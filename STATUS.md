@@ -59,12 +59,12 @@ There are currently three AI agents collaborating on this workspace. Please iden
 - [ ] Set up Next.js App Router structure (`/admin` and `/dashboard`)
 - [ ] Build base design system / UI primitives
 
-### 🔴 Phase 4: Admin Panel Core (NOT STARTED)
+### ✅ Phase 4: Admin Panel Core
 *Goal: Build the data management UI for mentors.*
-- [ ] `/admin/students` (Student roster CRUD)
-- [ ] `/admin/projects` (Project sequence management)
-- [ ] `/admin/assessments/mentor` (Score browser grid)
-- [ ] `/admin/import` (Excel upload wizard - requires Phase 2 logic)
+- [x] `/admin/students` (Student roster CRUD)
+- [x] `/admin/projects` (Project sequence management)
+- [x] `/admin/assessments/mentor` (Score browser grid)
+- [x] `/admin/import` (Excel upload wizard - requires Phase 2 logic)
 
 ### 🔴 Phase 5: Student Dashboard (NOT STARTED)
 *Goal: Build the visual, per-student assessment report.*
