@@ -5,10 +5,12 @@
 ---
 
 ## 👥 The Agent Team
-There are currently three AI agents collaborating on this workspace. Please identify your role and coordinate handoffs:
+There are currently five AI agents collaborating on this workspace. Please identify your role and coordinate handoffs:
 1. **Agent 0 (Project Manager & Architect):** Holds the big picture, wrote the architecture plans, and maintains this `STATUS.md` file.
 2. **Agent 1 (Database Specialist):** Responsible for executing the DB schema, writing `run_migration.py`, and connecting to Supabase.
 3. **Agent 2 (Data Pipeline Engineer):** Responsible for parsing the raw Excel files and writing the ETL ingestion logic (`import_data.py`).
+4. **Agent 3 (Admin Portal Developer):** Builds the Next.js React components and routes for the mentor admin panel.
+5. **Agent 5 (Dashboard & Charting Developer):** Specializes in Recharts, PDF generation, and the student-facing dashboard UI.
 
 ---
 
@@ -60,11 +62,21 @@ There are currently three AI agents collaborating on this workspace. Please iden
 - [ ] Build base design system / UI primitives
 
 ### ✅ Phase 4: Admin Panel Core
-*Goal: Build the data management UI for mentors.*
+*Goal: Build the primary data management UI for mentors.*
 - [x] `/admin/students` (Student roster CRUD)
 - [x] `/admin/projects` (Project sequence management)
 - [x] `/admin/assessments/mentor` (Score browser grid)
 - [x] `/admin/import` (Excel upload wizard - requires Phase 2 logic)
+
+### 🟡 Phase 4.1: Extended Admin Data Views (IN PROGRESS - AGENT 3)
+*Goal: Build the remaining admin panel data visualization grids.*
+- [ ] `/admin/assessments/self` (Self Scores grid view) - *Currently throwing 404*
+- [ ] `/admin/peer-feedback` (Peer Feedback browser) - *Currently throwing 404*
+- [ ] `/admin/term-tracking` (Term Tracking data grid) - *Currently throwing 404*
+
+### 🟡 Phase 4.2: Admin UI Polish (IN PROGRESS - AGENT 3)
+*Goal: Improve the Admin Panel navigation aesthetic.*
+- [ ] Redesign `/admin/layout.tsx` Sidebar: Make links look like distinct buttons stacked vertically.
 
 ### ✅ Phase 5: Student Dashboard
 *Goal: Build the visual, per-student assessment report.*
@@ -74,10 +86,18 @@ There are currently three AI agents collaborating on this workspace. Please iden
 - [x] Peer Feedback & Term Tracking UI
 - [x] PDF Export functionality
 
+### 🟡 Phase 5.1: Dashboard Chart Overhaul (IN PROGRESS - AGENT 5)
+*Goal: Upgrade the student progress visualisations.*
+- [ ] Refactor `RadarChart` into a Combined Bar Chart (comparing Mentor vs Self scores side-by-side).
+- [ ] Ensure the Bar Chart visually distinguishes between Mentor/Self.
+
 ---
 
 ## 📝 Recent Activity Log
 *Agents: Add a quick bullet point here when you finish a chunk of work.*
+- **2026-02-24 (Project Manager - Agent 0):** Updated roadmap with new UX/UI requirements (Phase 4.2 and Phase 5.1) based on user feedback. Assigned Admin UI and extended data views to Agent 3. Assigned Dashboard Chart refactoring to Agent 5.
+- **2026-02-24 (Deployment Lead):** Deployed application to Vercel successfully, resolved Next.js 16 dynamics routing (`params`) bug causing 404s, and applied global UI styling fixes (Arial typography and sidebar layout).
+- **2026-02-24 (Project Manager):** Discovered that `/admin/term-tracking`, `/admin/assessments/self`, and `/admin/peer-feedback` route directories are completely empty and causing 404 errors. Added Phase 4.1 to the roadmap and assigned it to Agent 3 (Frontend Developer) to implement these missing views next.
 - **2026-02-24 (Agent 1 & 2):** Successfully executed `run_migration.py` and seeded the database. Fixed Excel parsing errors and executed `import_data.py`. All 5 Excel files have been mapped, parsed, and successfully ingested into the Supabase database. Phases 1 & 2 are complete.
 - **2026-02-24 (Agent 1):** Wrote `run_migration.py` to push the schema and seed data to the live Supabase project via the v1 query API. Pending execution.
 - **2026-02-24 (Agent 2):** Drafted `import_data.py` to parse all 5 Excel files using Pandas and batch insert the data into Supabase via REST API. Pending execution.
