@@ -12,9 +12,9 @@ import { getProjects } from '@/lib/supabase/queries/projects';
 
 export const dynamic = 'force-dynamic';
 
-export default async function StudentDashboardPage({ params }: { params: { studentId: string } }) {
+export default async function StudentDashboardPage({ params }: { params: Promise<{ studentId: string }> }) {
     const supabase = await createClient();
-    const { studentId } = params;
+    const { studentId } = await params;
 
     // 1. Fetch Student Details
     const { data: student, error: studentError } = await supabase
