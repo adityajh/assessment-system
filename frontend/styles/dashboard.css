@@ -1,0 +1,80 @@
+:root {
+    /* Dashboard Palette (Light) */
+    --dash-bg: #f8fafc;
+    --dash-surface: #ffffff;
+    --dash-border: #e2e8f0;
+
+    --dash-text-primary: #0f172a;
+    --dash-text-muted: #64748b;
+
+    --domain-commercial: #f59e0b;
+    --domain-entrepreneurial: #10b981;
+    --domain-marketing: #ec4899;
+    --domain-innovation: #8b5cf6;
+    --domain-operational: #3b82f6;
+    --domain-professional: #14b8a6;
+
+    --score-mentor: #6366f1;
+    --score-self: #06b6d4;
+    --score-benchmark: #94a3b8;
+}
+
+body.dashboard-theme {
+    background-color: var(--dash-bg);
+    color: var(--dash-text-primary);
+}
+
+.dash-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.dash-header {
+    background-color: var(--dash-surface);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dash-card {
+    background-color: var(--dash-surface);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.dash-section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--dash-text-primary);
+}
+
+@media print {
+    body.dashboard-theme {
+        background: white;
+    }
+
+    .dash-layout {
+        gap: 1rem;
+        padding: 0;
+    }
+
+    .dash-card,
+    .dash-header {
+        box-shadow: none;
+        border: 1px solid var(--dash-border);
+        break-inside: avoid;
+    }
+
+    .btn {
+        display: none;
+    }
+}
