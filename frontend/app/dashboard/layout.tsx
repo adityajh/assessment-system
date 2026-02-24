@@ -4,6 +4,8 @@ import { LayoutDashboard, Users, FileText, ArrowLeft, Printer } from 'lucide-rea
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
+import { PrintButton } from '@/components/dashboard/PrintButton';
+
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const robotoMono = Roboto_Mono({ subsets: ['latin'], variable: '--font-roboto-mono' });
 
@@ -30,12 +32,7 @@ export default function DashboardLayout({
 
                     <div className="flex items-center gap-4">
                         {/* Real implementation would have a student selector here for teachers to quickly switch */}
-                        <button
-                            onClick={() => typeof window !== 'undefined' && window.print()}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-                        >
-                            <Printer size={16} /> Print Report
-                        </button>
+                        <PrintButton />
                     </div>
                 </div>
             </nav>

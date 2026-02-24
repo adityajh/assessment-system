@@ -1,0 +1,28 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Excel files and data
+*.xlsx
+*.csv
+*.db
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
