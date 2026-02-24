@@ -88,7 +88,7 @@ export default function PeerFeedbackClientPage({
                             <tbody className="divide-y divide-slate-800">
                                 {activeStudents.map(student => {
                                     const avg = studentAverages[student.id];
-                                    const hasData = avg.count > 0;
+                                    const hasData = (avg.count ?? 0) > 0;
 
                                     return (
                                         <tr key={student.id} className="hover:bg-slate-800/50 transition-colors">

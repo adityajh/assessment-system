@@ -43,6 +43,21 @@ export default async function StudentDashboardPage({ params }: { params: Promise
     const studentMentorAssessments = data.assessments.filter(a => a.student_id === studentId);
     const studentSelfAssessments = selfAssessments || [];
 
+    // Fetch Term Tracking
+    const { data: termData } = await supabase
+        .from('term_tracking')
+        .select('*')
+        .eq('student_id', studentId)
+        .single();
+
+    // Fetch Peer Feedback for this student
+    const { data: peerData } = await supabase
+        .from('peer_feedback')
+        .select('*, projects(name, sequence_label), giver:students!giver_id(canonical_name)')
+        .eq('recipient_id', studentId);
+
+    const peerFeedback = peerData || [];
+
     // Prepare Radar Chart Data
     const radarData = data.domains.map(domain => {
         const domainParams = data.parameters.filter(p => p.domain_id === domain.id);
@@ -117,19 +132,71 @@ export default async function StudentDashboardPage({ params }: { params: Promise
                 </div>
             </section>
 
-            {/* Term Tracking and Peer Feedback placeholders */}
+            {/* Term Tracking and Peer Feedback */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:break-before-page">
                 <div className="dash-card">
-                    <h3 className="section-title">Term Tracking (CBP/IP)</h3>
-                    <div className="py-12 flex items-center justify-center border-2 border-dashed var(--dash-border) rounded-lg bg-slate-50">
-                        <span className="text-slate-400">Term report data integration pending.</span>
-                    </div>
+                    <h3 className="section-title">Term Tracking</h3>
+                    {termData ? (
+                        <div className="grid grid-cols-3 gap-4 mt-4">
+                            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 text-center">
+                                <div className="text-3xl font-bold text-indigo-600">{termData.cbp_count ?? 0}</div>
+                                <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">CBP</div>
+                            </div>
+                            <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 text-center">
+                                <div className="text-3xl font-bold text-emerald-600">{termData.conflexion_count ?? 0}</div>
+                                <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">Conflexion</div>
+                            </div>
+                            <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center">
+                                <div className="text-3xl font-bold text-amber-600">{termData.bow_score?.toFixed(1) ?? '–'}</div>
+                                <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">BOW Score</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-8 flex items-center justify-center text-slate-400 text-sm">
+                            No term tracking data available.
+                        </div>
+                    )}
                 </div>
+
                 <div className="dash-card">
                     <h3 className="section-title">Peer Feedback Highlights</h3>
-                    <div className="py-12 flex items-center justify-center border-2 border-dashed var(--dash-border) rounded-lg bg-slate-50">
-                        <span className="text-slate-400">Peer feedback text integration pending.</span>
-                    </div>
+                    {peerFeedback.length > 0 ? (
+                        <div className="space-y-3 mt-3">
+                            {Array.from(new Set(peerFeedback.map((p: any) => p.project_id))).map((projId: any) => {
+                                const entries = peerFeedback.filter((p: any) => p.project_id === projId);
+                                const proj = (entries[0] as any)?.projects;
+                                const avg = (key: string) => {
+                                    const vals = entries.map((e: any) => e[key]).filter((v: any) => v !== null && v !== undefined);
+                                    return vals.length ? (vals.reduce((a: number, b: number) => a + b, 0) / vals.length).toFixed(1) : '–';
+                                };
+                                return (
+                                    <div key={projId} className="border border-slate-100 rounded-xl p-4">
+                                        <div className="font-semibold text-sm text-slate-700 mb-3">
+                                            {proj?.sequence_label} — {proj?.name} <span className="text-slate-400 font-normal">({entries.length} reviews)</span>
+                                        </div>
+                                        <div className="grid grid-cols-5 gap-2 text-center">
+                                            {[
+                                                { label: 'Quality', key: 'quality_of_work' },
+                                                { label: 'Initiative', key: 'initiative_ownership' },
+                                                { label: 'Comms', key: 'communication' },
+                                                { label: 'Collab', key: 'collaboration' },
+                                                { label: 'Growth', key: 'growth_mindset' },
+                                            ].map(({ label, key }) => (
+                                                <div key={key} className="rounded-lg bg-slate-50 py-2">
+                                                    <div className="text-lg font-bold text-slate-700">{avg(key)}</div>
+                                                    <div className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="py-8 flex items-center justify-center text-slate-400 text-sm">
+                            No peer feedback received yet.
+                        </div>
+                    )}
                 </div>
             </section>
 

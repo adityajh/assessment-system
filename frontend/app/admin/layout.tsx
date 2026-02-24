@@ -55,8 +55,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
             <main className="admin-main flex-1 ml-64 flex flex-col min-h-screen">
                 <header className="admin-header h-16 border-b border-slate-800 bg-slate-900 flex items-center px-8 shrink-0">
-                    <h1 className="text-lg font-semibold capitalize">
-                        {pathname.split('/').pop()?.replace('-', ' ') || 'Admin Panel'}
+                    <h1 className="text-lg font-semibold">
+                        {pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Admin Panel'}
                     </h1>
                 </header>
                 <div className="admin-content p-8 flex-1 overflow-auto">
