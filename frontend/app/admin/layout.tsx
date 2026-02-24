@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="text-xl font-bold text-white mb-2 tracking-tight px-4 flex items-center h-12">
                     <span>Let's Entreprise</span>
                 </div>
-                <nav className="flex flex-col gap-1 overflow-y-auto w-full">
+                <nav className="flex flex-col gap-2 overflow-y-auto w-full px-2 pb-6">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname.startsWith(item.href) && item.href !== '/dashboard';
@@ -41,9 +41,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors w-full ${isActive
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border w-full ${isActive
+                                    ? 'bg-slate-800 border-indigo-500/50 text-white shadow-sm shadow-indigo-500/10'
+                                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 hover:border-slate-700'
                                     }`}
                             >
                                 <Icon size={18} className="shrink-0" />

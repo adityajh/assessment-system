@@ -68,15 +68,15 @@ There are currently five AI agents collaborating on this workspace. Please ident
 - [x] `/admin/assessments/mentor` (Score browser grid)
 - [x] `/admin/import` (Excel upload wizard - requires Phase 2 logic)
 
-### 🟡 Phase 4.1: Extended Admin Data Views (IN PROGRESS - AGENT 3)
+### ✅ Phase 4.1: Extended Admin Data Views (COMPLETE)
 *Goal: Build the remaining admin panel data visualization grids.*
-- [ ] `/admin/assessments/self` (Self Scores grid view) - *Currently throwing 404*
-- [ ] `/admin/peer-feedback` (Peer Feedback browser) - *Currently throwing 404*
-- [ ] `/admin/term-tracking` (Term Tracking data grid) - *Currently throwing 404*
+- [x] `/admin/assessments/self` (Self Scores grid view)
+- [x] `/admin/peer-feedback` (Peer Feedback browser)
+- [x] `/admin/term-tracking` (Term Tracking data grid)
 
-### 🟡 Phase 4.2: Admin UI Polish (IN PROGRESS - AGENT 3)
+### ✅ Phase 4.2: Admin UI Polish (COMPLETE)
 *Goal: Improve the Admin Panel navigation aesthetic.*
-- [ ] Redesign `/admin/layout.tsx` Sidebar: Make links look like distinct buttons stacked vertically.
+- [x] Redesign `/admin/layout.tsx` Sidebar: Make links look like distinct buttons stacked vertically.
 
 ### ✅ Phase 5: Student Dashboard
 *Goal: Build the visual, per-student assessment report.*
@@ -86,15 +86,17 @@ There are currently five AI agents collaborating on this workspace. Please ident
 - [x] Peer Feedback & Term Tracking UI
 - [x] PDF Export functionality
 
-### 🟡 Phase 5.1: Dashboard Chart Overhaul (IN PROGRESS - AGENT 5)
+### ✅ Phase 5.1: Dashboard Chart Overhaul (COMPLETE - AGENT 5)
 *Goal: Upgrade the student progress visualisations.*
-- [ ] Refactor `RadarChart` into a Combined Bar Chart (comparing Mentor vs Self scores side-by-side).
-- [ ] Ensure the Bar Chart visually distinguishes between Mentor/Self.
+- [x] Refactor `RadarChart` into a Combined Bar Chart (comparing Mentor vs Self scores side-by-side).
+- [x] Ensure the Bar Chart visually distinguishes between Mentor/Self.
 
 ---
 
 ## 📝 Recent Activity Log
 *Agents: Add a quick bullet point here when you finish a chunk of work.*
+- **2026-02-24 (Agent 5):** Completed Phase 5.1 Dashboard Chart Overhaul by replacing the RadarChart with a comparative DomainBarChart for Mentor/Self scores.
+- **2026-02-24 (Agent 3):** Completed Phase 4.2 Admin UI Polish by redesigning the `/admin/layout.tsx` sidebar to feature distinct button styling and stacked vertical navigation.
 - **2026-02-24 (Project Manager - Agent 0):** Updated roadmap with new UX/UI requirements (Phase 4.2 and Phase 5.1) based on user feedback. Assigned Admin UI and extended data views to Agent 3. Assigned Dashboard Chart refactoring to Agent 5.
 - **2026-02-24 (Deployment Lead):** Deployed application to Vercel successfully, resolved Next.js 16 dynamics routing (`params`) bug causing 404s, and applied global UI styling fixes (Arial typography and sidebar layout).
 - **2026-02-24 (Project Manager):** Discovered that `/admin/term-tracking`, `/admin/assessments/self`, and `/admin/peer-feedback` route directories are completely empty and causing 404 errors. Added Phase 4.1 to the roadmap and assigned it to Agent 3 (Frontend Developer) to implement these missing views next.

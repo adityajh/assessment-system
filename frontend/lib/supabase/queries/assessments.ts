@@ -55,6 +55,30 @@ export async function getMentorAssessmentData(supabase: SupabaseClient) {
     };
 }
 
+export async function getSelfAssessmentData(supabase: SupabaseClient) {
+    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult] = await Promise.all([
+        supabase.from('students').select('*').order('student_number'),
+        supabase.from('projects').select('*').order('sequence').order('sequence_label'),
+        supabase.from('readiness_domains').select('*').order('display_order'),
+        supabase.from('readiness_parameters').select('*').order('param_number'),
+        supabase.from('assessments').select('*').eq('assessment_type', 'self')
+    ]);
+
+    if (studentsResult.error) throw studentsResult.error;
+    if (projectsResult.error) throw projectsResult.error;
+    if (domainsResult.error) throw domainsResult.error;
+    if (paramsResult.error) throw paramsResult.error;
+    if (assessmentsResult.error) throw assessmentsResult.error;
+
+    return {
+        students: studentsResult.data as Student[],
+        projects: projectsResult.data as Project[],
+        domains: domainsResult.data as ReadinessDomain[],
+        parameters: paramsResult.data as ReadinessParameter[],
+        assessments: assessmentsResult.data as Assessment[],
+    };
+}
+
 export async function updateAssessment(
     supabase: SupabaseClient,
     id: string,

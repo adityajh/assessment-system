@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { RadarRechart } from '@/components/dashboard/RadarChart';
+import { DomainBarChart } from '@/components/dashboard/RadarChart';
 import { ProgressionChart } from '@/components/dashboard/ProgressionChart';
 import { StudentReportHeader } from '@/components/dashboard/StudentReportHeader';
 import {
@@ -75,12 +75,12 @@ export default async function StudentDashboardPage({ params }: { params: Promise
             {/* Overview Section - Radar and Progression */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:block print:break-inside-avoid">
                 <div className="dash-card flex flex-col h-[500px]">
-                    <h3 className="section-title">Readiness Domains (Cumulative)</h3>
+                    <h3 className="section-title">Readiness Domains (Comparative)</h3>
                     <p className="text-sm var(--dash-text-muted) mb-4">
                         Comparison of Mentor (Subjective + Objective) and Self (Subjective) scores across the 6 major domains.
                     </p>
                     <div className="flex-1 min-h-0">
-                        <RadarRechart data={radarData} />
+                        <DomainBarChart data={radarData} />
                     </div>
                 </div>
 
