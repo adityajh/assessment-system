@@ -66,13 +66,13 @@ There are currently three AI agents collaborating on this workspace. Please iden
 - [x] `/admin/assessments/mentor` (Score browser grid)
 - [x] `/admin/import` (Excel upload wizard - requires Phase 2 logic)
 
-### 🔴 Phase 5: Student Dashboard (NOT STARTED)
+### ✅ Phase 5: Student Dashboard
 *Goal: Build the visual, per-student assessment report.*
-- [ ] `/dashboard/[studentId]` Main layout
-- [ ] Radar Chart (Readiness domains)
-- [ ] Progression Line Chart (Scores over time)
-- [ ] Peer Feedback & Term Tracking UI
-- [ ] PDF Export functionality
+- [x] `/dashboard/[studentId]` Main layout
+- [x] Radar Chart (Readiness domains)
+- [x] Progression Line Chart (Scores over time)
+- [x] Peer Feedback & Term Tracking UI
+- [x] PDF Export functionality
 
 ---
 
