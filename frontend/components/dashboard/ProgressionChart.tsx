@@ -54,8 +54,8 @@ export function ProgressionChart({ projects, assessments }: ProgressionProps) {
     }
 
     return (
-        <div className="w-full h-full min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full" style={{ height: 340 }}>
+            <ResponsiveContainer width="100%" height={340}>
                 <LineChart
                     data={chartData}
                     margin={{ top: 20, right: 30, left: 0, bottom: 20 }}

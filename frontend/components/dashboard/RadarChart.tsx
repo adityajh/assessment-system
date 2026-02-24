@@ -30,8 +30,8 @@ export function DomainBarChart({ data }: RadarProps) {
     }
 
     return (
-        <div className="w-full h-full min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full" style={{ height: 340 }}>
+            <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis

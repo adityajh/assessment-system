@@ -91,11 +91,22 @@ There are currently five AI agents collaborating on this workspace. Please ident
 - [x] Refactor `RadarChart` into a Combined Bar Chart (comparing Mentor vs Self scores side-by-side).
 - [x] Ensure the Bar Chart visually distinguishes between Mentor/Self.
 
+### ✅ Phase 6: Bug Fixes from Live Audit (COMPLETE - AGENT PM)
+*Goal: Fix all bugs discovered from the live Vercel UX audit.*
+- [x] Fix admin topbar heading: proper title-case with all hyphens replaced
+- [x] Fix dashboard charts not rendering: `.dash-card` now `display:flex` so `ResponsiveContainer` gets valid height
+- [x] Wire real Term Tracking (CBP/Conflexion/BOW) data into student dashboard (was placeholder)
+- [x] Wire real Peer Feedback (per-project averages) into student dashboard (was placeholder)
+- [x] Fix TypeScript null error in `PeerFeedbackClientPage` preventing Vercel build
+- [x] Push to git (commit `cea8d72`) — Vercel auto-redeploying from `main`
+- [ ] *Post-deploy:* Verify 3 previously-404 routes now load (`/admin/assessments/self`, `/admin/peer-feedback`, `/admin/term-tracking`)
+- [ ] *Post-deploy:* Verify charts render on student dashboard
+
 ---
 
 ## 📝 Recent Activity Log
 *Agents: Add a quick bullet point here when you finish a chunk of work.*
-- **2026-02-24 (Agent 5):** Completed Phase 5.1 Dashboard Chart Overhaul by replacing the RadarChart with a comparative DomainBarChart for Mentor/Self scores.
+- **2026-02-24 (Agent PM — All Agents):** UX audit of live app. Fixed 4 code bugs: topbar heading title-case, `.dash-card` flex layout for chart heights, wired real CBP/Conflexion/BOW and Peer Feedback data into student dashboard, fixed TS null error in `PeerFeedbackClientPage`. Build clean, pushed commit `cea8d72` to main. Vercel will auto-redeploy.
 - **2026-02-24 (Agent 3):** Completed Phase 4.2 Admin UI Polish by redesigning the `/admin/layout.tsx` sidebar to feature distinct button styling and stacked vertical navigation.
 - **2026-02-24 (Project Manager - Agent 0):** Updated roadmap with new UX/UI requirements (Phase 4.2 and Phase 5.1) based on user feedback. Assigned Admin UI and extended data views to Agent 3. Assigned Dashboard Chart refactoring to Agent 5.
 - **2026-02-24 (Deployment Lead):** Deployed application to Vercel successfully, resolved Next.js 16 dynamics routing (`params`) bug causing 404s, and applied global UI styling fixes (Arial typography and sidebar layout).
