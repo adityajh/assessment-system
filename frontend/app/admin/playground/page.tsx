@@ -14,6 +14,9 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let heatmapData = null;
     let consolidatedHeatmapData = null;
     let trajectoryData = null;
+    let kpiData = null;
+    let peerRatingData = null;
+    let projectDomainScores = null;
     let heatmapProjects: string[] = [];
     let studentName = "Mock Student";
     let studentsList: any[] = [];
@@ -107,6 +110,63 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             return { domain: domain.name, scores };
         });
 
+        // 5. BUILD KPI DATA (Dashboard view)
+        const uniqueProjectsAssessed = new Set(data.assessments.map(a => a.project_id)).size;
+        kpiData = {
+            projectsCount: uniqueProjectsAssessed,
+            cbpCount: data.termTracking?.cbp_count || 0,
+            conflexionCount: data.termTracking?.conflexion_count || 0,
+            bowScore: data.termTracking?.bow_score || 0
+        };
+
+        // 6. BUILD PEER RATING DATA (Radial Chart per project)
+        peerRatingData = data.projects.map((proj, idx) => {
+            const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
+            if (projectFeedback.length === 0) return null;
+
+            let totalScore = 0;
+            let count = 0;
+            projectFeedback.forEach(f => {
+                const sum = (f.quality_of_work || 0) + (f.initiative_ownership || 0) + (f.communication || 0) + (f.collaboration || 0) + (f.growth_mindset || 0);
+                const categoriesCount = [f.quality_of_work, f.initiative_ownership, f.communication, f.collaboration, f.growth_mindset].filter(v => v !== null && v !== undefined).length;
+                if (categoriesCount > 0) {
+                    totalScore += (sum / categoriesCount);
+                    count++;
+                }
+            });
+
+            const avgOutOf5 = count > 0 ? totalScore / count : 0;
+            const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+            return {
+                name: proj.name,
+                score: Number(avgOutOf5.toFixed(1)),
+                fill: colors[idx % colors.length]
+            };
+        }).filter(Boolean);
+
+        // 7. BUILD GROUPED BAR DATA (Self vs Mentor by domain across projects)
+        projectDomainScores = data.projects.map(proj => {
+            const categories = data.domains.map(domain => {
+                const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
+                const mentorAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+                const selfAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'self' && a.normalized_score !== null);
+
+                const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : 0;
+                const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : 0;
+
+                return {
+                    domain: domain.name,
+                    mentor: Number(mentorAvg.toFixed(1)),
+                    self: Number(selfAvg.toFixed(1))
+                };
+            }).filter(d => d.mentor > 0 || d.self > 0);
+
+            return {
+                project: proj.name,
+                categories
+            };
+        }).filter(p => p.categories.length > 0);
+
     } catch (e) {
         console.error("Failed to load playground data", e);
     }
@@ -126,6 +186,9 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 consolidatedHeatmapData={consolidatedHeatmapData}
                 heatmapProjects={heatmapProjects}
                 trajectoryData={trajectoryData}
+                kpiData={kpiData}
+                peerRatingData={peerRatingData}
+                projectDomainScores={projectDomainScores}
                 students={studentsList}
                 studentId={activeStudentId}
             />
