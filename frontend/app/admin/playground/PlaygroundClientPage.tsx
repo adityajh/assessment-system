@@ -131,15 +131,15 @@ export default function PlaygroundClientPage({ gapData, heatmapData, heatmapProj
 
                                 {/* Data Rows */}
                                 <div className="flex flex-col gap-1">
-                                    {HEATMAP_DATA.map((row, idx) => (
+                                    {heatmapData.map((row: any, idx: number) => (
                                         <div key={idx} className="flex items-center group">
                                             <div className="w-64 shrink-0 text-xs text-slate-300 truncate pr-4" title={row.parameter}>
                                                 <span className="text-slate-500 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">[{row.domain.substring(0, 3).toUpperCase()}]</span>
                                                 {row.parameter}
                                             </div>
                                             <div className="flex gap-1">
-                                                {HEATMAP_PROJECTS.map(proj => {
-                                                    const score = row.scores[proj as keyof typeof row.scores];
+                                                {heatmapProjects.map((proj: string) => {
+                                                    const score = row.scores[proj];
                                                     return (
                                                         <div
                                                             key={proj}
