@@ -73,7 +73,7 @@ def get_project_id(name_str):
 def main():
     print("="*50)
     print("1. Importing Term Tracking...")
-    df_term = pd.read_excel('Term Report CBP Conflexion BOW.xlsx', sheet_name='Sheet1')
+    df_term = pd.read_excel('../data/Term Report CBP Conflexion BOW.xlsx', sheet_name='Sheet1')
     term_rows = []
     for _, row in df_term.iterrows():
         student_name = row['Student Name']
@@ -97,7 +97,7 @@ def main():
 
     print("="*50)
     print("2. Importing Peer Feedback...")
-    df_peer = pd.read_excel('Peer Feedback Form (Responses) (1).xlsx', sheet_name='Peer feedback metrics ')
+    df_peer = pd.read_excel('../data/Peer Feedback Form (Responses) (1).xlsx', sheet_name='Peer feedback metrics ')
     peer_rows = []
     for _, row in df_peer.iterrows():
         giver_name = row['Your Name (So we can follow up if needed)']
@@ -141,7 +141,7 @@ def main():
         ('operational', 1), ('operational', 2), ('operational', 3), ('operational', 4),
         ('commercial', 3), ('professional', 2), ('professional', 3), ('professional', 4)
     ]
-    df_bxr = pd.read_excel('Business X-Ray _ Responses.xlsx', sheet_name='Form Responses 1')
+    df_bxr = pd.read_excel('../data/Business X-Ray _ Responses.xlsx', sheet_name='Form Responses 1')
     bxr_proj_id = get_project_id('Business X-Ray')
     bxr_assessments = []
     
@@ -180,7 +180,7 @@ def main():
         ('commercial', 1), ('commercial', 3), ('commercial', 1), ('commercial', 3),
         ('operational', 3), ('operational', 4), ('professional', 2), ('professional', 3), ('professional', 4)
     ]
-    df_acc = pd.read_excel('Accounting Project \u2013 Readiness Self-Assessment (Responses).xlsx', sheet_name='Form responses 1')
+    df_acc = pd.read_excel('../data/Accounting Project \u2013 Readiness Self-Assessment (Responses).xlsx', sheet_name='Form responses 1')
     acc_proj_id = get_project_id('Accounts')
     acc_assessments = []
     
@@ -229,7 +229,7 @@ def main():
 
     print("="*50)
     print("5. Importing Mentor Assessment Matrix...")
-    matrix_file = 'Year 1 Assessment_Matrix (1) (1) (1).xlsx'
+    matrix_file = '../data/Year 1 Assessment_Matrix (1) (1) (1).xlsx'
     xls = pd.ExcelFile(matrix_file)
     matrix_assessments = []
     
