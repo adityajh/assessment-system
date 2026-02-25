@@ -112,16 +112,27 @@ export async function getRubricsData(supabase: SupabaseClient) {
 }
 
 // Data required for the Component Playground charts
-export async function getPlaygroundData(supabase: SupabaseClient) {
-    // 1. Get the first student
-    const { data: students, error: studentError } = await supabase
-        .from('students')
-        .select('*')
-        .order('student_number')
-        .limit(1);
+export async function getPlaygroundData(supabase: SupabaseClient, studentId?: string) {
+    // 1. Get the student
+    let student;
+    if (studentId) {
+        const { data, error } = await supabase
+            .from('students')
+            .select('*')
+            .eq('id', studentId)
+            .single();
+        if (error) throw error;
+        student = data;
+    } else {
+        const { data: students, error: studentError } = await supabase
+            .from('students')
+            .select('*')
+            .order('student_number')
+            .limit(1);
 
-    if (studentError) throw studentError;
-    const student = students[0];
+        if (studentError) throw studentError;
+        student = students[0];
+    }
 
     // 2. Fetch all required reference data and assessments for that student
     const [projectsResult, domainsResult, paramsResult, assessmentsResult] = await Promise.all([

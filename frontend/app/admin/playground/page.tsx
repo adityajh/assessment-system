@@ -1,23 +1,30 @@
 import PlaygroundClientPage from './PlaygroundClientPage';
 import { createClient } from '@/lib/supabase/server';
 import { getPlaygroundData } from '@/lib/supabase/queries/assessments';
+import { getStudents } from '@/lib/supabase/queries/students';
 
 export const metadata = {
     title: 'Component Playground - Admin Panel',
 };
 
-export default async function PlaygroundPage() {
+export default async function PlaygroundPage({ searchParams }: { searchParams: Promise<{ studentId?: string }> }) {
+    const { studentId } = await searchParams;
     let mockData = null;
     let gapData = null;
     let heatmapData = null;
+    let consolidatedHeatmapData = null;
     let trajectoryData = null;
     let heatmapProjects: string[] = [];
     let studentName = "Mock Student";
+    let studentsList: any[] = [];
+    let activeStudentId = studentId || "";
 
     try {
         const supabase = await createClient();
-        const data = await getPlaygroundData(supabase);
+        const data = await getPlaygroundData(supabase, studentId);
+        studentsList = await getStudents(supabase);
 
+        activeStudentId = data.student.id;
         studentName = data.student.canonical_name;
 
         // 1. BUILD GAP DATA (Domain Averages)
@@ -73,15 +80,32 @@ export default async function PlaygroundPage() {
             const mentorAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
             const selfAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'self' && a.normalized_score !== null);
 
-            const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : 0;
-            const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : 0;
+            const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : null;
+            const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : null;
 
             return {
                 project: proj.name,
-                mentor: Number(mentorAvg.toFixed(1)),
-                self: Number(selfAvg.toFixed(1))
+                mentor: mentorAvg !== null ? Number(mentorAvg.toFixed(1)) : null,
+                self: selfAvg !== null ? Number(selfAvg.toFixed(1)) : null
             };
-        }).filter(t => t.mentor > 0 || t.self > 0); // Only keep projects with actual data
+        });
+
+        // 4. BUILD CONSOLIDATED HEATMAP DATA (Domains x Projects)
+        consolidatedHeatmapData = data.domains.map(domain => {
+            const scores: Record<string, number | null> = {};
+            data.projects.forEach(proj => {
+                const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
+                const asses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+
+                if (asses.length > 0) {
+                    const avg = asses.reduce((sum, a) => sum + a.normalized_score!, 0) / asses.length;
+                    scores[proj.name] = Number(avg.toFixed(1));
+                } else {
+                    scores[proj.name] = null;
+                }
+            });
+            return { domain: domain.name, scores };
+        });
 
     } catch (e) {
         console.error("Failed to load playground data", e);
@@ -99,8 +123,11 @@ export default async function PlaygroundPage() {
             <PlaygroundClientPage
                 gapData={gapData}
                 heatmapData={heatmapData}
+                consolidatedHeatmapData={consolidatedHeatmapData}
                 heatmapProjects={heatmapProjects}
                 trajectoryData={trajectoryData}
+                students={studentsList}
+                studentId={activeStudentId}
             />
         </div>
     );
