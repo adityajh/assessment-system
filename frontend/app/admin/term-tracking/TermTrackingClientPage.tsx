@@ -63,7 +63,7 @@ export default function TermTrackingClientPage({
                                             {latest?.conflexion_count ?? '-'}
                                         </td>
                                         <td className={`px-6 py-3 text-center font-mono font-bold border-l border-slate-800 ${hasData ? 'text-indigo-400' : 'text-slate-600'}`}>
-                                            {latest?.bow_score ?? '-'}
+                                            {latest?.bow_score !== undefined && latest?.bow_score !== null ? Number(latest.bow_score).toFixed(2) : '-'}
                                         </td>
                                     </tr>
                                 );

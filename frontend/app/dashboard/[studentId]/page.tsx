@@ -147,7 +147,7 @@ export default async function StudentDashboardPage({ params }: { params: Promise
                                 <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">Conflexion</div>
                             </div>
                             <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center">
-                                <div className="text-3xl font-bold text-amber-600">{termData.bow_score?.toFixed(1) ?? '–'}</div>
+                                <div className="text-3xl font-bold text-amber-600">{termData.bow_score?.toFixed(2) ?? '–'}</div>
                                 <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">BOW Score</div>
                             </div>
                         </div>

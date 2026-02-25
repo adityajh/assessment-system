@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
     if (delta <= -1.5) return '#ef4444'; // Red (highly overconfident)
@@ -48,7 +48,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, projectDomainScores, students, studentId }: any) {
+export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, students, studentId }: any) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -288,8 +288,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     itemStyle={{ color: '#f8fafc' }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <Line type="monotone" dataKey="mentor" name="Average Mentor Score" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#1e2233' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-                                <Line type="monotone" dataKey="self" name="Average Self Score" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#1e2233' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                <Line connectNulls={true} type="monotone" dataKey="mentor" name="Average Mentor Score" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#1e2233' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                <Line connectNulls={true} type="monotone" dataKey="self" name="Average Self Score" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#1e2233' }} activeDot={{ r: 6, strokeWidth: 0 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
@@ -317,39 +317,29 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
 
                     {activeTab === 'peer-rating' && peerRatingData && peerRatingData.length > 0 && (
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadialBarChart
-                                cx="50%"
-                                cy="50%"
-                                innerRadius="30%"
-                                outerRadius="100%"
-                                barSize={24}
-                                data={peerRatingData}
-                                startAngle={90}
-                                endAngle={-270}
-                            >
-                                <PolarAngleAxis type="number" domain={[0, 5]} angleAxisId={0} tick={false} />
-                                <RadialBar
-                                    background={{ fill: '#334155' }}
-                                    dataKey="score"
-                                    cornerRadius={12}
-                                />
+                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={peerRatingData}>
+                                <PolarGrid stroke="#334155" />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 5]} stroke="#64748b" />
                                 <Tooltip
-                                    content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            const data = payload[0].payload;
-                                            return (
-                                                <div className="bg-[#1e2233] border border-slate-700 p-3 rounded-md shadow-lg">
-                                                    <p className="text-slate-200 font-medium mb-1">{data.name} Project</p>
-                                                    <p className="text-indigo-400 text-sm">Average Peer Rating: <span className="text-slate-100 font-medium">{data.score} / 5</span></p>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }}
+                                    itemStyle={{ color: '#f8fafc' }}
                                 />
-                                <Legend iconSize={12} width={120} height={140} layout="vertical" verticalAlign="middle" wrapperStyle={{ right: 20, top: '50%', transform: 'translateY(-50%)', lineHeight: '30px' }} />
-                            </RadialBarChart>
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                {peerRatingProjects?.map((proj: string, idx: number) => {
+                                    const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+                                    return (
+                                        <Radar
+                                            key={proj}
+                                            name={proj}
+                                            dataKey={proj}
+                                            stroke={colors[idx % colors.length]}
+                                            fill={colors[idx % colors.length]}
+                                            fillOpacity={0.4}
+                                        />
+                                    );
+                                })}
+                            </RadarChart>
                         </ResponsiveContainer>
                     )}
                     {activeTab === 'peer-rating' && (!peerRatingData || peerRatingData.length === 0) && (
@@ -359,24 +349,26 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'domain-comparison' && projectDomainScores && projectDomainScores.length > 0 && (
-                        <div className="w-full h-full flex flex-col overflow-auto gap-12 pb-8 pr-4">
+                        <div className="w-full h-full flex overflow-x-auto gap-6 pb-2 pr-4 custom-scrollbar">
                             {projectDomainScores.map((projData: any, idx: number) => (
-                                <div key={idx} className="w-full min-w-[800px] h-[300px] shrink-0 border border-slate-800 bg-[#161b22] rounded-lg p-6">
+                                <div key={idx} className="w-[500px] h-full shrink-0 border border-slate-800 bg-[#161b22] rounded-lg p-6 flex flex-col">
                                     <h4 className="text-indigo-400 font-medium mb-4">{projData.project} Project</h4>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={projData.categories} margin={{ top: 0, right: 30, left: 0, bottom: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                            <XAxis dataKey="domain" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                                            <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 10]} />
-                                            <Tooltip
-                                                cursor={{ fill: '#334155', opacity: 0.2 }}
-                                                contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f1f5f9' }}
-                                            />
-                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                            <Bar dataKey="self" name="Self Score" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                                            <Bar dataKey="mentor" name="Mentor Score" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
+                                    <div className="flex-1 min-h-0">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={projData.categories} margin={{ top: 0, right: 10, left: -20, bottom: 20 }}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                                <XAxis dataKey="domain" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
+                                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 11 }} domain={[0, 10]} />
+                                                <Tooltip
+                                                    cursor={{ fill: '#334155', opacity: 0.2 }}
+                                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f1f5f9' }}
+                                                />
+                                                <Legend wrapperStyle={{ paddingTop: '10px', fontSize: 12 }} />
+                                                <Bar dataKey="self" name="Self Score" fill="#06b6d4" radius={[2, 2, 0, 0]} barSize={10} />
+                                                <Bar dataKey="mentor" name="Mentor Score" fill="#8b5cf6" radius={[2, 2, 0, 0]} barSize={10} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 </div>
                             ))}
                         </div>

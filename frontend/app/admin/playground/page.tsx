@@ -16,6 +16,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let trajectoryData = null;
     let kpiData = null;
     let peerRatingData = null;
+    let peerRatingProjects: string[] = [];
     let projectDomainScores = null;
     let heatmapProjects: string[] = [];
     let studentName = "Mock Student";
@@ -113,36 +114,41 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         // 5. BUILD KPI DATA (Dashboard view)
         const uniqueProjectsAssessed = new Set(data.assessments.map(a => a.project_id)).size;
         kpiData = {
-            projectsCount: uniqueProjectsAssessed,
+            projectsCount: `${uniqueProjectsAssessed}/${data.projects.length}`,
             cbpCount: data.termTracking?.cbp_count || 0,
             conflexionCount: data.termTracking?.conflexion_count || 0,
-            bowScore: data.termTracking?.bow_score || 0
+            bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00"
         };
 
-        // 6. BUILD PEER RATING DATA (Radial Chart per project)
-        peerRatingData = data.projects.map((proj, idx) => {
+        // 6. BUILD PEER RATING DATA (Radar Chart: Questions as axes, Projects as lines)
+        const peerCategories = [
+            { key: 'quality_of_work', label: 'Quality of Work' },
+            { key: 'initiative_ownership', label: 'Initiative & Ownership' },
+            { key: 'communication', label: 'Communication' },
+            { key: 'collaboration', label: 'Collaboration' },
+            { key: 'growth_mindset', label: 'Growth Mindset' }
+        ];
+
+        const radarDataMap: Record<string, any> = {};
+        peerCategories.forEach(c => {
+            radarDataMap[c.key] = { subject: c.label };
+        });
+
+        data.projects.forEach(proj => {
             const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
-            if (projectFeedback.length === 0) return null;
+            if (projectFeedback.length > 0) {
+                peerRatingProjects.push(proj.name);
+                peerCategories.forEach(c => {
+                    const scores = projectFeedback.map(f => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
+                    const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
+                    if (avg !== null) {
+                        radarDataMap[c.key][proj.name] = Number(avg.toFixed(1));
+                    }
+                });
+            }
+        });
 
-            let totalScore = 0;
-            let count = 0;
-            projectFeedback.forEach(f => {
-                const sum = (f.quality_of_work || 0) + (f.initiative_ownership || 0) + (f.communication || 0) + (f.collaboration || 0) + (f.growth_mindset || 0);
-                const categoriesCount = [f.quality_of_work, f.initiative_ownership, f.communication, f.collaboration, f.growth_mindset].filter(v => v !== null && v !== undefined).length;
-                if (categoriesCount > 0) {
-                    totalScore += (sum / categoriesCount);
-                    count++;
-                }
-            });
-
-            const avgOutOf5 = count > 0 ? totalScore / count : 0;
-            const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
-            return {
-                name: proj.name,
-                score: Number(avgOutOf5.toFixed(1)),
-                fill: colors[idx % colors.length]
-            };
-        }).filter(Boolean);
+        peerRatingData = peerCategories.map(c => radarDataMap[c.key]);
 
         // 7. BUILD GROUPED BAR DATA (Self vs Mentor by domain across projects)
         projectDomainScores = data.projects.map(proj => {
@@ -188,6 +194,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 trajectoryData={trajectoryData}
                 kpiData={kpiData}
                 peerRatingData={peerRatingData}
+                peerRatingProjects={peerRatingProjects}
                 projectDomainScores={projectDomainScores}
                 students={studentsList}
                 studentId={activeStudentId}
