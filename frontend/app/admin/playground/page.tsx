@@ -162,16 +162,16 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
 
                 return {
                     domain: domain.name,
-                    mentor: Number(mentorAvg.toFixed(1)),
-                    self: Number(selfAvg.toFixed(1))
+                    mentor: mentorAsses.length > 0 ? Number(mentorAvg.toFixed(1)) : null,
+                    self: selfAsses.length > 0 ? Number(selfAvg.toFixed(1)) : null
                 };
-            }).filter(d => d.mentor > 0 || d.self > 0);
+            });
 
             return {
                 project: proj.name,
                 categories
             };
-        }).filter(p => p.categories.length > 0);
+        });
 
     } catch (e) {
         console.error("Failed to load playground data", e);

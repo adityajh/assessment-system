@@ -349,23 +349,23 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'domain-comparison' && projectDomainScores && projectDomainScores.length > 0 && (
-                        <div className="w-full h-full flex overflow-x-auto gap-6 pb-2 pr-4 custom-scrollbar">
+                        <div className="w-full h-full flex gap-2 pb-2 pr-4 overflow-x-auto custom-scrollbar">
                             {projectDomainScores.map((projData: any, idx: number) => (
-                                <div key={idx} className="w-[500px] h-full shrink-0 border border-slate-800 bg-[#161b22] rounded-lg p-6 flex flex-col">
-                                    <h4 className="text-indigo-400 font-medium mb-4">{projData.project} Project</h4>
+                                <div key={idx} className="flex-1 min-w-[120px] h-full border border-slate-800 bg-[#161b22] rounded-lg p-2 flex flex-col">
+                                    <h4 className="text-indigo-400 font-medium mb-2 text-center text-sm truncate" title={projData.project}>{projData.project}</h4>
                                     <div className="flex-1 min-h-0">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={projData.categories} margin={{ top: 0, right: 10, left: -20, bottom: 20 }}>
+                                            <BarChart data={projData.categories} margin={{ top: 0, right: 0, left: -25, bottom: 20 }} barGap={0} barCategoryGap="20%">
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                                <XAxis dataKey="domain" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-                                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 11 }} domain={[0, 10]} />
+                                                <XAxis dataKey="domain" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} angle={-35} textAnchor="end" height={60} />
+                                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 10 }} domain={[0, 10]} />
                                                 <Tooltip
                                                     cursor={{ fill: '#334155', opacity: 0.2 }}
                                                     contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f1f5f9' }}
                                                 />
-                                                <Legend wrapperStyle={{ paddingTop: '10px', fontSize: 12 }} />
-                                                <Bar dataKey="self" name="Self Score" fill="#06b6d4" radius={[2, 2, 0, 0]} barSize={10} />
-                                                <Bar dataKey="mentor" name="Mentor Score" fill="#8b5cf6" radius={[2, 2, 0, 0]} barSize={10} />
+                                                <Legend wrapperStyle={{ paddingTop: '5px', fontSize: 10 }} iconSize={8} />
+                                                <Bar dataKey="self" name="Self" fill="#06b6d4" radius={[2, 2, 0, 0]} maxBarSize={12} minPointSize={1} />
+                                                <Bar dataKey="mentor" name="Mentor" fill="#8b5cf6" radius={[2, 2, 0, 0]} maxBarSize={12} minPointSize={1} />
                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>
