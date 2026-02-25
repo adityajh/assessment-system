@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
                                 {section.label}
                             </p>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {section.items.map((item) => {
                                     const Icon = item.icon;
                                     const isActive = item.href === '/dashboard'
@@ -81,22 +81,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                             key={item.href}
                                             href={item.href}
                                             className={`
-                                                group flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium
-                                                transition-all duration-200 relative border
+                                                flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold
+                                                transition-all duration-200 border shadow-sm
                                                 ${isActive
-                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-900/20'
-                                                    : 'bg-slate-900/50 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 hover:border-slate-700'
+                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-indigo-900/50'
+                                                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-600'
                                                 }
                                             `}
                                         >
 
                                             <Icon
                                                 size={18}
-                                                className={`shrink-0 transition-colors ${isActive ? 'text-indigo-100' : 'text-slate-400 group-hover:text-slate-200'}`}
+                                                className={`shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400'}`}
                                             />
-                                            <span className="truncate">{item.label}</span>
+                                            <span className="truncate flex-1">{item.label}</span>
                                             {isActive && (
-                                                <ChevronRight size={16} className="ml-auto text-indigo-200" />
+                                                <ChevronRight size={18} className="shrink-0 text-white/70" />
                                             )}
                                         </Link>
                                     );
