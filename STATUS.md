@@ -7,10 +7,9 @@
 ## 👥 The Agent Team
 There are currently five AI agents collaborating on this workspace. Please identify your role and coordinate handoffs:
 1. **Agent 0 (Project Manager & Architect):** Holds the big picture, wrote the architecture plans, and maintains this `STATUS.md` file.
-2. **Agent 1 (Database Specialist):** Responsible for executing the DB schema, writing `run_migration.py`, and connecting to Supabase.
-3. **Agent 2 (Data Pipeline Engineer):** Responsible for parsing the raw Excel files and writing the ETL ingestion logic (`import_data.py`).
-4. **Agent 3 (Admin Portal Developer):** Builds the Next.js React components and routes for the mentor admin panel.
-5. **Agent 5 (Dashboard & Charting Developer):** Specializes in Recharts, PDF generation, and the student-facing dashboard UI.
+2. **Agent DB (Database & Data Expert):** Responsible for the database schema, ETL pipelines, migrations, Supabase connectivity, and data integrity. **(NOTE: This agent ONLY accepts database and data-related tasks. All UI/Frontend tasks will be rejected/handed off).**
+3. **Agent 3 (Admin Portal Developer):** Builds the Next.js React components and routes for the mentor admin panel.
+4. **Agent 5 (Dashboard & Charting Developer):** Specializes in Recharts, PDF generation, and the student-facing dashboard UI.
 
 ---
 
@@ -99,13 +98,19 @@ There are currently five AI agents collaborating on this workspace. Please ident
 - [x] Wire real Peer Feedback (per-project averages) into student dashboard (was placeholder)
 - [x] Fix TypeScript null error in `PeerFeedbackClientPage` preventing Vercel build
 - [x] Push to git (commit `cea8d72`) — Vercel auto-redeploying from `main`
-- [ ] *Post-deploy:* Verify 3 previously-404 routes now load (`/admin/assessments/self`, `/admin/peer-feedback`, `/admin/term-tracking`)
-- [ ] *Post-deploy:* Verify charts render on student dashboard
+- [x] *Post-deploy:* Verify 3 previously-404 routes now load (`/admin/assessments/self`, `/admin/peer-feedback`, `/admin/term-tracking`)
+- [x] *Post-deploy:* Verify charts render on student dashboard
+
+### ✅ Phase 7: Data Sanity Check (COMPLETE - AGENT 2)
+*Goal: Verify that data in Supabase matches the original Excel inputs.*
+- [x] Write `sanity_check.py` to compare row counts and metrics.
+- [x] Execute script and document findings (100% match).
 
 ---
 
 ## 📝 Recent Activity Log
 *Agents: Add a quick bullet point here when you finish a chunk of work.*
+- **2026-02-25 (Agent 2):** Wrote and executed `sanity_check.py` to verify data integrity between the 5 source Excel files and the Supabase tables. Verified exact match for all Term Tracking (17), Peer Feedback (133), Self Assessments (365), and Mentor Assessments (543). Phase 7 complete.
 - **2026-02-24 (Agent PM — All Agents):** UX audit of live app. Fixed 4 code bugs: topbar heading title-case, `.dash-card` flex layout for chart heights, wired real CBP/Conflexion/BOW and Peer Feedback data into student dashboard, fixed TS null error in `PeerFeedbackClientPage`. Build clean, pushed commit `cea8d72` to main. Vercel will auto-redeploy.
 - **2026-02-24 (Agent 3):** Completed Phase 4.2 Admin UI Polish by redesigning the `/admin/layout.tsx` sidebar to feature distinct button styling and stacked vertical navigation.
 - **2026-02-24 (Project Manager - Agent 0):** Updated roadmap with new UX/UI requirements (Phase 4.2 and Phase 5.1) based on user feedback. Assigned Admin UI and extended data views to Agent 3. Assigned Dashboard Chart refactoring to Agent 5.

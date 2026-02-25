@@ -3,29 +3,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line } from 'recharts';
 
-// Simple mock data for initial layout testing
-const MOCK_DATA = [
-    { name: 'Commercial', mentor: 7.5, self: 8.0 },
-    { name: 'Entrepreneurial', mentor: 6.0, self: 6.5 },
-    { name: 'Marketing', mentor: 8.2, self: 7.0 },
-    { name: 'Innovation', mentor: 5.5, self: 8.5 },
-    { name: 'Operational', mentor: 9.0, self: 8.0 },
-    { name: 'Professional', mentor: 7.8, self: 7.8 },
-];
-
-const TRAJECTORY_DATA = [
-    { project: 'Kickstart', mentor: 5.5, self: 6.0 },
-    { project: 'Business X-Ray', mentor: 6.5, self: 7.0 },
-    { project: 'Accounts', mentor: 7.2, self: 7.5 },
-    { project: 'SDP', mentor: 8.0, self: 8.2 },
-];
-
-// Calculate delta (Mentor - Self) for diverging bar chart
-const GAP_DATA = MOCK_DATA.map(d => ({
-    ...d,
-    delta: Number((d.mentor - d.self).toFixed(1))
-}));
-
 const getGapColor = (delta: number) => {
     if (delta <= -1.5) return '#ef4444'; // Red (highly overconfident)
     if (delta < 0) return '#f59e0b'; // Amber (slightly overconfident)
@@ -33,18 +10,6 @@ const getGapColor = (delta: number) => {
     if (delta > 0 && delta < 1.5) return '#06b6d4'; // Cyan (slightly underconfident)
     return '#10b981'; // Emerald (highly underconfident / "impostor syndrome")
 };
-
-// Heatmap Data
-const HEATMAP_PROJECTS = ['Kickstart', 'Business X-Ray', 'Accounts', 'SDP'];
-const HEATMAP_DATA = [
-    { parameter: 'Financial Literacy', domain: 'Commercial', scores: { 'Kickstart': 4, 'Business X-Ray': 6, 'Accounts': 8, 'SDP': 8 } },
-    { parameter: 'Accounting', domain: 'Commercial', scores: { 'Kickstart': null, 'Business X-Ray': null, 'Accounts': 7, 'SDP': 8 } },
-    { parameter: 'Market Research', domain: 'Entrepreneurial', scores: { 'Kickstart': 7, 'Business X-Ray': 8, 'Accounts': null, 'SDP': 9 } },
-    { parameter: 'Pitching', domain: 'Entrepreneurial', scores: { 'Kickstart': 8, 'Business X-Ray': 8, 'Accounts': null, 'SDP': 9 } },
-    { parameter: 'Marketing Strategy', domain: 'Marketing', scores: { 'Kickstart': 5, 'Business X-Ray': 7, 'Accounts': null, 'SDP': 8 } },
-    { parameter: 'Process Management', domain: 'Operational', scores: { 'Kickstart': 6, 'Business X-Ray': 7, 'Accounts': 7, 'SDP': 8 } },
-    { parameter: 'Professional Conduct', domain: 'Professional', scores: { 'Kickstart': 8, 'Business X-Ray': 8, 'Accounts': 9, 'SDP': 9 } },
-];
 
 const getHeatmapColor = (score: number | null | undefined) => {
     if (!score) return '#1e293b'; // Slate 800 - Not Assessed
@@ -82,8 +47,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage() {
+export default function PlaygroundClientPage({ gapData, heatmapData, heatmapProjects, trajectoryData }: any) {
     const [activeTab, setActiveTab] = useState('self-awareness');
+
+    if (!gapData || !heatmapData || !trajectoryData) {
+        return (
+            <div className="flex-1 flex items-center justify-center text-slate-500 italic">
+                Loading production data from Supabase...
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 overflow-y-auto min-h-0 pd-8 pb-20">
@@ -126,14 +99,14 @@ export default function PlaygroundClientPage() {
                 <div className="h-[500px] w-full bg-slate-800/20 rounded-lg border border-slate-700/50 p-6 flex flex-col">
                     {activeTab === 'self-awareness' && (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={GAP_DATA} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} layout="vertical">
+                            <BarChart data={gapData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={true} />
                                 <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[-4, 4]} ticks={[-4, -3, -2, -1, 0, 1, 2, 3, 4]} />
                                 <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} width={120} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#334155', opacity: 0.4 }} />
                                 <ReferenceLine x={0} stroke="#f1f5f9" strokeWidth={2} />
                                 <Bar dataKey="delta" radius={[0, 4, 4, 0]}>
-                                    {GAP_DATA.map((entry, index) => (
+                                    {gapData.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={getGapColor(entry.delta)} />
                                     ))}
                                 </Bar>
@@ -148,7 +121,7 @@ export default function PlaygroundClientPage() {
                                 <div className="flex mb-2 sticky top-0 bg-[#1a1d27] z-10 pt-2 pb-2">
                                     <div className="w-64 shrink-0 text-sm font-semibold text-slate-400">Parameter</div>
                                     <div className="flex gap-1">
-                                        {HEATMAP_PROJECTS.map(proj => (
+                                        {heatmapProjects.map((proj: string) => (
                                             <div key={proj} className="w-24 text-center text-xs font-semibold text-slate-400 rotate-0">
                                                 {proj}
                                             </div>
@@ -202,7 +175,7 @@ export default function PlaygroundClientPage() {
 
                     {activeTab === 'trajectory' && (
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={TRAJECTORY_DATA} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <LineChart data={trajectoryData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                 <XAxis dataKey="project" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                 <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 10]} />

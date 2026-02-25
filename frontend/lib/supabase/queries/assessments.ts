@@ -110,3 +110,37 @@ export async function getRubricsData(supabase: SupabaseClient) {
         parameters: paramsResult.data as ReadinessParameter[],
     };
 }
+
+// Data required for the Component Playground charts
+export async function getPlaygroundData(supabase: SupabaseClient) {
+    // 1. Get the first student
+    const { data: students, error: studentError } = await supabase
+        .from('students')
+        .select('*')
+        .order('student_number')
+        .limit(1);
+
+    if (studentError) throw studentError;
+    const student = students[0];
+
+    // 2. Fetch all required reference data and assessments for that student
+    const [projectsResult, domainsResult, paramsResult, assessmentsResult] = await Promise.all([
+        supabase.from('projects').select('*').order('sequence'),
+        supabase.from('readiness_domains').select('*').order('display_order'),
+        supabase.from('readiness_parameters').select('*').order('param_number'),
+        supabase.from('assessments').select('*').eq('student_id', student.id)
+    ]);
+
+    if (projectsResult.error) throw projectsResult.error;
+    if (domainsResult.error) throw domainsResult.error;
+    if (paramsResult.error) throw paramsResult.error;
+    if (assessmentsResult.error) throw assessmentsResult.error;
+
+    return {
+        student: student as Student,
+        projects: projectsResult.data as Project[],
+        domains: domainsResult.data as ReadinessDomain[],
+        parameters: paramsResult.data as ReadinessParameter[],
+        assessments: assessmentsResult.data as Assessment[],
+    };
+}
