@@ -21,7 +21,8 @@ import {
     Briefcase,
     LayoutDashboard,
     StickyNote,
-    BarChart2
+    BarChart2,
+    LayoutTemplate
 } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -47,8 +48,8 @@ const navSections = [
         label: 'Tools',
         items: [
             { label: 'Term Tracking', href: '/admin/term-tracking', icon: CalendarClock },
-            { label: 'Mentor Notes', href: '/admin/notes', icon: MessageSquareQuote },
             { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen },
+            { label: 'Playground', href: '/admin/playground', icon: LayoutTemplate },
             { label: 'Settings', href: '/admin/settings', icon: Settings },
         ]
     }
