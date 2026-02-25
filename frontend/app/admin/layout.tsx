@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
                                 {section.label}
                             </p>
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                                 {section.items.map((item) => {
                                     const Icon = item.icon;
                                     const isActive = item.href === '/dashboard'
@@ -81,25 +81,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                             key={item.href}
                                             href={item.href}
                                             className={`
-                                                group flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium
-                                                transition-all duration-150 relative
+                                                group flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium
+                                                transition-all duration-200 relative border
                                                 ${isActive
-                                                    ? 'bg-indigo-600/15 text-indigo-300 border border-indigo-500/25'
-                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-900/20'
+                                                    : 'bg-slate-900/50 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 hover:border-slate-700'
                                                 }
                                             `}
                                         >
-                                            {/* Active left indicator */}
-                                            {isActive && (
-                                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-indigo-400" />
-                                            )}
+
                                             <Icon
-                                                size={16}
-                                                className={`shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`}
+                                                size={18}
+                                                className={`shrink-0 transition-colors ${isActive ? 'text-indigo-100' : 'text-slate-400 group-hover:text-slate-200'}`}
                                             />
                                             <span className="truncate">{item.label}</span>
                                             {isActive && (
-                                                <ChevronRight size={14} className="ml-auto text-indigo-400/60" />
+                                                <ChevronRight size={16} className="ml-auto text-indigo-200" />
                                             )}
                                         </Link>
                                     );
