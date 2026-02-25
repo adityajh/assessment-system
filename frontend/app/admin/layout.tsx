@@ -80,14 +80,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         <Link
                                             key={item.href}
                                             href={item.href}
-                                            className={`
-                                                flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold
-                                                transition-all duration-200 border shadow-sm
-                                                ${isActive
-                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-indigo-900/50'
-                                                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-600'
-                                                }
-                                            `}
+                                            className={
+                                                "flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 border shadow-sm " +
+                                                (isActive
+                                                    ? "bg-indigo-600 border-indigo-500 text-white shadow-indigo-900/50 "
+                                                    : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-600 ")
+                                            }
                                         >
 
                                             <Icon
