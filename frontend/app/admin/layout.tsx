@@ -4,9 +4,24 @@ import '../../styles/admin.css';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    Users, FolderGit2, FileText, UploadCloud,
-    MessageSquare, Briefcase, Settings, LayoutDashboard,
-    StickyNote, BarChart2, ChevronRight
+    Users,
+    FolderGit2,
+    BarChart3,
+    BookOpen,
+    PieChart,
+    CalendarClock,
+    Settings,
+    MessageSquareQuote,
+    LogOut,
+    ChevronRight,
+    Search,
+    FileText,
+    UploadCloud,
+    MessageSquare,
+    Briefcase,
+    LayoutDashboard,
+    StickyNote,
+    BarChart2
 } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -31,9 +46,10 @@ const navSections = [
     {
         label: 'Tools',
         items: [
-            { href: '/admin/import', icon: UploadCloud, label: 'Import Excel' },
-            { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard Viewer' },
-            { href: '/admin/settings', icon: Settings, label: 'Settings' },
+            { label: 'Term Tracking', href: '/admin/term-tracking', icon: CalendarClock },
+            { label: 'Mentor Notes', href: '/admin/notes', icon: MessageSquareQuote },
+            { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen },
+            { label: 'Settings', href: '/admin/settings', icon: Settings },
         ]
     }
 ];

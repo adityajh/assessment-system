@@ -94,3 +94,19 @@ export async function updateAssessment(
     if (error) throw error;
     return data as Assessment;
 }
+
+// Data required for the Rubrics viewer admin page
+export async function getRubricsData(supabase: SupabaseClient) {
+    const [domainsResult, paramsResult] = await Promise.all([
+        supabase.from('readiness_domains').select('*').order('display_order'),
+        supabase.from('readiness_parameters').select('*').order('param_number')
+    ]);
+
+    if (domainsResult.error) throw domainsResult.error;
+    if (paramsResult.error) throw paramsResult.error;
+
+    return {
+        domains: domainsResult.data as ReadinessDomain[],
+        parameters: paramsResult.data as ReadinessParameter[],
+    };
+}
