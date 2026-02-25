@@ -47,7 +47,6 @@ const navSections = [
     {
         label: 'Tools',
         items: [
-            { label: 'Term Tracking', href: '/admin/term-tracking', icon: CalendarClock },
             { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen },
             { label: 'Playground', href: '/admin/playground', icon: LayoutTemplate },
             { label: 'Settings', href: '/admin/settings', icon: Settings },
