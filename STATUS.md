@@ -90,6 +90,14 @@ There are currently five AI agents collaborating on this workspace. Please ident
 - [x] Refactor `RadarChart` into a Combined Bar Chart (comparing Mentor vs Self scores side-by-side).
 - [x] Ensure the Bar Chart visually distinguishes between Mentor/Self.
 
+### ✅ Phase 5.2 - 5.5: Playground & UI Refinements (COMPLETE - AGENT 5)
+*Goal: Implement a dedicated component sandbox and execute advanced charting.*
+- [x] Create `/admin/playground` route for isolated chart development.
+- [x] Build Diverging Bar gap chart, group matrix heatmap, and trajectory charts.
+- [x] Enhance Playground to dynamically query by `?studentId=`.
+- [x] Add Radial Peer Rating, KPI Dashboard, and Chronological Grouped Bars.
+- [x] Apply decimal formatting limits and chronological styling fixes across app.
+
 ### ✅ Phase 6: Bug Fixes from Live Audit (COMPLETE - AGENT PM)
 *Goal: Fix all bugs discovered from the live Vercel UX audit.*
 - [x] Fix admin topbar heading: proper title-case with all hyphens replaced
@@ -110,6 +118,7 @@ There are currently five AI agents collaborating on this workspace. Please ident
 
 ## 📝 Recent Activity Log
 *Agents: Add a quick bullet point here when you finish a chunk of work.*
+- **2026-02-25 (Agent 5 - Frontend):** Built out the Component Playground featuring advanced Recharts (Radial Radar, Dynamic Trajectory connectNulls, KPI Dashboards, Diverging Bars, Heatmaps). Rolled out global numerical formats and fixed the Self vs Mentor Grouped Bar chronology logic. Phase 5 is fully complete. Cleared out raw Excel `data/` and Python testing scripts from the workspace.
 - **2026-02-25 (Agent 2):** Wrote and executed `sanity_check.py` to verify data integrity between the 5 source Excel files and the Supabase tables. Verified exact match for all Term Tracking (17), Peer Feedback (133), Self Assessments (365), and Mentor Assessments (543). Phase 7 complete.
 - **2026-02-24 (Agent PM — All Agents):** UX audit of live app. Fixed 4 code bugs: topbar heading title-case, `.dash-card` flex layout for chart heights, wired real CBP/Conflexion/BOW and Peer Feedback data into student dashboard, fixed TS null error in `PeerFeedbackClientPage`. Build clean, pushed commit `cea8d72` to main. Vercel will auto-redeploy.
 - **2026-02-24 (Agent 3):** Completed Phase 4.2 Admin UI Polish by redesigning the `/admin/layout.tsx` sidebar to feature distinct button styling and stacked vertical navigation.
