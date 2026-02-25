@@ -23,6 +23,8 @@ export type Assessment = {
     project_id: string;
     parameter_id: string;
     assessment_type: 'mentor' | 'self';
+    assessment_framework_id?: string | null;
+    self_assessment_question_id?: string | null;
     raw_score: number | null;
     raw_scale_min: number | null;
     raw_scale_max: number | null;

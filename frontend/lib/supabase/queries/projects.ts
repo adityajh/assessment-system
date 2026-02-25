@@ -10,6 +10,9 @@ export type Project = {
     concurrent_group: string | null;
     project_type: 'standard' | 'client';
     parent_project_id: string | null;
+    program_id?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
     created_at: string;
 };
 

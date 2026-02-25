@@ -5,6 +5,8 @@ export type Student = {
     student_number: number;
     canonical_name: string;
     aliases: string[];
+    program_id?: string;
+    cohort?: string;
     is_active: boolean;
     created_at: string;
     updated_at: string;

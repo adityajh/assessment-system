@@ -108,6 +108,19 @@ Before designing the schema, here is the proposed mapping of self-assessment que
 
 ### 2.2 Table Definitions
 
+#### `programs`
+The programs run by the school (e.g. UG-MED).
+
+```sql
+CREATE TABLE programs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
 #### `students`
 The canonical student roster.
 
@@ -117,6 +130,8 @@ CREATE TABLE students (
     student_number INT NOT NULL UNIQUE,
     canonical_name TEXT NOT NULL UNIQUE,
     aliases TEXT[] DEFAULT '{}',      -- all known name variations for matching
+    program_id UUID REFERENCES programs(id),
+    cohort TEXT,                      -- e.g. '2025'
     is_active BOOLEAN DEFAULT TRUE,   -- FALSE for students like Madhur who left
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
@@ -143,6 +158,9 @@ CREATE TABLE projects (
     concurrent_group TEXT,                   -- 'M' or 'L' (NULL if not concurrent)
     project_type TEXT NOT NULL DEFAULT 'standard',  -- 'standard' or 'client'
     parent_project_id UUID REFERENCES projects(id), -- Moonshine/SIDR → SDP
+    program_id UUID REFERENCES programs(id),
+    start_date DATE,
+    end_date DATE,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
@@ -189,6 +207,8 @@ CREATE TABLE assessments (
     project_id UUID NOT NULL REFERENCES projects(id),
     parameter_id UUID NOT NULL REFERENCES readiness_parameters(id),
     assessment_type TEXT NOT NULL CHECK (assessment_type IN ('mentor', 'self')),
+    assessment_framework_id UUID REFERENCES assessment_frameworks(id),
+    self_assessment_question_id UUID REFERENCES self_assessment_questions(id),
     raw_score NUMERIC,                  -- original score as entered
     raw_scale_min INT,                  -- 1 (for all scales)
     raw_scale_max INT,                  -- 5 or 10 depending on source
