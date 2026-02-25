@@ -3,20 +3,39 @@
 import '../../styles/admin.css';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, FolderGit2, FileText, UploadCloud, MessageSquare, Briefcase, Settings, LayoutDashboard } from 'lucide-react';
+import {
+    Users, FolderGit2, FileText, UploadCloud,
+    MessageSquare, Briefcase, Settings, LayoutDashboard,
+    StickyNote, BarChart2, ChevronRight
+} from 'lucide-react';
 import { useEffect } from 'react';
 
-const navItems = [
-    { href: '/admin/students', icon: Users, label: 'Students' },
-    { href: '/admin/projects', icon: FolderGit2, label: 'Projects' },
-    { href: '/admin/term-tracking', icon: Briefcase, label: 'Term Tracking' },
-    { href: '/admin/assessments/mentor', icon: FileText, label: 'Mentor Scores' },
-    { href: '/admin/assessments/self', icon: FileText, label: 'Self Scores' },
-    { href: '/admin/peer-feedback', icon: MessageSquare, label: 'Peer Feedback' },
-    { href: '/admin/notes', icon: FileText, label: 'Mentor Notes' },
-    { href: '/admin/import', icon: UploadCloud, label: 'Import Excel' },
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard Viewer' },
-    { href: '/admin/settings', icon: Settings, label: 'Settings' },
+const navSections = [
+    {
+        label: 'Students & Projects',
+        items: [
+            { href: '/admin/students', icon: Users, label: 'Students' },
+            { href: '/admin/projects', icon: FolderGit2, label: 'Projects' },
+            { href: '/admin/term-tracking', icon: Briefcase, label: 'Term Tracking' },
+        ]
+    },
+    {
+        label: 'Assessments',
+        items: [
+            { href: '/admin/assessments/mentor', icon: BarChart2, label: 'Mentor Scores' },
+            { href: '/admin/assessments/self', icon: FileText, label: 'Self Scores' },
+            { href: '/admin/peer-feedback', icon: MessageSquare, label: 'Peer Feedback' },
+            { href: '/admin/notes', icon: StickyNote, label: 'Mentor Notes' },
+        ]
+    },
+    {
+        label: 'Tools',
+        items: [
+            { href: '/admin/import', icon: UploadCloud, label: 'Import Excel' },
+            { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard Viewer' },
+            { href: '/admin/settings', icon: Settings, label: 'Settings' },
+        ]
+    }
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,35 +48,82 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <div className="admin-layout flex min-h-screen bg-slate-950">
-            <aside className="admin-sidebar border-r border-slate-800 bg-slate-900 p-4 w-64 flex flex-col gap-4 fixed inset-y-0 left-0 z-10 shrink-0">
-                <div className="text-xl font-bold text-white mb-2 tracking-tight px-4 flex items-center h-12">
-                    <span>Let's Entreprise</span>
+            {/* ── Sidebar ── */}
+            <aside className="fixed inset-y-0 left-0 z-10 flex flex-col w-64 bg-[#11131a] border-r border-slate-800/60 shrink-0">
+
+                {/* Logo / Brand */}
+                <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-800/60 shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+                        <BarChart2 size={16} className="text-white" />
+                    </div>
+                    <div>
+                        <div className="text-sm font-bold text-white leading-tight">Let's Entreprise</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-widest">Admin Panel</div>
+                    </div>
                 </div>
-                <nav className="flex flex-col gap-2 overflow-y-auto w-full px-2 pb-6">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname.startsWith(item.href) && item.href !== '/dashboard';
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border w-full ${isActive
-                                    ? 'bg-slate-800 border-indigo-500/50 text-white shadow-sm shadow-indigo-500/10'
-                                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 hover:border-slate-700'
-                                    }`}
-                            >
-                                <Icon size={18} className="shrink-0" />
-                                <span className="truncate">{item.label}</span>
-                            </Link>
-                        );
-                    })}
+
+                {/* Nav */}
+                <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+                    {navSections.map((section) => (
+                        <div key={section.label}>
+                            <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
+                                {section.label}
+                            </p>
+                            <div className="space-y-1">
+                                {section.items.map((item) => {
+                                    const Icon = item.icon;
+                                    const isActive = item.href === '/dashboard'
+                                        ? pathname.startsWith('/dashboard')
+                                        : pathname.startsWith(item.href);
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={`
+                                                group flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium
+                                                transition-all duration-150 relative
+                                                ${isActive
+                                                    ? 'bg-indigo-600/15 text-indigo-300 border border-indigo-500/25'
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                                                }
+                                            `}
+                                        >
+                                            {/* Active left indicator */}
+                                            {isActive && (
+                                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-indigo-400" />
+                                            )}
+                                            <Icon
+                                                size={16}
+                                                className={`shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`}
+                                            />
+                                            <span className="truncate">{item.label}</span>
+                                            {isActive && (
+                                                <ChevronRight size={14} className="ml-auto text-indigo-400/60" />
+                                            )}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
+
+                {/* Footer */}
+                <div className="px-4 py-3 border-t border-slate-800/60 shrink-0">
+                    <p className="text-[10px] text-slate-600 text-center">Year 1 Assessment System</p>
+                </div>
             </aside>
+
+            {/* ── Main Content ── */}
             <main className="admin-main flex-1 ml-64 flex flex-col min-h-screen">
-                <header className="admin-header h-16 border-b border-slate-800 bg-slate-900 flex items-center px-8 shrink-0">
-                    <h1 className="text-lg font-semibold">
-                        {pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Admin Panel'}
-                    </h1>
+                <header className="admin-header h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center px-8 shrink-0 gap-3">
+                    <div className="flex-1">
+                        <h1 className="text-base font-semibold text-white">
+                            {pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Admin'}
+                        </h1>
+                        <p className="text-xs text-slate-500">{pathname}</p>
+                    </div>
                 </header>
                 <div className="admin-content p-8 flex-1 overflow-auto">
                     {children}
