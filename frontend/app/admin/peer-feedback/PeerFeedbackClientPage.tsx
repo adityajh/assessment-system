@@ -9,6 +9,7 @@ interface PeerFeedbackProps {
     initialStudents: Student[];
     initialProjects: Project[];
     initialFeedback: PeerFeedback[];
+    initialLogs: any[];
 }
 
 const PEER_SCALE_MAX = 5; // Raw peer feedback is on a 1-5 scale
@@ -16,12 +17,25 @@ const PEER_SCALE_MAX = 5; // Raw peer feedback is on a 1-5 scale
 export default function PeerFeedbackClientPage({
     initialStudents,
     initialProjects,
-    initialFeedback
+    initialFeedback,
+    initialLogs
 }: PeerFeedbackProps) {
     const [selectedProject, setSelectedProject] = useState<string>(initialProjects[0]?.id || '');
     const [displayScore, setDisplayScore] = useState<'raw' | 'normalized'>('raw');
 
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
+
+    const availableLogs = useMemo(() => {
+        return initialLogs.filter(log => log.project_id === selectedProject || log.project_id === null); // Support null for generic term/peer imports
+    }, [initialLogs, selectedProject]);
+
+    const [selectedLog, setSelectedLog] = useState<string>('all');
+
+    // Filter feedback based on selected log
+    const displayFeedback = useMemo(() => {
+        if (selectedLog === 'all') return initialFeedback;
+        return initialFeedback.filter(f => f.assessment_log_id === selectedLog);
+    }, [initialFeedback, selectedLog]);
 
     // Compute averages for each student on the selected project
     const studentAverages = useMemo(() => {
@@ -29,7 +43,7 @@ export default function PeerFeedbackClientPage({
         const result: Record<string, Record<string, number | null>> = {};
 
         activeStudents.forEach(student => {
-            const studentFeedback = initialFeedback.filter(f => f.recipient_id === student.id && f.project_id === selectedProject);
+            const studentFeedback = displayFeedback.filter(f => f.recipient_id === student.id && f.project_id === selectedProject);
 
             result[student.id] = {};
             metrics.forEach(metric => {
@@ -62,10 +76,32 @@ export default function PeerFeedbackClientPage({
                     <select
                         className="input bg-slate-900"
                         value={selectedProject}
-                        onChange={(e) => setSelectedProject(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedProject(e.target.value);
+                            setSelectedLog('all'); // Reset log filter when project changes
+                        }}
                     >
                         {initialProjects.map(p => (
                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5 min-w-[300px]">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <span>Assessment Event</span>
+                        <span className="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded text-[10px]">Filter</span>
+                    </label>
+                    <select
+                        className="input bg-slate-900"
+                        value={selectedLog}
+                        onChange={(e) => setSelectedLog(e.target.value)}
+                    >
+                        <option value="all">All Available Data</option>
+                        {availableLogs.map(log => (
+                            <option key={log.id} value={log.id}>
+                                {log.assessment_date} • {log.file_name || 'Import'}
+                            </option>
                         ))}
                     </select>
                 </div>

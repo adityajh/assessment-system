@@ -21,6 +21,7 @@ export default async function PeerFeedbackPage() {
                 initialStudents={data.students}
                 initialProjects={data.projects}
                 initialFeedback={data.feedback}
+                initialLogs={data.logs}
             />
         </div>
     );

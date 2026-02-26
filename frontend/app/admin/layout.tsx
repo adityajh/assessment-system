@@ -47,7 +47,7 @@ const navSections = [
     {
         label: 'Tools',
         items: [
-            { label: 'Data Import', href: '/admin/import', icon: UploadCloud },
+            { label: 'Data Import', href: '/admin/import', icon: UploadCloud, badge: 'Beta' },
             { label: 'Assessment Logs', href: '/admin/assessment-logs', icon: FileText },
             { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen },
             { label: 'Playground', href: '/admin/playground', icon: LayoutTemplate },
@@ -111,7 +111,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                 className={`shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400'}`}
                                             />
                                             <span className="truncate flex-1">{item.label}</span>
-                                            {isActive && (
+                                            {(item as any).badge && (
+                                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase shrink-0 ${isActive ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                                                    {(item as any).badge}
+                                                </span>
+                                            )}
+                                            {isActive && !((item as any).badge) && (
                                                 <ChevronRight size={18} className="shrink-0 text-white/70" />
                                             )}
                                         </Link>
