@@ -242,7 +242,10 @@ function DomainDetailCard({
 
                     return (
                         <div key={param.id} className="text-sm border-b border-slate-100 last:border-0 pb-3 last:pb-0">
-                            <div className="font-medium text-slate-700 mb-1 leading-snug">{param.name}</div>
+                            <div className="font-medium text-slate-700 mb-1 leading-snug">
+                                <span className="text-slate-400 font-mono mr-1.5">[{param.code || `P${param.param_number}`}]</span>
+                                {param.name}
+                            </div>
                             <div className="flex items-center gap-4 text-xs font-mono">
                                 <div className="flex items-center gap-1.5 border px-1.5 py-0.5 rounded bg-slate-50">
                                     <span className="text-indigo-600 font-bold">M</span>

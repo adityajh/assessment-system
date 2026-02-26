@@ -37,7 +37,7 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
         if (id === 'bow_score') return 'Value: BOW Score';
 
         const param = parameters.find(p => p.id === id);
-        return param ? `${param.param_number}. ${param.name}` : id;
+        return param ? `[${param.code || param.param_number}] ${param.name}` : id;
     };
 
     return (

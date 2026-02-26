@@ -164,7 +164,7 @@ export function ScoreGrid({
                                     className={`p-2 w-[60px] min-w-[60px] text-center text-xs font-mono text-slate-400 border-t border-slate-800/50 ${idx === 0 ? 'border-l border-slate-800' : ''}`}
                                     title={param.name}
                                 >
-                                    P{param.param_number}
+                                    {param.code || `P${param.param_number}`}
                                 </th>
                             ));
                         })}
