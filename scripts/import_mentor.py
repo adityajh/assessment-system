@@ -76,6 +76,7 @@ domain_mapping = {
     'marketing readiness': 'marketing',
     'innovation readiness': 'innovation',
     'operational readiness': 'operational',
+    'operations readiness': 'operational',
     'professional readiness': 'professional'
 }
 
@@ -88,10 +89,31 @@ for sheet in xls.sheet_names:
     if len(df) < 5: continue
     
     current_domain = None
+    
+    # Pre-compute student mappings for this sheet
+    student_cols = {}
+    for col_idx in range(1, len(df.columns)):
+        s_id = get_student_id(df.columns[col_idx])
+        if s_id:
+            student_cols[col_idx] = s_id
+        else:
+            for r_idx in range(min(5, len(df))):
+                s_id = get_student_id(df.iloc[r_idx, col_idx])
+                if s_id:
+                    student_cols[col_idx] = s_id
+                    break
+                    
     for _, row in df.iterrows():
         val0 = str(row.iloc[0]).strip().lower()
-        if val0 in domain_mapping:
-            current_domain = domain_mapping[val0]
+        
+        found_domain = False
+        for dm_key, dm_val in domain_mapping.items():
+            if val0 == dm_key or val0.startswith(dm_key):
+                current_domain = dm_val
+                found_domain = True
+                break
+                
+        if found_domain:
             continue
         
         param_num = None
@@ -103,13 +125,10 @@ for sheet in xls.sheet_names:
             param_id = param_map.get((current_domain, param_num))
             if not param_id: continue
             
-            for col_idx in range(1, len(row)):
-                col_name = df.columns[col_idx]
-                student_id = get_student_id(col_name)
-                if not student_id: continue
+            for col_idx, student_id in student_cols.items():
                 
                 score_val = row.iloc[col_idx]
-                if pd.isna(score_val) or score_val in ['na', 'n/a', '-', '']: continue
+                if pd.isna(score_val) or str(score_val).strip().lower() in ['na', 'n/a', '-', '']: continue
                 try:
                     score = float(score_val)
                     if score > 10:
