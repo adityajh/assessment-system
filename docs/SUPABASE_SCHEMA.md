@@ -93,6 +93,12 @@ Before designing the schema, here is the proposed mapping of self-assessment que
 │ (student × project  │    │ (recipient × giver  │    │ (student level)  │
 │  × parameter × type)│    │  × project)         │    │                  │
 └─────────────────────┘    └─────────────────────┘    └──────────────────┘
+            │                         │                        │
+            ▼                         ▼                        ▼
+     ┌────────────────────────────────────────────────────────────┐
+     │                      assessment_logs                       │
+     │      (Master Import Event: type × program × project)       │
+     └────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────┐    ┌─────────────────────────────┐
 │   mentor_notes      │    │  self_assessment_questions   │
@@ -197,8 +203,28 @@ CREATE TABLE readiness_parameters (
 
 ---
 
+#### `assessment_logs` (NEW - Phase 9)
+Master table tracking discrete data import events, allowing tracebacks of bulk assessment data.
+
+```sql
+CREATE TABLE assessment_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_date DATE NOT NULL,
+    program_id UUID REFERENCES programs(id) NOT NULL,
+    term TEXT NOT NULL,
+    data_type TEXT NOT NULL CHECK (data_type IN ('self', 'mentor', 'peer', 'term')),
+    project_id UUID REFERENCES projects(id),
+    file_name TEXT,
+    mapping_config JSONB,
+    records_inserted INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
 #### `assessments`
-The core data table. Stores every individual score: mentor OR self, per student × project × parameter.
+The core data table. Stores every individual score: mentor OR self, per student × project × parameter. Links to `assessment_logs` for auditability.
 
 ```sql
 CREATE TABLE assessments (
@@ -207,13 +233,14 @@ CREATE TABLE assessments (
     project_id UUID NOT NULL REFERENCES projects(id),
     parameter_id UUID NOT NULL REFERENCES readiness_parameters(id),
     assessment_type TEXT NOT NULL CHECK (assessment_type IN ('mentor', 'self')),
+    assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
     assessment_framework_id UUID REFERENCES assessment_frameworks(id),
     self_assessment_question_id UUID REFERENCES self_assessment_questions(id),
     raw_score NUMERIC,                  -- original score as entered
     raw_scale_min INT,                  -- 1 (for all scales)
     raw_scale_max INT,                  -- 5 or 10 depending on source
     normalized_score NUMERIC,           -- normalized to 1-10 scale
-    source_file TEXT,                   -- which Excel file this came from
+    source_file TEXT,                   -- which Excel file this came from (legacy)
     created_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(student_id, project_id, parameter_id, assessment_type)
 );
@@ -226,7 +253,7 @@ CREATE TABLE assessments (
 ---
 
 #### `peer_feedback`
-Individual peer-to-peer feedback entries.
+Individual peer-to-peer feedback entries. Links to `assessment_logs` for auditability.
 
 ```sql
 CREATE TABLE peer_feedback (
@@ -234,6 +261,7 @@ CREATE TABLE peer_feedback (
     recipient_id UUID NOT NULL REFERENCES students(id),
     giver_id UUID NOT NULL REFERENCES students(id),
     project_id UUID NOT NULL REFERENCES projects(id),
+    assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
     quality_of_work INT CHECK (quality_of_work BETWEEN 1 AND 5),
     initiative_ownership INT CHECK (initiative_ownership BETWEEN 1 AND 5),
     communication INT CHECK (communication BETWEEN 1 AND 5),
@@ -248,12 +276,13 @@ CREATE TABLE peer_feedback (
 ---
 
 #### `term_tracking`
-CBP, Conflexion, BOW per student.
+CBP, Conflexion, BOW per student. Links to `assessment_logs` for auditability.
 
 ```sql
 CREATE TABLE term_tracking (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID NOT NULL REFERENCES students(id),
+    assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
     cbp_count INT DEFAULT 0,
     conflexion_count INT DEFAULT 0,
     bow_score NUMERIC DEFAULT 0.0,

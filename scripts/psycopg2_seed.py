@@ -20,7 +20,7 @@ try:
     conn = psycopg2.connect(conn_str)
     cursor = conn.cursor()
     
-    with open("scripts/003_seed_questions.sql", "r") as f:
+    with open("scripts/006_add_assessment_logs.sql", "r") as f:
         sql = f.read()
 
     print("Executing full SQL seed script...")

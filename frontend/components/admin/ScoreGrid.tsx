@@ -31,6 +31,7 @@ interface ScoreGridProps {
     parameters: ReadinessParameter[];
     assessments: Assessment[];
     assessmentType: 'mentor' | 'self';
+    displayScore: 'raw' | 'normalized';
     onScoreUpdate: (assessment: Assessment) => void;
 }
 
@@ -41,6 +42,7 @@ export function ScoreGrid({
     parameters,
     assessments,
     assessmentType,
+    displayScore,
     onScoreUpdate
 }: ScoreGridProps) {
     const supabase = createClient();
@@ -183,7 +185,7 @@ export function ScoreGrid({
 
                                 return params.map((param, idx) => {
                                     const assessment = scoreMap.get(`${student.id}-${param.id}`);
-                                    const score = assessment?.normalized_score ?? null;
+                                    const score = displayScore === 'raw' ? (assessment?.raw_score ?? null) : (assessment?.normalized_score ?? null);
                                     const isEditing = editingCell?.studentId === student.id && editingCell?.paramId === param.id;
 
                                     let cellBg = '';

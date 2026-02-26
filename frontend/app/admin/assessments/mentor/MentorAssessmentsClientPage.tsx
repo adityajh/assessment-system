@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Assessment, ReadinessDomain, ReadinessParameter } from '@/lib/supabase/queries/assessments';
+import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog } from '@/lib/supabase/queries/assessments';
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
 import { ScoreGrid } from '@/components/admin/ScoreGrid';
@@ -12,6 +12,7 @@ interface MentorAssessmentsProps {
     initialDomains: ReadinessDomain[];
     initialParameters: ReadinessParameter[];
     initialAssessments: Assessment[];
+    initialLogs: AssessmentLog[];
 }
 
 export default function MentorAssessmentsClientPage({
@@ -19,18 +20,29 @@ export default function MentorAssessmentsClientPage({
     initialProjects,
     initialDomains,
     initialParameters,
-    initialAssessments
+    initialAssessments,
+    initialLogs
 }: MentorAssessmentsProps) {
     const [assessments, setAssessments] = useState(initialAssessments);
     const [selectedProject, setSelectedProject] = useState<string>(initialProjects[0]?.id || '');
-    const [selectedDomain, setSelectedDomain] = useState<string>('all');
+    const [displayScore, setDisplayScore] = useState<'raw' | 'normalized'>('normalized');
 
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
 
-    const filteredParams = useMemo(() => {
-        if (selectedDomain === 'all') return initialParameters;
-        return initialParameters.filter(p => p.domain_id === selectedDomain);
-    }, [selectedDomain, initialParameters]);
+    // Filter logs that belong to the selected project
+    const availableLogs = useMemo(() => {
+        return initialLogs.filter(log => log.project_id === selectedProject);
+    }, [initialLogs, selectedProject]);
+
+    const [selectedLog, setSelectedLog] = useState<string>('all');
+
+    // Auto-select the first log when project changes if "all" isn't preferred or if we want to default to something.
+    // For now, "all" is fine to show all logs for that project.
+
+    const displayAssessments = useMemo(() => {
+        if (selectedLog === 'all') return assessments;
+        return assessments.filter(a => a.assessment_log_id === selectedLog);
+    }, [assessments, selectedLog]);
 
     const handleScoreUpdate = (updatedAssessment: Assessment) => {
         setAssessments(prev => {
@@ -44,13 +56,16 @@ export default function MentorAssessmentsClientPage({
 
     return (
         <div className="flex flex-col gap-6 h-full">
-            <div className="flex gap-4 p-4 admin-card bg-slate-900/50 shrink-0">
+            <div className="flex gap-4 p-4 admin-card bg-slate-900/50 shrink-0 flex-wrap items-end">
                 <div className="flex flex-col gap-1.5 min-w-[250px]">
                     <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Project</label>
                     <select
                         className="input bg-slate-900"
                         value={selectedProject}
-                        onChange={(e) => setSelectedProject(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedProject(e.target.value);
+                            setSelectedLog('all');
+                        }}
                     >
                         {initialProjects.filter(p => p.project_type === 'standard').map(p => (
                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
@@ -59,17 +74,35 @@ export default function MentorAssessmentsClientPage({
                 </div>
 
                 <div className="flex flex-col gap-1.5 min-w-[250px]">
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Readiness Domain View</label>
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Assessment Event</label>
                     <select
                         className="input bg-slate-900"
-                        value={selectedDomain}
-                        onChange={(e) => setSelectedDomain(e.target.value)}
+                        value={selectedLog}
+                        onChange={(e) => setSelectedLog(e.target.value)}
+                        disabled={availableLogs.length === 0}
                     >
-                        <option value="all">All Domains (Full Grid)</option>
-                        {initialDomains.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
+                        <option value="all">All Events for Project</option>
+                        {availableLogs.map(log => (
+                            <option key={log.id} value={log.id}>
+                                {log.assessment_date} • {log.file_name || 'Import'} ({log.records_inserted} records)
+                            </option>
                         ))}
                     </select>
+                </div>
+
+                <div className="ml-auto flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <button
+                        onClick={() => setDisplayScore('raw')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'raw' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        Raw Scores
+                    </button>
+                    <button
+                        onClick={() => setDisplayScore('normalized')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'normalized' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        Normalized (1-10)
+                    </button>
                 </div>
             </div>
 
@@ -83,9 +116,10 @@ export default function MentorAssessmentsClientPage({
                         students={activeStudents}
                         projectId={selectedProject}
                         domains={initialDomains}
-                        parameters={filteredParams}
-                        assessments={assessments}
+                        parameters={initialParameters}
+                        assessments={displayAssessments}
                         assessmentType="mentor"
+                        displayScore={displayScore}
                         onScoreUpdate={handleScoreUpdate}
                     />
                 )}

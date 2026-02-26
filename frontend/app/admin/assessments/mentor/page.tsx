@@ -23,6 +23,7 @@ export default async function MentorAssessmentsPage() {
                 initialDomains={data.domains}
                 initialParameters={data.parameters}
                 initialAssessments={data.assessments}
+                initialLogs={data.assessmentLogs}
             />
         </div>
     );

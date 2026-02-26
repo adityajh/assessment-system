@@ -17,12 +17,26 @@ export type ReadinessParameter = {
     param_number: number;
 };
 
+export type AssessmentLog = {
+    id: string;
+    assessment_date: string;
+    program_id: string;
+    term: string;
+    data_type: 'self' | 'mentor' | 'peer' | 'term';
+    project_id: string | null;
+    file_name: string | null;
+    mapping_config: Record<string, string>;
+    records_inserted: number;
+    created_at: string;
+};
+
 export type Assessment = {
     id: string;
     student_id: string;
     project_id: string;
     parameter_id: string;
     assessment_type: 'mentor' | 'self';
+    assessment_log_id?: string | null;
     assessment_framework_id?: string | null;
     self_assessment_question_id?: string | null;
     raw_score: number | null;
@@ -34,12 +48,13 @@ export type Assessment = {
 
 // Data required for the admin score browser grid
 export async function getMentorAssessmentData(supabase: SupabaseClient) {
-    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult] = await Promise.all([
+    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult, logsResult] = await Promise.all([
         supabase.from('students').select('*').order('student_number'),
         supabase.from('projects').select('*').order('sequence').order('sequence_label'),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('readiness_parameters').select('*').order('param_number'),
-        supabase.from('assessments').select('*').eq('assessment_type', 'mentor')
+        supabase.from('assessments').select('*').eq('assessment_type', 'mentor'),
+        supabase.from('assessment_logs').select('*').eq('data_type', 'mentor').order('assessment_date', { ascending: false })
     ]);
 
     if (studentsResult.error) throw studentsResult.error;
@@ -47,6 +62,7 @@ export async function getMentorAssessmentData(supabase: SupabaseClient) {
     if (domainsResult.error) throw domainsResult.error;
     if (paramsResult.error) throw paramsResult.error;
     if (assessmentsResult.error) throw assessmentsResult.error;
+    if (logsResult.error) throw logsResult.error;
 
     return {
         students: studentsResult.data as Student[],
@@ -54,16 +70,18 @@ export async function getMentorAssessmentData(supabase: SupabaseClient) {
         domains: domainsResult.data as ReadinessDomain[],
         parameters: paramsResult.data as ReadinessParameter[],
         assessments: assessmentsResult.data as Assessment[],
+        assessmentLogs: logsResult.data as AssessmentLog[],
     };
 }
 
 export async function getSelfAssessmentData(supabase: SupabaseClient) {
-    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult] = await Promise.all([
+    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult, logsResult] = await Promise.all([
         supabase.from('students').select('*').order('student_number'),
         supabase.from('projects').select('*').order('sequence').order('sequence_label'),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('readiness_parameters').select('*').order('param_number'),
-        supabase.from('assessments').select('*').eq('assessment_type', 'self')
+        supabase.from('assessments').select('*').eq('assessment_type', 'self'),
+        supabase.from('assessment_logs').select('*').eq('data_type', 'self').order('assessment_date', { ascending: false })
     ]);
 
     if (studentsResult.error) throw studentsResult.error;
@@ -71,6 +89,7 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
     if (domainsResult.error) throw domainsResult.error;
     if (paramsResult.error) throw paramsResult.error;
     if (assessmentsResult.error) throw assessmentsResult.error;
+    if (logsResult.error) throw logsResult.error;
 
     return {
         students: studentsResult.data as Student[],
@@ -78,6 +97,7 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
         domains: domainsResult.data as ReadinessDomain[],
         parameters: paramsResult.data as ReadinessParameter[],
         assessments: assessmentsResult.data as Assessment[],
+        assessmentLogs: logsResult.data as AssessmentLog[],
     };
 }
 

@@ -47,6 +47,8 @@ const navSections = [
     {
         label: 'Tools',
         items: [
+            { label: 'Data Import', href: '/admin/import', icon: UploadCloud },
+            { label: 'Assessment Logs', href: '/admin/assessment-logs', icon: FileText },
             { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen },
             { label: 'Playground', href: '/admin/playground', icon: LayoutTemplate },
             { label: 'Settings', href: '/admin/settings', icon: Settings },
