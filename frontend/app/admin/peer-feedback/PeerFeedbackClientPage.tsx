@@ -62,7 +62,10 @@ export default function PeerFeedbackClientPage({
             const overallRaw = rawScoresAll.length > 0 ? Number((rawScoresAll.reduce((a, b) => a + b, 0) / rawScoresAll.length).toFixed(1)) : null;
             result[student.id]['overall_raw'] = overallRaw;
             result[student.id]['overall_norm'] = overallRaw !== null ? Number(((overallRaw / PEER_SCALE_MAX) * 10).toFixed(1)) : null;
-            result[student.id]['count'] = studentFeedback.length;
+            
+            // Counts
+            result[student.id]['count'] = studentFeedback.length; // Received
+            result[student.id]['given_count'] = displayFeedback.filter(f => f.giver_id === student.id && f.project_id === selectedProject).length;
         });
 
         return result;
@@ -133,9 +136,10 @@ export default function PeerFeedbackClientPage({
                             <thead className="bg-[#0f172a] text-slate-300">
                                 <tr>
                                     <th className="px-6 py-4 font-semibold text-slate-200 sticky left-0 bg-[#0f172a] z-20 min-w-[250px]">
-                                        Student Recipient
+                                        Student
                                     </th>
-                                    <th className="px-6 py-4 font-semibold whitespace-nowrap text-center text-slate-400">Total Peer Reviews</th>
+                                    <th className="px-6 py-4 font-semibold whitespace-nowrap text-center text-slate-400">Reviews Received</th>
+                                    <th className="px-6 py-4 font-semibold whitespace-nowrap text-center text-slate-400">Reviews Given</th>
                                     <th className="px-6 py-4 font-semibold whitespace-nowrap text-center">Quality of Work</th>
                                     <th className="px-6 py-4 font-semibold whitespace-nowrap text-center">Initiative</th>
                                     <th className="px-6 py-4 font-semibold whitespace-nowrap text-center">Communication</th>
@@ -159,6 +163,11 @@ export default function PeerFeedbackClientPage({
                                             <td className="px-6 py-3 text-center">
                                                 <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold ${hasData ? 'bg-slate-800 text-slate-300' : 'text-slate-600'}`}>
                                                     {avg.count}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-3 text-center">
+                                                <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold ${(avg.given_count ?? 0) > 0 ? 'bg-slate-800 text-slate-300' : 'text-slate-600'}`}>
+                                                    {avg.given_count}
                                                 </span>
                                             </td>
                                             <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{(avg[`quality_of_work${suffix}`] as number | null) ?? '-'}</td>
