@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
             return ['code', 'parameter', 'description', 'rubric', 'weight', 'score', 'average', 'total'].includes(low);
         };
 
+        let finalDetectedType = detectFileType(file.name, sheetNames);
+        let maxFoundScore = 0;
+
         // Scan sheets for patterns
         Object.values(sheetsData).forEach(rows => {
             if (rows.length === 0) return;
@@ -69,22 +72,43 @@ export async function POST(request: NextRequest) {
             if (headerIdx === -1) headerIdx = 0;
 
             const headerRow = rows[headerIdx];
-            const detectedType = detectFileType(file.name, sheetNames);
+            const headerRowStr = headerRow.join(' ').toLowerCase();
+
+            // Upgrade unknown type if headers indicate a matrix
+            if (finalDetectedType === 'unknown' && (headerRowStr.includes('code') && headerRowStr.includes('domain'))) {
+                finalDetectedType = 'mentor';
+            }
 
             // Matrix Format Detection (Headers are students)
-            if (detectedType === 'mentor' || detectedType === 'self') {
-                headerRow.forEach(cell => {
+            if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
+                const studentCols: number[] = [];
+                headerRow.forEach((cell, idx) => {
                     const cellStr = String(cell || '').trim();
                     if (!cellStr || isKnownMetadata(cellStr)) return;
 
                     const student = checkStudent(cellStr);
-                    if (student) recognizedStudents.add(student.canonical_name);
+                    if (student) {
+                        recognizedStudents.add(student.canonical_name);
+                        studentCols.push(idx);
+                    }
                     else unrecognizedStudents.add(cellStr);
                 });
+
+                // Detect max score for scale determination
+                for (let r = headerIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row) continue;
+                    studentCols.forEach(colIdx => {
+                        const scoreVal = parseFloat(String(row[colIdx] || ''));
+                        if (!isNaN(scoreVal) && scoreVal > maxFoundScore) {
+                            maxFoundScore = scoreVal;
+                        }
+                    });
+                }
             }
 
             // Flat Format Detection (Columns are students)
-            if (detectedType === 'peer') {
+            if (finalDetectedType === 'peer') {
                 // Find Columns for Giver/Recipient
                 const colMap: Record<string, number> = {};
                 headerRow.forEach((cell, idx) => {
@@ -119,7 +143,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Also check for Parameter Codes in Column 0 (Matrix)
-            if (detectedType === 'mentor' || detectedType === 'self') {
+            if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
                 for (let r = headerIdx + 1; r < rows.length; r++) {
                     const row = rows[r];
                     if (!row || row.length === 0) continue;
@@ -133,12 +157,15 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        const detectedScale = maxFoundScore > 0 ? (maxFoundScore <= 5 ? 5 : 10) : null;
+
         return NextResponse.json({
             success: true,
             filename: file.name,
             sheetNames,
             sheetsData,
-            detectedType: detectFileType(file.name, sheetNames),
+            detectedType: finalDetectedType,
+            detectedScale,
             recognition: {
                 studentCount: recognizedStudents.size,
                 students: Array.from(recognizedStudents).sort(),

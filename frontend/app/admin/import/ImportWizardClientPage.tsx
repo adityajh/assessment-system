@@ -258,19 +258,27 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                             </div>
 
                             {(detectedType === 'mentor' || detectedType === 'self') && (
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
-                                    <select
-                                        className="input bg-white border-2 border-slate-300 text-slate-950 font-black h-12 focus:border-indigo-600 transition-all"
-                                        value={projectId}
-                                        onChange={(e) => setProjectId(e.target.value)}
-                                    >
-                                        <option value="">-- Choose Project --</option>
-                                        {initialProjects.filter(p => p.project_type === 'standard').sort((a, b) => (a.sequence_label || '').localeCompare(b.sequence_label || '')).map(p => (
-                                            <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
+                                        <select
+                                            className="input bg-white border-2 border-slate-300 text-slate-950 font-black h-12 focus:border-indigo-600 transition-all"
+                                            value={projectId}
+                                            onChange={(e) => setProjectId(e.target.value)}
+                                        >
+                                            <option value="">-- Choose Project --</option>
+                                            {initialProjects.filter(p => p.project_type === 'standard').sort((a, b) => (a.sequence_label || '').localeCompare(b.sequence_label || '')).map(p => (
+                                                <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex flex-col gap-2 border-t border-slate-100 pt-6 mt-2">
+                                        <label className="text-md font-black text-slate-950 uppercase tracking-wide">Detected Raw Scale</label>
+                                        <div className="bg-slate-50 border-2 border-slate-200 text-slate-700 font-bold h-12 flex items-center px-4 rounded-xl">
+                                            {previewData?.detectedScale ? `1 to ${previewData.detectedScale}` : '1 to 10 (Default)'}
+                                        </div>
+                                    </div>
+                                </>
                             )}
 
                             <div className="flex flex-col gap-2 border-t border-slate-100 pt-6 mt-2">
