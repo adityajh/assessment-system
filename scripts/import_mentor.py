@@ -89,7 +89,12 @@ for sheet in xls.sheet_names:
     if len(df) < 5: continue
     
     current_domain = None
-    
+    header_val0 = str(df.columns[0]).strip().lower()
+    for dm_key, dm_val in domain_mapping.items():
+        if header_val0 == dm_key or header_val0.startswith(dm_key):
+            current_domain = dm_val
+            break
+            
     # Pre-compute student mappings for this sheet
     student_cols = {}
     for col_idx in range(1, len(df.columns)):
