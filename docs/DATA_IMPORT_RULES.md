@@ -57,4 +57,41 @@ Your header row must contain columns with words that match these specific keywor
 | 10/24 | Jane Doe | John Smith | SDP | 4 | 5 | 5 |
 | 10/24 | John Smith | Jane Doe | SDP | 5 | 4 | 3 |
 
+---
+
+## 3. Term Report Format
+**Rule:** Term reports track single high-level metrics for students. It expects a row-by-row flat structure mapping a student to a specific metric name and score.
+
+### Required Header Columns
+Your header row must contain columns that match these keywords:
+1. **Student Name:** Header must contain `student` or `name`.
+2. **Metric Type:** Header must contain `metric` (and not 'value'). Accepted values in rows below this column: `cbp`, `conflexion`, `bow`.
+3. **Value:** Header must contain `value`, `score`, or `count`.
+
+### Example Expected Format (Term Report)
+
+| Sr. | Student Name | Metric | Value |
+| :--- | :--- | :--- | :--- |
+| 1 | Jane Doe | cbp | 4 |
+| 2 | Jane Doe | bow | 3.5 |
+| 3 | John Smith | conflexion | 12 |
+
+---
+
+## 4. Mentor Notes Format
+**Rule:** For bulk importing qualitative free-text feedback from mentors to students. If multiple rows exist for the same student (from the same or different mentors), the parser will intelligently combine them into a single comprehensive note.
+
+### Required Header Columns
+Your header row must contain columns that match these keywords:
+1. **Student Name:** Header must contain `student` or `name`.
+2. **Mentor Name:** Header must contain `mentor`.
+3. **Notes:** Header must contain `note`.
+
+### Example Expected Format (Mentor Notes)
+
+| Sr. | Student Name | Mentor | Notes |
+| :--- | :--- | :--- | :--- |
+| 1 | Jane Doe | Sharjeel | Jane showed excellent leadership today. |
+| 2 | Jane Doe | Aditya | She needs to speak up more in large groups. |
+
 *Following these rules guarantees your data will be safely, cleanly, and permanently ingested into the platform.*

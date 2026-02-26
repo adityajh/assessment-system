@@ -469,6 +469,117 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        if (type === 'mentor_notes') {
+            const notesByStudent: Record<string, {
+                student_id: string,
+                project_id: string | null,
+                mentors: Set<string>,
+                notes: string[]
+            }> = {};
+            let lastColMap: Record<string, number> = {};
+
+            Object.entries(sheetsData as Record<string, any[][]>).forEach(([sheetName, rows]) => {
+                if (rows.length < 2) return;
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, rows.length); i++) {
+                    const rowStr = rows[i].join(' ').toLowerCase();
+                    if (rowStr.includes('student') && rowStr.includes('mentor')) {
+                        headerRowIdx = i;
+                        break;
+                    }
+                }
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = rows[headerRowIdx].map(h => String(h || '').toLowerCase().trim());
+                const colMap: Record<string, number> = {};
+                headers.forEach((h, idx) => {
+                    if (h.includes('student') || h.includes('name')) colMap['student'] = idx;
+                    else if (h.includes('mentor')) colMap['mentor'] = idx;
+                    else if (h.includes('note')) colMap['notes'] = idx;
+                });
+                lastColMap = colMap;
+
+                if (colMap['student'] === undefined || colMap['notes'] === undefined) {
+                     return; // Skip sheet if missing required columns
+                }
+
+                for (let r = headerRowIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    const studentName = String(row[colMap['student']] || '').trim();
+                    const mentorName = colMap['mentor'] !== undefined ? String(row[colMap['mentor']] || '').trim() : 'Unknown Mentor';
+                    const noteText = String(row[colMap['notes']] || '').trim();
+
+                    if (!studentName || !noteText || noteText.toLowerCase() === 'nan') continue;
+
+                    const studentId = getStudentId(studentName);
+                    if (!studentId) continue;
+
+                    if (!notesByStudent[studentId]) {
+                        notesByStudent[studentId] = {
+                            student_id: studentId,
+                            project_id: projectId || null,
+                            mentors: new Set(),
+                            notes: []
+                        };
+                    }
+
+                    if (mentorName && mentorName.toLowerCase() !== 'nan') {
+                        notesByStudent[studentId].mentors.add(mentorName);
+                    }
+                    
+                    const prefix = mentorName && mentorName.toLowerCase() !== 'nan' ? `${mentorName}: ` : '';
+                    notesByStudent[studentId].notes.push(`${prefix}${noteText}`);
+                }
+            });
+
+            const finalInserts = Object.values(notesByStudent).map(data => ({
+                student_id: data.student_id,
+                project_id: data.project_id,
+                note_text: data.notes.join('\n\n'),
+                note_type: 'general',
+                created_by: Array.from(data.mentors).join(', ')
+            }));
+
+            if (finalInserts.length === 0) {
+                return NextResponse.json({ error: 'No valid mentor notes records found.' }, { status: 400 });
+            }
+
+            // Create Log
+            const { data: log, error: logEff } = await supabase
+                .from('assessment_logs')
+                .insert({
+                    assessment_date: date,
+                    program_id: resolvedProgramId,
+                    term: term,
+                    data_type: 'mentor_notes',
+                    project_id: projectId || null,
+                    file_name: fileName,
+                    mapping_config: lastColMap as any,
+                    records_inserted: finalInserts.length
+                })
+                .select().single();
+
+            if (logEff) throw logEff;
+
+            // Note: `mentor_notes` table does not have an assessment_log_id column yet according to schema,
+            // but we logged the event in assessment_logs. We insert directly into mentor_notes.
+            
+            const { error: notesErr } = await supabase
+                .from('mentor_notes')
+                .insert(finalInserts);
+
+            if (notesErr) throw notesErr;
+
+            return NextResponse.json({
+                success: true,
+                message: `Imported combined mentor notes for ${finalInserts.length} students.`,
+                count: finalInserts.length
+            });
+        }
+
         return NextResponse.json({ error: `Unsupported import type: ${type}` }, { status: 400 });
 
     } catch (error: any) {

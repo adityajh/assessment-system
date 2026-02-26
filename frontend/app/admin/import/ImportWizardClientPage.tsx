@@ -151,20 +151,34 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                         <h3 className="text-xl font-extrabold text-slate-950 mb-1">Golden Data Templates</h3>
                         <p className="text-sm text-slate-700 font-bold">Use these established formats for 100% recognition accuracy.</p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4 mt-4">
                         <a
                             href="/templates/Golden_Template_Matrix.xlsx"
                             download
-                            className="bg-slate-950 text-white px-5 py-2.5 rounded-xl text-sm font-bold border-2 border-slate-950 hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg"
+                            className="bg-slate-950 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-slate-950 hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm"
                         >
                             <FileSpreadsheet size={16} /> Matrix Template
                         </a>
                         <a
                             href="/templates/Golden_Template_PeerFeedback.xlsx"
                             download
-                            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold border-2 border-indigo-500 hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg"
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-indigo-500 hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-sm"
                         >
                             <FileSpreadsheet size={16} /> Peer Template
+                        </a>
+                        <a
+                            href="/templates/GoldenTemplate_Term Report.xlsx"
+                            download
+                            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-emerald-500 hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <FileSpreadsheet size={16} /> Term Report Template
+                        </a>
+                        <a
+                            href="/templates/Golden_Template_MentorNotes.xlsx"
+                            download
+                            className="bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-amber-500 hover:bg-amber-700 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <FileSpreadsheet size={16} /> Mentor Notes Template
                         </a>
                     </div>
                 </div>
@@ -254,10 +268,11 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     <option value="self">Self Assessments</option>
                                     <option value="peer">Peer Feedback</option>
                                     <option value="term">Term Reports</option>
+                                    <option value="mentor_notes">Mentor Notes</option>
                                 </select>
                             </div>
 
-                            {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer') && (
+                            {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && (
                                 <div className="flex flex-col gap-2">
                                     <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
                                     <select

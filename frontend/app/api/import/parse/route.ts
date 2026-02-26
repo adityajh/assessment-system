@@ -179,6 +179,32 @@ export async function POST(request: NextRequest) {
                 }
             }
 
+            // Mentor Notes Format Detection
+            if (finalDetectedType === 'mentor_notes') {
+                // Find Columns for Student, Mentor, Notes
+                const colMap: Record<string, number> = {};
+                headerRow.forEach((cell, idx) => {
+                    const low = String(cell || '').toLowerCase();
+                    if (low.includes('student') || low.includes('name')) colMap['student'] = idx;
+                    if (low.includes('mentor')) colMap['mentor'] = idx;
+                    if (low.includes('note')) colMap['notes'] = idx;
+                });
+
+                for (let r = headerIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    if (colMap['student'] !== undefined) {
+                        const cellStr = String(row[colMap['student']] || '').trim();
+                        if (!cellStr || cellStr.toLowerCase() === 'nan') continue;
+
+                        const student = checkStudent(cellStr);
+                        if (student) recognizedStudents.add(student.canonical_name);
+                        else unrecognizedStudents.add(cellStr);
+                    }
+                }
+            }
+
             // Also check for Parameter Codes in Column 0 (Matrix)
             if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
                 for (let r = headerIdx + 1; r < rows.length; r++) {
@@ -225,6 +251,7 @@ export async function POST(request: NextRequest) {
 
 function detectFileType(filename: string, sheetNames: string[]): string {
     const nameLower = filename.toLowerCase();
+    if (nameLower.includes('note')) return 'mentor_notes';
     if (nameLower.includes('matrix') || sheetNames.includes('Kickstart') || sheetNames.includes('Legend')) return 'mentor';
     if (nameLower.includes('self') || nameLower.includes('x-ray') || nameLower.includes('accounting')) return 'self';
     if (nameLower.includes('peer')) return 'peer';
