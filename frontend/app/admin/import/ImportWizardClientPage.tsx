@@ -17,6 +17,9 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
     const [file, setFile] = useState<File | null>(null);
     const [detectedType, setDetectedType] = useState<ImportType>('unknown');
     const [projectId, setProjectId] = useState<string>('');
+    const [assessmentDate, setAssessmentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [program, setProgram] = useState<string>('UG-MED');
+    const [term, setTerm] = useState<string>('Year 1');
 
     const [isUploading, setIsUploading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -104,6 +107,11 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                 },
                 body: JSON.stringify({
                     type: detectedType,
+                    projectId: projectId,
+                    program: program,
+                    term: term,
+                    date: assessmentDate,
+                    fileName: file.name,
                     records: recordsToSave
                 }),
             });
@@ -125,14 +133,9 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
     // Mock transformation function for scaffolding purposes
     const transformDataForDatabase = (preview: any, type: ImportType, projId: string, students: Student[]) => {
-        // This is a placeholder. 
-        // True implementation would rigorously parse the sheetsData 
-        // matching aliases and mapping columns to parameter IDs.
-        console.log("Mock Transforming:", { type, projId, sheets: preview.sheetNames.length });
-        return [
-            // Mock record structure
-            // { student_id: '...', project_id: projId, parameter_id: '...', assessment_type: type, raw_score: 5, etc. }
-        ];
+        // Since we are sending the raw sheetsData to the backend for actual parsing now, 
+        // we'll just return the raw preview data payload and let the backend securely parse it!
+        return preview.sheetsData;
     };
 
     return (
@@ -239,10 +242,43 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                 </div>
                             )}
 
+                            <div className="flex flex-col gap-2 border-t border-slate-800 pt-4 mt-2">
+                                <label className="text-sm font-medium text-slate-400">Date of Assessment</label>
+                                <input
+                                    type="date"
+                                    className="input bg-slate-900"
+                                    value={assessmentDate}
+                                    onChange={(e) => setAssessmentDate(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium text-slate-400">Program</label>
+                                    <input
+                                        type="text"
+                                        className="input bg-slate-900"
+                                        placeholder="e.g. UG-MED"
+                                        value={program}
+                                        onChange={(e) => setProgram(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium text-slate-400">Term</label>
+                                    <input
+                                        type="text"
+                                        className="input bg-slate-900"
+                                        placeholder="e.g. Year 1"
+                                        value={term}
+                                        onChange={(e) => setTerm(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
                             <button
                                 className="btn btn-primary mt-4 py-3"
                                 onClick={handleImport}
-                                disabled={isProcessing || detectedType === 'unknown' || ((detectedType === 'mentor' || detectedType === 'self') && !projectId)}
+                                disabled={isProcessing || detectedType === 'unknown' || ((detectedType === 'mentor' || detectedType === 'self') && (!projectId || !assessmentDate || !program || !term))}
                             >
                                 {isProcessing ? (
                                     <span className="flex items-center gap-2"><LoadingSpinner size={18} /> Processing...</span>
