@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Modal } from '@/components/shared/Modal';
-import { Student, createStudent, updateStudent } from '@/lib/supabase/queries/students';
+import { Student, createStudent, updateStudent, Program } from '@/lib/supabase/queries/students';
 import { createClient } from '@/lib/supabase/client';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { X } from 'lucide-react';
@@ -11,10 +11,11 @@ interface StudentFormProps {
     isOpen: boolean;
     onClose: () => void;
     student: Student | null;
+    programs: Program[];
     onSave: (student: Student) => void;
 }
 
-export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormProps) {
+export function StudentForm({ isOpen, onClose, student, programs, onSave }: StudentFormProps) {
     const supabase = createClient();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -23,6 +24,8 @@ export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormPro
         student_number: '',
         canonical_name: '',
         is_active: true,
+        program_id: '',
+        cohort: '',
         aliases: [] as string[],
         newAlias: ''
     });
@@ -33,6 +36,8 @@ export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormPro
                 student_number: student.student_number.toString(),
                 canonical_name: student.canonical_name,
                 is_active: student.is_active,
+                program_id: student.program_id || '',
+                cohort: student.cohort || '',
                 aliases: [...student.aliases],
                 newAlias: ''
             });
@@ -41,6 +46,8 @@ export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormPro
                 student_number: '',
                 canonical_name: '',
                 is_active: true,
+                program_id: '',
+                cohort: '',
                 aliases: [],
                 newAlias: ''
             });
@@ -83,6 +90,8 @@ export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormPro
                 student_number: parseInt(formData.student_number, 10),
                 canonical_name: formData.canonical_name.trim(),
                 is_active: formData.is_active,
+                program_id: formData.program_id || undefined,
+                cohort: formData.cohort.trim() || undefined,
                 aliases: formData.aliases
             };
 
@@ -142,17 +151,31 @@ export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormPro
                     <p className="text-xs text-slate-500">The primary name used across the system.</p>
                 </div>
 
-                <div className="flex items-center gap-3 py-2 border-y border-slate-800">
-                    <input
-                        type="checkbox"
-                        id="isActive"
-                        checked={formData.is_active}
-                        onChange={(e) => setFormData(p => ({ ...p, is_active: e.target.checked }))}
-                        className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900"
-                    />
-                    <label htmlFor="isActive" className="text-sm font-medium text-slate-300 cursor-pointer">
-                        Student is active
-                    </label>
+                <div className="flex gap-4">
+                    <div className="flex flex-col gap-1.5 w-1/2">
+                        <label className="text-sm font-medium text-slate-300">Program <span className="text-slate-500">(Optional)</span></label>
+                        <select
+                            className="input"
+                            value={formData.program_id}
+                            onChange={(e) => setFormData(p => ({ ...p, program_id: e.target.value }))}
+                        >
+                            <option value="">-- No Program --</option>
+                            {programs.map(prog => (
+                                <option key={prog.id} value={prog.id}>{prog.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 w-1/2">
+                        <label className="text-sm font-medium text-slate-300">Cohort <span className="text-slate-500">(Optional)</span></label>
+                        <input
+                            type="text"
+                            className="input"
+                            value={formData.cohort}
+                            onChange={(e) => setFormData(p => ({ ...p, cohort: e.target.value }))}
+                            placeholder="e.g. 2025"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -196,7 +219,20 @@ export function StudentForm({ isOpen, onClose, student, onSave }: StudentFormPro
                     </div>
                 </div>
 
-                <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <div className="flex items-center gap-3 py-2 mt-2 border-t border-slate-800 pt-4">
+                    <input
+                        type="checkbox"
+                        id="isActive"
+                        checked={formData.is_active}
+                        onChange={(e) => setFormData(p => ({ ...p, is_active: e.target.checked }))}
+                        className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900"
+                    />
+                    <label htmlFor="isActive" className="text-sm font-medium text-slate-300 cursor-pointer">
+                        Program Status: Student is currently active
+                    </label>
+                </div>
+
+                <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-slate-800">
                     <button
                         type="button"
                         onClick={onClose}

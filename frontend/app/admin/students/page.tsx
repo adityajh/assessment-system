@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getStudents } from '@/lib/supabase/queries/students';
+import { getStudents, getPrograms } from '@/lib/supabase/queries/students';
 import StudentsClientPage from './StudentsClientPage';
 
 export const dynamic = 'force-dynamic';
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 export default async function StudentsPage() {
     const supabase = await createClient();
     const students = await getStudents(supabase);
+    const programs = await getPrograms(supabase);
 
     return (
         <div className="flex flex-col gap-6 w-full max-w-5xl">
@@ -17,7 +18,7 @@ export default async function StudentsPage() {
                 </div>
             </div>
 
-            <StudentsClientPage initialStudents={students} />
+            <StudentsClientPage initialStudents={students} initialPrograms={programs} />
         </div>
     );
 }

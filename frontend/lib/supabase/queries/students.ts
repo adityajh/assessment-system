@@ -12,6 +12,12 @@ export type Student = {
     updated_at: string;
 };
 
+export type Program = {
+    id: string;
+    name: string;
+    created_at: string;
+};
+
 export async function getStudents(supabase: SupabaseClient) {
     const { data, error } = await supabase
         .from('students')
@@ -20,6 +26,16 @@ export async function getStudents(supabase: SupabaseClient) {
 
     if (error) throw error;
     return data as Student[];
+}
+
+export async function getPrograms(supabase: SupabaseClient) {
+    const { data, error } = await supabase
+        .from('programs')
+        .select('*')
+        .order('name');
+    
+    if (error) throw error;
+    return data as Program[];
 }
 
 export async function updateStudent(
