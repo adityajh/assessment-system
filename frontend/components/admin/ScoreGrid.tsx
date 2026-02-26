@@ -93,11 +93,16 @@ export function ScoreGrid({
             setIsSaving(true);
 
             if (existingAssessment && existingAssessment.id) {
+                // Determine normalized score based on existing scale
+                let normalizedScore = newValue;
+                if (newValue !== null && existingAssessment.raw_scale_max === 5) {
+                    normalizedScore = ((newValue - 1) / (5 - 1)) * 9 + 1;
+                }
+
                 // Update existing
-                // Basic normalization assumption for mentor scores (1-10 scale usually)
                 const updated = await updateAssessment(supabase, existingAssessment.id, {
                     raw_score: newValue,
-                    normalized_score: newValue !== null ? newValue : null
+                    normalized_score: normalizedScore
                 });
                 onScoreUpdate(updated);
             } else {
