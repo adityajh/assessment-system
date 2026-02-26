@@ -195,6 +195,7 @@ CREATE TABLE readiness_parameters (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     domain_id UUID NOT NULL REFERENCES readiness_domains(id),
     name TEXT NOT NULL,                 -- 'Financial Literacy & Analysis'
+    code TEXT,                          -- 'C1', 'E2', 'M4', etc.
     description TEXT,                   -- 'Uses ratios, percentages, breakeven logic'
     param_number INT NOT NULL,          -- 1-4 within the domain
     UNIQUE(domain_id, param_number)

@@ -9,16 +9,17 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 interface ImportWizardProps {
     initialStudents: Student[];
     initialProjects: Project[];
+    initialPrograms: any[];
 }
 
 type ImportType = 'mentor' | 'self' | 'peer' | 'term' | 'unknown';
 
-export default function ImportWizardClientPage({ initialStudents, initialProjects }: ImportWizardProps) {
+export default function ImportWizardClientPage({ initialStudents, initialProjects, initialPrograms }: ImportWizardProps) {
     const [file, setFile] = useState<File | null>(null);
     const [detectedType, setDetectedType] = useState<ImportType>('unknown');
     const [projectId, setProjectId] = useState<string>('');
     const [assessmentDate, setAssessmentDate] = useState<string>(new Date().toISOString().split('T')[0]);
-    const [program, setProgram] = useState<string>('UG-MED');
+    const [program, setProgram] = useState<string>(initialPrograms?.[0]?.name || 'UG-MED');
     const [term, setTerm] = useState<string>('Year 1');
 
     const [isUploading, setIsUploading] = useState(false);
@@ -142,14 +143,14 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
         <div className="flex flex-col gap-6">
 
             {/* Step 1: Upload */}
-            <div className="admin-card">
-                <h3 className="text-lg font-medium text-slate-200 mb-4 flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-sm">1</span>
+            <div className="admin-card bg-white shadow-md border-slate-200">
+                <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">1</span>
                     Upload Data File
                 </h3>
 
                 <div
-                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${file ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-slate-700 bg-slate-800/20 hover:border-slate-600 hover:bg-slate-800/40'
+                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${file ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
                         }`}
                     onClick={() => !isUploading && fileInputRef.current?.click()}
                 >
@@ -165,17 +166,17 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     {isUploading ? (
                         <div className="flex flex-col items-center gap-4 py-4">
                             <LoadingSpinner size={32} />
-                            <p className="text-slate-400">Parsing Excel file...</p>
+                            <p className="text-slate-600 font-medium">Parsing Excel file...</p>
                         </div>
                     ) : file ? (
                         <div className="flex flex-col items-center gap-3">
-                            <FileSpreadsheet size={48} className="text-indigo-400" />
+                            <FileSpreadsheet size={48} className="text-indigo-600" />
                             <div>
-                                <p className="font-medium text-slate-200">{file.name}</p>
-                                <p className="text-sm text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                <p className="font-bold text-black">{file.name}</p>
+                                <p className="text-sm text-slate-600">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                             </div>
                             <button
-                                className="text-xs text-indigo-400 hover:text-indigo-300 underline mt-2"
+                                className="text-xs text-indigo-700 hover:text-indigo-800 font-semibold underline mt-2"
                                 onClick={(e) => { e.stopPropagation(); setFile(null); setPreviewData(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                             >
                                 Remove file
@@ -183,10 +184,10 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-3 py-4">
-                            <UploadCloud size={48} className="text-slate-500" />
+                            <UploadCloud size={48} className="text-slate-400" />
                             <div>
-                                <p className="font-medium text-slate-300">Click or drag Excel file to upload</p>
-                                <p className="text-sm text-slate-500 mt-1">Supports .xlsx and .xls formats</p>
+                                <p className="font-bold text-slate-800">Click or drag Excel file to upload</p>
+                                <p className="text-sm text-slate-500 mt-1 font-medium">Supports .xlsx and .xls formats</p>
                             </div>
                         </div>
                     )}
@@ -200,11 +201,11 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                 )}
             </div>
 
-            {/* Step 2: Configure & Verify (Only shown if file parsed) */}
+            {/* Step 2: Configure & Verify */}
             {previewData && !importResult && (
-                <div className="admin-card animate-in slide-in-from-bottom-4">
-                    <h3 className="text-lg font-medium text-slate-200 mb-6 flex items-center gap-2">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-sm">2</span>
+                <div className="admin-card bg-white shadow-md border-slate-200 animate-in slide-in-from-bottom-4">
+                    <h3 className="text-lg font-bold text-black mb-6 flex items-center gap-2">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">2</span>
                         Configure Import
                     </h3>
 
@@ -212,9 +213,9 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                         <div className="flex flex-col gap-5">
 
                             <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-slate-400">Detected Data Type</label>
+                                <label className="text-sm font-bold text-slate-700">Detected Data Type</label>
                                 <select
-                                    className="input bg-slate-900"
+                                    className="input bg-white border-slate-300 text-black font-medium"
                                     value={detectedType}
                                     onChange={(e) => setDetectedType(e.target.value as ImportType)}
                                 >
@@ -228,25 +229,25 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
                             {(detectedType === 'mentor' || detectedType === 'self') && (
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium text-slate-400">Associated Project</label>
+                                    <label className="text-sm font-bold text-slate-700">Associated Project</label>
                                     <select
-                                        className="input bg-slate-900"
+                                        className="input bg-white border-slate-300 text-black font-medium"
                                         value={projectId}
                                         onChange={(e) => setProjectId(e.target.value)}
                                     >
                                         <option value="">-- Select Project --</option>
-                                        {initialProjects.filter(p => p.project_type === 'standard').map(p => (
+                                        {initialProjects.filter(p => p.project_type === 'standard').sort((a, b) => (a.sequence_label || '').localeCompare(b.sequence_label || '')).map(p => (
                                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
                                         ))}
                                     </select>
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-2 border-t border-slate-800 pt-4 mt-2">
-                                <label className="text-sm font-medium text-slate-400">Date of Assessment</label>
+                            <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 mt-2">
+                                <label className="text-sm font-bold text-slate-700">Date of Assessment</label>
                                 <input
                                     type="date"
-                                    className="input bg-slate-900"
+                                    className="input bg-white border-slate-300 text-black font-medium"
                                     value={assessmentDate}
                                     onChange={(e) => setAssessmentDate(e.target.value)}
                                 />
@@ -254,20 +255,22 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium text-slate-400">Program</label>
-                                    <input
-                                        type="text"
-                                        className="input bg-slate-900"
-                                        placeholder="e.g. UG-MED"
+                                    <label className="text-sm font-bold text-slate-700">Program</label>
+                                    <select
+                                        className="input bg-white border-slate-300 text-black font-medium"
                                         value={program}
                                         onChange={(e) => setProgram(e.target.value)}
-                                    />
+                                    >
+                                        {initialPrograms.map(p => (
+                                            <option key={p.id} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium text-slate-400">Term</label>
+                                    <label className="text-sm font-bold text-slate-700">Term</label>
                                     <input
                                         type="text"
-                                        className="input bg-slate-900"
+                                        className="input bg-white border-slate-300 text-black font-medium"
                                         placeholder="e.g. Year 1"
                                         value={term}
                                         onChange={(e) => setTerm(e.target.value)}
@@ -289,31 +292,61 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
                         </div>
 
-                        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
-                            <h4 className="text-sm font-medium text-slate-400 mb-3 uppercase tracking-wider">File Synopsis</h4>
-                            <ul className="space-y-2 text-sm text-slate-300">
-                                <li className="flex justify-between">
-                                    <span className="text-slate-500">File Name:</span>
-                                    <span className="font-mono truncate ml-4" title={previewData.filename}>{previewData.filename}</span>
-                                </li>
-                                <li className="flex justify-between">
-                                    <span className="text-slate-500">Sheets Found:</span>
-                                    <span>{previewData.sheetNames.length}</span>
-                                </li>
-                                {previewData.sheetNames.map((sheet: string, i: number) => {
-                                    const rowCount = previewData.sheetsData[sheet]?.length || 0;
-                                    if (i > 3) return i === 4 ? <li key="more" className="text-slate-500 text-right text-xs">...and {previewData.sheetNames.length - 4} more</li> : null;
-                                    return (
-                                        <li key={sheet} className="text-xs flex justify-between pl-2 border-l-2 border-slate-700 ml-1">
-                                            <span className="truncate">{sheet}</span>
-                                            <span className="text-slate-500 ml-2">{rowCount} rows</span>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                            <div className="mt-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded text-xs text-indigo-300 flex items-start gap-2">
-                                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                                <p>The import process will attempt to auto-match student names using known aliases. Unmatched records will be skipped.</p>
+                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-6">
+                            <h4 className="text-sm font-bold text-black mb-4 uppercase tracking-wider">Recognition Confirmation</h4>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-xs font-bold text-slate-500">STUDENTS RECOGNIZED</span>
+                                        <span className="text-xs font-bold text-black">{previewData.recognition.studentCount} Found</span>
+                                    </div>
+                                    <div className="bg-white border border-slate-200 rounded p-2 max-h-32 overflow-y-auto">
+                                        {previewData.recognition.students.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1">
+                                                {previewData.recognition.students.map((s: string) => (
+                                                    <span key={s} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold">{s}</span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-red-500 text-[10px] font-bold">No students matched! Check headers.</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-xs font-bold text-slate-500">METRICS / CODES RECOGNIZED</span>
+                                        <span className="text-xs font-bold text-black">{previewData.recognition.parameterCount} Matched</span>
+                                    </div>
+                                    <div className="bg-white border border-slate-200 rounded p-2">
+                                        {previewData.recognition.parameters.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1">
+                                                {previewData.recognition.parameters.map((p: string) => (
+                                                    <span key={p} className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded text-[10px] font-bold">{p}</span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-red-500 text-[10px] font-bold">No parameter codes recognized!</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {previewData.recognition.unrecognizedCodes.length > 0 && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                                        <span className="text-[10px] font-bold text-amber-800 block mb-1">UNRECOGNIZED CODES (WILL BE SKIPPED):</span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {previewData.recognition.unrecognizedCodes.map((c: string) => (
+                                                <span key={c} className="text-[10px] text-amber-600 font-mono">{c}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-6 p-3 bg-indigo-50 border border-indigo-100 rounded text-[11px] text-indigo-900 font-medium flex items-start gap-2">
+                                <CheckCircle2 size={14} className="shrink-0 mt-0.5 text-indigo-600" />
+                                <p>Recognition is automatic. Column mapping is no longer required as long as Student Names and Parameter Codes are found.</p>
                             </div>
                         </div>
                     </div>
