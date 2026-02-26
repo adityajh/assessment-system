@@ -12,7 +12,7 @@ interface ImportWizardProps {
     initialPrograms: any[];
 }
 
-type ImportType = 'mentor' | 'self' | 'peer' | 'term' | 'unknown';
+type ImportType = 'mentor' | 'self' | 'peer' | 'term' | 'mentor_notes' | 'unknown';
 
 export default function ImportWizardClientPage({ initialStudents, initialProjects, initialPrograms }: ImportWizardProps) {
     const [file, setFile] = useState<File | null>(null);
