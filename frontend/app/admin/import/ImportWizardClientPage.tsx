@@ -142,31 +142,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
     return (
         <div className="flex flex-col gap-6">
 
-            {/* Templates & Resources Card */}
-            <div className="admin-card bg-white shadow-md border-slate-200">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h3 className="text-lg font-bold text-black mb-1">Importer Resources</h3>
-                        <p className="text-sm text-slate-600 font-medium">Download these "Golden Templates" to ensure your data is perfectly formatted.</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <a
-                            href="/templates/Golden_Template_Matrix.xlsx"
-                            download
-                            className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 transition-colors flex items-center gap-2"
-                        >
-                            <FileSpreadsheet size={14} /> Matrix Template
-                        </a>
-                        <a
-                            href="/templates/Golden_Template_PeerFeedback.xlsx"
-                            download
-                            className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 hover:bg-slate-100 transition-colors flex items-center gap-2"
-                        >
-                            <FileSpreadsheet size={14} /> Peer Template
-                        </a>
-                    </div>
-                </div>
-            </div>
+
 
             {/* Templates & Resources Card */}
             <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-2xl">

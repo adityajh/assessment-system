@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { Eye, X, CheckSquare, Search } from 'lucide-react';
+import { Eye, X, CheckSquare, Search, Trash2, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type LogRow = {
     id: string;
@@ -22,6 +23,35 @@ type Parameter = any;
 
 export default function AssessmentLogsClientPage({ logs, parameters }: { logs: LogRow[], parameters: Parameter[] }) {
     const [selectedLog, setSelectedLog] = useState<LogRow | null>(null);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const router = useRouter();
+
+    const handleDelete = async (logId: string) => {
+        if (!confirm("Are you sure you want to delete this import? This will remove all associated assessment scores and cannot be undone.")) {
+            return;
+        }
+
+        setIsDeleting(logId);
+        try {
+            const response = await fetch('/api/import/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logId })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete import');
+            }
+
+            // Refresh to update the list
+            router.refresh();
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setIsDeleting(null);
+        }
+    };
 
     const getParameterName = (id: string) => {
         if (id === 'student_name') return '★ Student Name Key';
@@ -71,12 +101,24 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
                                 <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.projects?.name || '-'}</td>
                                 <td className="py-3 px-6 text-slate-700 font-medium truncate max-w-[200px]" title={log.file_name || ''}>{log.file_name || '-'}</td>
                                 <td className="py-3 px-6 text-right font-medium text-slate-900">{log.records_inserted}</td>
-                                <td className="py-3 px-6 text-right">
+                                <td className="py-3 px-6 text-right flex justify-end gap-2">
                                     <button
                                         onClick={() => setSelectedLog(log)}
                                         className="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
                                     >
                                         <Eye size={14} /> View Map
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(log.id)}
+                                        disabled={isDeleting === log.id}
+                                        className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {isDeleting === log.id ? (
+                                            <RefreshCcw size={14} className="animate-spin" />
+                                        ) : (
+                                            <Trash2 size={14} />
+                                        )}
+                                        Delete
                                     </button>
                                 </td>
                             </tr>
