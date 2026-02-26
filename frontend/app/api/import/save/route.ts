@@ -457,7 +457,7 @@ export async function POST(request: NextRequest) {
             const { error: termErr } = await supabase
                 .from('term_tracking')
                 .upsert(finalInserts, {
-                    onConflict: 'student_id,term'
+                    onConflict: 'student_id,term,assessment_log_id'
                 });
 
             if (termErr) throw termErr;

@@ -32,7 +32,6 @@ const navSections = [
         items: [
             { href: '/admin/students', icon: Users, label: 'Students' },
             { href: '/admin/projects', icon: FolderGit2, label: 'Projects' },
-            { href: '/admin/term-tracking', icon: Briefcase, label: 'Term Tracking' },
         ]
     },
     {
@@ -40,8 +39,9 @@ const navSections = [
         items: [
             { href: '/admin/assessments/mentor', icon: BarChart2, label: 'Mentor Scores' },
             { href: '/admin/assessments/self', icon: FileText, label: 'Self Scores' },
-            { href: '/admin/peer-feedback', icon: MessageSquare, label: 'Peer Feedback' },
+            { href: '/admin/peer-feedback', icon: MessageSquareQuote, label: 'Peer Feedback' },
             { href: '/admin/notes', icon: StickyNote, label: 'Mentor Notes' },
+            { href: '/admin/metrics', icon: Briefcase, label: 'Metrics' }
         ]
     },
     {
