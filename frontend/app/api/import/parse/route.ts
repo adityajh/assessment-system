@@ -37,15 +37,20 @@ export async function POST(request: NextRequest) {
         let recognizedStudents = new Set<string>();
         let recognizedCodes = new Set<string>();
         let missingCodes = new Set<string>();
-        let totalRecordsFound = 0;
+        let unrecognizedStudents = new Set<string>();
 
         const checkStudent = (name: string) => {
             const clean = String(name || '').trim().toLowerCase();
-            if (!clean || clean === 'nan') return null;
+            if (!clean || clean === 'nan' || clean === 'null' || clean === 'undefined') return null;
             return students.find(s =>
                 s.canonical_name.toLowerCase() === clean ||
                 (s.aliases || []).some((a: string) => a.toLowerCase() === clean)
             );
+        };
+
+        const isKnownMetadata = (val: string) => {
+            const low = val.toLowerCase();
+            return ['code', 'parameter', 'description', 'rubric', 'weight', 'score', 'average', 'total'].includes(low);
         };
 
         // Scan sheets for patterns
@@ -56,7 +61,7 @@ export async function POST(request: NextRequest) {
             let headerIdx = -1;
             for (let i = 0; i < Math.min(10, rows.length); i++) {
                 const rowStr = rows[i].join(' ').toLowerCase();
-                if (rowStr.includes('code') || rowStr.includes('recipient') || rowStr.includes('quality')) {
+                if (rowStr.includes('code') || rowStr.includes('recipient') || rowStr.includes('giver') || rowStr.includes('quality')) {
                     headerIdx = i;
                     break;
                 }
@@ -64,33 +69,67 @@ export async function POST(request: NextRequest) {
             if (headerIdx === -1) headerIdx = 0;
 
             const headerRow = rows[headerIdx];
+            const detectedType = detectFileType(file.name, sheetNames);
 
-            // Look for students in headers (Matrix format)
-            headerRow.forEach(cell => {
-                const student = checkStudent(cell);
-                if (student) recognizedStudents.add(student.canonical_name);
-            });
+            // Matrix Format Detection (Headers are students)
+            if (detectedType === 'mentor' || detectedType === 'self') {
+                headerRow.forEach(cell => {
+                    const cellStr = String(cell || '').trim();
+                    if (!cellStr || isKnownMetadata(cellStr)) return;
 
-            // Look for students in rows (Flat format)
-            for (let r = headerIdx + 1; r < rows.length; r++) {
-                const row = rows[r];
-                if (!row || row.length === 0) continue;
-
-                // Check first column for Parameter Code
-                const code = String(row[0] || '').trim().toUpperCase();
-                if (code && code !== 'NAN') {
-                    const param = parameters.find(p => p.code === code);
-                    if (param) recognizedCodes.add(code);
-                    else if (code.length >= 2 && code.length <= 4) missingCodes.add(code);
-                }
-
-                // Check all cells for student matches (Flat format)
-                row.forEach(cell => {
-                    if (typeof cell === 'string' && cell.length > 3) {
-                        const student = checkStudent(cell);
-                        if (student) recognizedStudents.add(student.canonical_name);
-                    }
+                    const student = checkStudent(cellStr);
+                    if (student) recognizedStudents.add(student.canonical_name);
+                    else unrecognizedStudents.add(cellStr);
                 });
+            }
+
+            // Flat Format Detection (Columns are students)
+            if (detectedType === 'peer') {
+                // Find Columns for Giver/Recipient
+                const colMap: Record<string, number> = {};
+                headerRow.forEach((cell, idx) => {
+                    const low = String(cell || '').toLowerCase();
+                    if (low.includes('recipient') || low.includes('to:')) colMap['recipient'] = idx;
+                    if (low.includes('giver') || low.includes('from:')) colMap['giver'] = idx;
+                });
+
+                for (let r = headerIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    ['recipient', 'giver'].forEach(key => {
+                        if (colMap[key] !== undefined) {
+                            const cellStr = String(row[colMap[key]] || '').trim();
+                            if (!cellStr || cellStr.toLowerCase() === 'nan') return;
+
+                            const student = checkStudent(cellStr);
+                            if (student) recognizedStudents.add(student.canonical_name);
+                            else unrecognizedStudents.add(cellStr);
+                        }
+                    });
+
+                    // Also check for parameters/metrics
+                    headerRow.forEach((cell, idx) => {
+                        const cellStr = String(cell || '').toLowerCase();
+                        if (cellStr.includes('quality') || cellStr.includes('initiative') || cellStr.includes('communication') || cellStr.includes('collaboration') || cellStr.includes('growth')) {
+                            recognizedCodes.add(cellStr); // For Peer, we recognize by header keywords
+                        }
+                    });
+                }
+            }
+
+            // Also check for Parameter Codes in Column 0 (Matrix)
+            if (detectedType === 'mentor' || detectedType === 'self') {
+                for (let r = headerIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+                    const code = String(row[0] || '').trim().toUpperCase();
+                    if (code && code !== 'NAN') {
+                        const param = parameters.find(p => p.code === code);
+                        if (param) recognizedCodes.add(code);
+                        else if (code.length >= 2 && code.length <= 4) missingCodes.add(code);
+                    }
+                }
             }
         });
 
@@ -103,6 +142,8 @@ export async function POST(request: NextRequest) {
             recognition: {
                 studentCount: recognizedStudents.size,
                 students: Array.from(recognizedStudents).sort(),
+                unrecognizedStudentCount: unrecognizedStudents.size,
+                unrecognizedStudents: Array.from(unrecognizedStudents).sort(),
                 parameterCount: recognizedCodes.size,
                 parameters: Array.from(recognizedCodes).sort(),
                 unrecognizedCodes: Array.from(missingCodes).sort()
