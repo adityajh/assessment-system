@@ -302,6 +302,14 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'No valid peer feedback records found.' }, { status: 400 });
             }
 
+            // Deduplicate peer inserts based on unique constraint: recipient_id, giver_id, project_id
+            const uniquePeerInsertsMap = new Map();
+            peerInserts.forEach(insert => {
+                const key = `${insert.recipient_id}-${insert.giver_id}-${insert.project_id}`;
+                uniquePeerInsertsMap.set(key, insert);
+            });
+            peerInserts = Array.from(uniquePeerInsertsMap.values());
+
             // 4. Create Log & Save
             const { data: log, error: logEff } = await supabase
                 .from('assessment_logs')
