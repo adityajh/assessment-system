@@ -257,7 +257,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                 </select>
                             </div>
 
-                            {(detectedType === 'mentor' || detectedType === 'self') && (
+                            {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer') && (
                                 <div className="flex flex-col gap-2">
                                     <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
                                     <select

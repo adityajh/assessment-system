@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
                     if (quality === null && initiative === null && communication === null && collaboration === null && growth === null) continue;
 
                     // Resolve Project ID: check row first, then UI selection
-                    let rowProjectId = projectId;
+                    let rowProjectId = projectId || null;
                     if (colMap['project'] !== undefined) {
                         const rowProjName = String(row[colMap['project']] || '').trim();
                         if (rowProjName) {
@@ -279,6 +279,10 @@ export async function POST(request: NextRequest) {
                             );
                             if (foundProj) rowProjectId = foundProj.id;
                         }
+                    }
+
+                    if (!rowProjectId) {
+                        return NextResponse.json({ error: 'Project association missing for peer feedback. Please select a Project from the dropdown or ensure the Project column matches a known project name.' }, { status: 400 });
                     }
 
                     peerInserts.push({
