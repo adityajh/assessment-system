@@ -133,6 +133,11 @@ for sheet in xls.sheet_names:
                     score = float(score_val)
                     if score > 10:
                         score = score / 10.0 # Some stray 1-100 inputs or typos
+                    
+                    actual_scale_max = 5 if 'kickstart' in target_tabs[sheet].lower() else 10
+                    # Normalize to 1-10 scale
+                    normalized = ((score - 1) / (actual_scale_max - 1)) * 9 + 1
+                    
                 except:
                     continue
                     
@@ -143,8 +148,8 @@ for sheet in xls.sheet_names:
                     "assessment_type": "mentor",
                     "raw_score": score,
                     "raw_scale_min": 1,
-                    "raw_scale_max": 10,
-                    "normalized_score": score,
+                    "raw_scale_max": actual_scale_max,
+                    "normalized_score": round(normalized, 2),
                     "source_file": "Year 1 Assessment Matrix.xlsx"
                 })
                 
