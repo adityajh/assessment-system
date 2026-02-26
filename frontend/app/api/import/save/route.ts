@@ -12,15 +12,17 @@ export async function POST(request: NextRequest) {
         }
 
         // 1. Fetch reference data for matching
-        const [studentsRes, paramsRes, programsRes] = await Promise.all([
+        const [studentsRes, paramsRes, programsRes, projectsRes] = await Promise.all([
             supabase.from('students').select('id, canonical_name, aliases'),
             supabase.from('readiness_parameters').select('id, code, param_number'),
-            supabase.from('programs').select('id, name')
+            supabase.from('programs').select('id, name'),
+            supabase.from('projects').select('id, name, sequence_label')
         ]);
 
         if (studentsRes.error) throw studentsRes.error;
         if (paramsRes.error) throw paramsRes.error;
         if (programsRes.error) throw programsRes.error;
+        if (projectsRes.error) throw projectsRes.error;
 
         // Try to resolve program ID from name exactly, else use the first one or a fallback
         let resolvedProgramId = programsRes.data?.[0]?.id;
@@ -31,6 +33,7 @@ export async function POST(request: NextRequest) {
 
         const students = studentsRes.data;
         const parameters = paramsRes.data;
+        const projects = projectsRes.data;
 
         // Normalize student matching
         const getStudentId = (rawName: string) => {
@@ -172,6 +175,135 @@ export async function POST(request: NextRequest) {
                 success: true,
                 message: `Successfully mapped and imported ${inserts.length} ${type} assessments! Linked to Log ID: ${logData.id.slice(0, 8)}...`,
                 count: inserts.length
+            });
+        }
+
+        if (type === 'peer') {
+            let peerInserts: any[] = [];
+            let lastColMap: Record<string, number> = {};
+
+            Object.entries(sheetsData as Record<string, any[][]>).forEach(([sheetName, rows]) => {
+                if (rows.length < 2) return;
+
+                // 1. Find Header Row
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, rows.length); i++) {
+                    const rowStr = rows[i].join(' ').toLowerCase();
+                    if (rowStr.includes('recipient') || rowStr.includes('quality') || rowStr.includes('feedback')) {
+                        headerRowIdx = i;
+                        break;
+                    }
+                }
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = rows[headerRowIdx].map(h => String(h || '').toLowerCase().trim());
+
+                // 2. Map Columns
+                const colMap: Record<string, number> = {};
+                headers.forEach((h, idx) => {
+                    if (h.includes('recipient')) colMap['recipient'] = idx;
+                    else if (h.includes('your name') || h.includes('giver')) colMap['giver'] = idx;
+                    else if (h.includes('project')) colMap['project'] = idx;
+                    else if (h.includes('quality')) colMap['quality'] = idx;
+                    else if (h.includes('initiative') || h.includes('ownership')) colMap['initiative'] = idx;
+                    else if (h.includes('communication')) colMap['communication'] = idx;
+                    else if (h.includes('collaboration')) colMap['collaboration'] = idx;
+                    else if (h.includes('growth')) colMap['growth'] = idx;
+                });
+                lastColMap = colMap;
+
+                // 3. Extract Data
+                for (let r = headerRowIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    const recipientName = row[colMap['recipient']];
+                    const giverName = row[colMap['giver']];
+                    if (!recipientName || !giverName) continue;
+
+                    const recipientId = getStudentId(recipientName);
+                    const giverId = getStudentId(giverName);
+                    if (!recipientId || !giverId) continue;
+
+                    // Metrics
+                    const getValue = (key: string) => {
+                        const val = row[colMap[key]];
+                        const num = parseFloat(String(val || ''));
+                        return isNaN(num) ? null : num;
+                    };
+
+                    const quality = getValue('quality');
+                    const initiative = getValue('initiative');
+                    const communication = getValue('communication');
+                    const collaboration = getValue('collaboration');
+                    const growth = getValue('growth');
+
+                    // Skip if all metrics are empty
+                    if (quality === null && initiative === null && communication === null && collaboration === null && growth === null) continue;
+
+                    // Resolve Project ID: check row first, then UI selection
+                    let rowProjectId = projectId;
+                    if (colMap['project'] !== undefined) {
+                        const rowProjName = String(row[colMap['project']] || '').trim();
+                        if (rowProjName) {
+                            const foundProj = (projects as any[]).find(p =>
+                                p.name.toLowerCase() === rowProjName.toLowerCase() ||
+                                p.sequence_label?.toLowerCase() === rowProjName.toLowerCase()
+                            );
+                            if (foundProj) rowProjectId = foundProj.id;
+                        }
+                    }
+
+                    peerInserts.push({
+                        recipient_id: recipientId,
+                        giver_id: giverId,
+                        project_id: rowProjectId,
+                        quality_of_work: quality,
+                        initiative_ownership: initiative,
+                        communication: communication,
+                        collaboration: collaboration,
+                        growth_mindset: growth,
+                        source_file: fileName
+                    });
+                }
+            });
+
+            if (peerInserts.length === 0) {
+                return NextResponse.json({ error: 'No valid peer feedback records found.' }, { status: 400 });
+            }
+
+            // 4. Create Log & Save
+            const { data: log, error: logEff } = await supabase
+                .from('assessment_logs')
+                .insert({
+                    assessment_date: date,
+                    program_id: resolvedProgramId,
+                    term: term,
+                    data_type: 'peer',
+                    project_id: projectId || null,
+                    file_name: fileName,
+                    mapping_config: lastColMap as any, // Save the column detection for audit
+                    records_inserted: peerInserts.length
+                })
+                .select().single();
+
+            if (logEff) throw logEff;
+
+            // Add log ID to records
+            const finalPeerInserts = peerInserts.map(p => ({ ...p, assessment_log_id: log.id }));
+
+            const { error: peerErr } = await supabase
+                .from('peer_feedback')
+                .upsert(finalPeerInserts, {
+                    onConflict: 'recipient_id,giver_id,project_id'
+                });
+
+            if (peerErr) throw peerErr;
+
+            return NextResponse.json({
+                success: true,
+                message: `Imported ${peerInserts.length} peer feedback entries.`,
+                count: peerInserts.length
             });
         }
 
