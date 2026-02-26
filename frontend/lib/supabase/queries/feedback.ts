@@ -12,6 +12,7 @@ export type PeerFeedback = {
     communication: number | null;
     collaboration: number | null;
     growth_mindset: number | null;
+    normalized_avg: number | null;
     submitted_at: string | null;
     created_at: string;
 };

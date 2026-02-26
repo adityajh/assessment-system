@@ -11,12 +11,15 @@ interface PeerFeedbackProps {
     initialFeedback: PeerFeedback[];
 }
 
+const PEER_SCALE_MAX = 5; // Raw peer feedback is on a 1-5 scale
+
 export default function PeerFeedbackClientPage({
     initialStudents,
     initialProjects,
     initialFeedback
 }: PeerFeedbackProps) {
     const [selectedProject, setSelectedProject] = useState<string>(initialProjects[0]?.id || '');
+    const [displayScore, setDisplayScore] = useState<'raw' | 'normalized'>('raw');
 
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
 
@@ -30,16 +33,21 @@ export default function PeerFeedbackClientPage({
 
             result[student.id] = {};
             metrics.forEach(metric => {
-                const scores = studentFeedback.map(f => f[metric]).filter((s): s is number => s !== null);
-                if (scores.length > 0) {
-                    result[student.id][metric] = Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
+                const rawScores = studentFeedback.map(f => f[metric]).filter((s): s is number => s !== null);
+                if (rawScores.length > 0) {
+                    const rawAvg = rawScores.reduce((a, b) => a + b, 0) / rawScores.length;
+                    result[student.id][`${metric}_raw`] = Number(rawAvg.toFixed(1));
+                    result[student.id][`${metric}_norm`] = Number(((rawAvg / PEER_SCALE_MAX) * 10).toFixed(1));
                 } else {
-                    result[student.id][metric] = null;
+                    result[student.id][`${metric}_raw`] = null;
+                    result[student.id][`${metric}_norm`] = null;
                 }
             });
-            // Total peer score average
-            const allScores = metrics.flatMap(m => result[student.id][m]).filter((s): s is number => s !== null);
-            result[student.id]['overall'] = allScores.length > 0 ? Number((allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(1)) : null;
+            // Total peer score
+            const rawScoresAll = metrics.map(m => result[student.id][`${m}_raw`]).filter((s): s is number => s !== null);
+            const overallRaw = rawScoresAll.length > 0 ? Number((rawScoresAll.reduce((a, b) => a + b, 0) / rawScoresAll.length).toFixed(1)) : null;
+            result[student.id]['overall_raw'] = overallRaw;
+            result[student.id]['overall_norm'] = overallRaw !== null ? Number(((overallRaw / PEER_SCALE_MAX) * 10).toFixed(1)) : null;
             result[student.id]['count'] = studentFeedback.length;
         });
 
@@ -48,7 +56,7 @@ export default function PeerFeedbackClientPage({
 
     return (
         <div className="flex flex-col gap-6 h-full">
-            <div className="flex gap-4 p-4 admin-card bg-slate-900/50 shrink-0">
+            <div className="flex gap-4 p-4 admin-card bg-slate-900/50 shrink-0 flex-wrap items-end">
                 <div className="flex flex-col gap-1.5 min-w-[250px]">
                     <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">Project</label>
                     <select
@@ -60,6 +68,21 @@ export default function PeerFeedbackClientPage({
                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
                         ))}
                     </select>
+                </div>
+
+                <div className="ml-auto flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <button
+                        onClick={() => setDisplayScore('raw')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'raw' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        Raw (1-5)
+                    </button>
+                    <button
+                        onClick={() => setDisplayScore('normalized')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'normalized' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        Normalized (1-10)
+                    </button>
                 </div>
             </div>
 
@@ -89,6 +112,7 @@ export default function PeerFeedbackClientPage({
                                 {activeStudents.map(student => {
                                     const avg = studentAverages[student.id];
                                     const hasData = (avg.count ?? 0) > 0;
+                                    const suffix = displayScore === 'normalized' ? '_norm' : '_raw';
 
                                     return (
                                         <tr key={student.id} className="hover:bg-slate-800/50 transition-colors">
@@ -101,13 +125,13 @@ export default function PeerFeedbackClientPage({
                                                     {avg.count}
                                                 </span>
                                             </td>
-                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{avg.quality_of_work ?? '-'}</td>
-                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{avg.initiative_ownership ?? '-'}</td>
-                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{avg.communication ?? '-'}</td>
-                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{avg.collaboration ?? '-'}</td>
-                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{avg.growth_mindset ?? '-'}</td>
+                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{(avg[`quality_of_work${suffix}`] as number | null) ?? '-'}</td>
+                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{(avg[`initiative_ownership${suffix}`] as number | null) ?? '-'}</td>
+                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{(avg[`communication${suffix}`] as number | null) ?? '-'}</td>
+                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{(avg[`collaboration${suffix}`] as number | null) ?? '-'}</td>
+                                            <td className={`px-6 py-3 text-center font-mono ${hasData ? 'text-slate-300' : 'text-slate-600'}`}>{(avg[`growth_mindset${suffix}`] as number | null) ?? '-'}</td>
                                             <td className={`px-6 py-3 text-center font-mono font-bold border-l border-slate-800 ${hasData ? 'text-indigo-400' : 'text-slate-600'}`}>
-                                                {avg.overall ?? '-'}
+                                                {(avg[`overall${suffix}`] as number | null) ?? '-'}
                                             </td>
                                         </tr>
                                     );
