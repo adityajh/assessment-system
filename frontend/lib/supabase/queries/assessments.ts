@@ -13,6 +13,7 @@ export type ReadinessParameter = {
     id: string;
     domain_id: string;
     name: string;
+    code?: string;
     description: string;
     param_number: number;
 };

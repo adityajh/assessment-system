@@ -32,8 +32,8 @@ export default function RubricsClientPage({
                                 {domainParams.map(param => (
                                     <div key={param.id} className="bg-slate-900/50 rounded-lg p-3 border border-slate-800 hover:border-slate-700 transition-colors">
                                         <div className="flex items-start gap-3">
-                                            <div className="shrink-0 w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-bold mt-0.5">
-                                                {param.param_number}
+                                            <div className="shrink-0 px-2 h-6 rounded bg-slate-800 text-slate-300 flex items-center justify-center text-[11px] font-bold mt-0.5 tracking-wider">
+                                                {param.code || param.param_number}
                                             </div>
                                             <div>
                                                 <h4 className="font-semibold text-slate-300 text-sm">{param.name}</h4>
