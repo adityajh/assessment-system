@@ -440,8 +440,7 @@ export async function POST(request: NextRequest) {
 
             const finalInserts = termInserts.map(insert => {
                 const ex = existingMap.get(insert.student_id);
-                return {
-                     id: ex ? ex.id : undefined,
+                const payload: any = {
                      student_id: insert.student_id,
                      term: insert.term,
                      assessment_log_id: log.id,
@@ -449,6 +448,10 @@ export async function POST(request: NextRequest) {
                      conflexion_count: insert.conflexion_count !== undefined ? insert.conflexion_count : (ex?.conflexion_count || 0),
                      bow_score: insert.bow_score !== undefined ? insert.bow_score : (ex?.bow_score || 0)
                 };
+                if (ex && ex.id) {
+                    payload.id = ex.id;
+                }
+                return payload;
             });
 
             const { error: termErr } = await supabase
