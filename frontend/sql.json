@@ -1,0 +1,3 @@
+{
+  "query": "SELECT canonical_name, aliases FROM students WHERE canonical_name ILIKE '%Advait%' OR canonical_name ILIKE '%Archit%';"
+}

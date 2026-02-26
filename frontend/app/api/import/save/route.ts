@@ -345,6 +345,127 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        if (type === 'term') {
+            const updatesByStudent: Record<string, any> = {};
+            let lastColMap: Record<string, number> = {};
+
+            Object.entries(sheetsData as Record<string, any[][]>).forEach(([sheetName, rows]) => {
+                if (rows.length < 2) return;
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, rows.length); i++) {
+                    const rowStr = rows[i].join(' ').toLowerCase();
+                    if (rowStr.includes('metric') && rowStr.includes('value')) {
+                        headerRowIdx = i;
+                        break;
+                    }
+                }
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = rows[headerRowIdx].map(h => String(h || '').toLowerCase().trim());
+                const colMap: Record<string, number> = {};
+                headers.forEach((h, idx) => {
+                    if (h.includes('student') || h.includes('name')) colMap['student'] = idx;
+                    else if (h.includes('metric') && !h.includes('value')) colMap['metric'] = idx;
+                    else if (h.includes('value') || h.includes('score') || h.includes('count')) colMap['value'] = idx;
+                });
+                lastColMap = colMap;
+
+                if (colMap['student'] === undefined || colMap['metric'] === undefined || colMap['value'] === undefined) {
+                     return; // Skip sheet if missing required columns
+                }
+
+                for (let r = headerRowIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    const studentName = String(row[colMap['student']] || '').trim();
+                    const metric = String(row[colMap['metric']] || '').trim().toLowerCase();
+                    const valueStr = String(row[colMap['value']] || '').trim();
+
+                    if (!studentName || !metric || !valueStr || valueStr.toLowerCase() === 'nan') continue;
+
+                    const studentId = getStudentId(studentName);
+                    if (!studentId) continue;
+
+                    if (!updatesByStudent[studentId]) {
+                        updatesByStudent[studentId] = { student_id: studentId, term: term };
+                    }
+
+                    const valNum = parseFloat(valueStr);
+                    if (isNaN(valNum)) continue;
+
+                    if (metric.includes('cbp')) {
+                        updatesByStudent[studentId].cbp_count = Math.round(valNum);
+                    } else if (metric.includes('conflexion')) {
+                        updatesByStudent[studentId].conflexion_count = Math.round(valNum);
+                    } else if (metric.includes('bow')) {
+                        updatesByStudent[studentId].bow_score = valNum;
+                    }
+                }
+            });
+
+            const termInserts = Object.values(updatesByStudent);
+
+            if (termInserts.length === 0) {
+                return NextResponse.json({ error: 'No valid term report records found.' }, { status: 400 });
+            }
+
+            // Create Log
+            const { data: log, error: logEff } = await supabase
+                .from('assessment_logs')
+                .insert({
+                    assessment_date: date,
+                    program_id: resolvedProgramId,
+                    term: term,
+                    data_type: 'term',
+                    project_id: projectId || null,
+                    file_name: fileName,
+                    mapping_config: lastColMap as any,
+                    records_inserted: termInserts.length
+                })
+                .select().single();
+
+            if (logEff) throw logEff;
+
+            // Fetch existing term records to avoid completely overwriting untouched metrics
+            const { data: existingRecords } = await supabase
+                .from('term_tracking')
+                .select('*')
+                .in('student_id', termInserts.map(t => t.student_id))
+                .eq('term', term);
+
+            const existingMap = new Map();
+            (existingRecords || []).forEach(r => existingMap.set(r.student_id, r));
+
+            const finalInserts = termInserts.map(insert => {
+                const ex = existingMap.get(insert.student_id);
+                return {
+                     id: ex ? ex.id : undefined,
+                     student_id: insert.student_id,
+                     term: insert.term,
+                     assessment_log_id: log.id,
+                     cbp_count: insert.cbp_count !== undefined ? insert.cbp_count : (ex?.cbp_count || 0),
+                     conflexion_count: insert.conflexion_count !== undefined ? insert.conflexion_count : (ex?.conflexion_count || 0),
+                     bow_score: insert.bow_score !== undefined ? insert.bow_score : (ex?.bow_score || 0)
+                };
+            });
+
+            const { error: termErr } = await supabase
+                .from('term_tracking')
+                .upsert(finalInserts, {
+                    onConflict: 'student_id,term'
+                });
+
+            if (termErr) throw termErr;
+
+            return NextResponse.json({
+                success: true,
+                message: `Imported term tracking metrics for ${finalInserts.length} students.`,
+                count: finalInserts.length
+            });
+        }
+
         return NextResponse.json({ error: `Unsupported import type: ${type}` }, { status: 400 });
 
     } catch (error: any) {

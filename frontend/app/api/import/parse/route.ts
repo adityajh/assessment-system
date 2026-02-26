@@ -142,6 +142,43 @@ export async function POST(request: NextRequest) {
                 }
             }
 
+            // Term Report Format Detection
+            if (finalDetectedType === 'term') {
+                // Find Columns for Student, Metric, Value
+                const colMap: Record<string, number> = {};
+                headerRow.forEach((cell, idx) => {
+                    const low = String(cell || '').toLowerCase();
+                    if (low.includes('student') || low.includes('name')) colMap['student'] = idx;
+                    if (low.includes('metric') && !low.includes('value')) colMap['metric'] = idx;
+                    if (low.includes('value') || low.includes('score') || low.includes('count')) colMap['value'] = idx;
+                });
+
+                for (let r = headerIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    if (colMap['student'] !== undefined) {
+                        const cellStr = String(row[colMap['student']] || '').trim();
+                        if (!cellStr || cellStr.toLowerCase() === 'nan') continue;
+
+                        const student = checkStudent(cellStr);
+                        if (student) recognizedStudents.add(student.canonical_name);
+                        else unrecognizedStudents.add(cellStr);
+                    }
+                    
+                    if (colMap['metric'] !== undefined) {
+                        const metricStr = String(row[colMap['metric']] || '').trim().toLowerCase();
+                        if (metricStr && metricStr !== 'nan') {
+                            if (metricStr.includes('cbp') || metricStr.includes('conflexion') || metricStr.includes('bow')) {
+                                recognizedCodes.add(metricStr);
+                            } else {
+                                missingCodes.add(metricStr);
+                            }
+                        }
+                    }
+                }
+            }
+
             // Also check for Parameter Codes in Column 0 (Matrix)
             if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
                 for (let r = headerIdx + 1; r < rows.length; r++) {
