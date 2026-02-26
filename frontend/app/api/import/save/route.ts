@@ -159,6 +159,15 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'Zero valid records were extracted. Please check the file formatting.' }, { status: 400 });
             }
 
+            // Deduplicate inserts based on unique constraint: student_id, project_id, parameter_id, assessment_type
+            // If duplicate sheets are uploaded, this keeps the last occurrence.
+            const uniqueInsertsMap = new Map();
+            inserts.forEach(insert => {
+                const key = `${insert.student_id}-${insert.project_id}-${insert.parameter_id}-${insert.assessment_type}`;
+                uniqueInsertsMap.set(key, insert);
+            });
+            inserts = Array.from(uniqueInsertsMap.values());
+
             // 1. Create the Assessment Log
             const { data: logData, error: logError } = await supabase
                 .from('assessment_logs')
@@ -280,8 +289,7 @@ export async function POST(request: NextRequest) {
                         initiative_ownership: initiative,
                         communication: communication,
                         collaboration: collaboration,
-                        growth_mindset: growth,
-                        source_file: fileName
+                        growth_mindset: growth
                     });
                 }
             });
