@@ -33,4 +33,28 @@ To ensure flawless data ingestion through the Import Wizard, all CSV or Excel te
 | **C2** | Commercial | If I had ₹1,000 more... | 2.5 | 3.5 |
 | **E1** | Entrepreneurial | Am I willing to take calculated risks... | 4.0 | 5.0 |
 
+---
+
+## 2. Peer Feedback Format
+**Rule:** Peer feedback is processed differently. It is a "flat" or "transactional" format where each row is a single feedback instance between two students.
+
+### Required Header Columns
+Your header row must contain columns with words that match these specific keywords (case-insensitive):
+1. **Recipient Name:** The column header must contain `recipient` or `to:`. This is the student receiving feedback.
+2. **Giver Name:** The column header must contain `giver`, `your name`, or `from:`. This is the student giving feedback.
+3. **Project Name (Optional but Recommended):** The header must contain `project`. If left blank, the wizard's dropdown selection will be used.
+4. **Metrics:** You must have columns containing the following keywords to map to the 5 standard peer metrics:
+   * `quality` (maps to Quality of Work)
+   * `initiative` or `ownership` (maps to Initiative & Ownership)
+   * `communication` (maps to Communication)
+   * `collaboration` (maps to Collaboration)
+   * `growth` (maps to Growth Mindset)
+
+### Example Expected Format (Peer Feedback)
+
+| Timestamp | Recipient Name | Your Name (Giver) | Project | Quality of Work | Communication | Collaboration |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 10/24 | Jane Doe | John Smith | SDP | 4 | 5 | 5 |
+| 10/24 | John Smith | Jane Doe | SDP | 5 | 4 | 3 |
+
 *Following these rules guarantees your data will be safely, cleanly, and permanently ingested into the platform.*

@@ -96,7 +96,7 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
                         {logs.map(log => (
                             <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="py-3 px-6 font-medium text-slate-900 whitespace-nowrap">{log.assessment_date}</td>
-                                <td className="py-3 px-6 capitalize whitespace-nowrap">{log.data_type}</td>
+                                <td className="py-3 px-6 capitalize font-medium text-slate-900 whitespace-nowrap">{log.data_type}</td>
                                 <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.programs?.name || 'Unknown'} <span className="text-slate-400 mx-1">•</span> {log.term}</td>
                                 <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.projects?.name || '-'}</td>
                                 <td className="py-3 px-6 text-slate-700 font-medium truncate max-w-[200px]" title={log.file_name || ''}>{log.file_name || '-'}</td>
