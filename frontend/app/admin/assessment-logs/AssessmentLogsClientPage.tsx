@@ -85,10 +85,10 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
                             <th className="py-3 px-6 font-semibold text-slate-700">Assessment Date</th>
-                            <th className="py-3 px-6 font-semibold text-slate-700">Upload Date</th>
-                            <th className="py-3 px-6 font-semibold text-slate-700">Type</th>
+                            <th className="py-3 px-4 font-semibold text-slate-700 w-44">Upload Date</th>
+                            <th className="py-3 px-4 font-semibold text-slate-700 w-24">Type</th>
                             <th className="py-3 px-6 font-semibold text-slate-700">Cohort / Term</th>
-                            <th className="py-3 px-6 font-semibold text-slate-700">Project</th>
+                            <th className="py-3 px-4 font-semibold text-slate-700 w-32">Project</th>
                             <th className="py-3 px-6 font-semibold text-slate-700">File Name</th>
                             <th className="py-3 px-6 font-semibold text-slate-700">Raw Scale</th>
                             <th className="py-3 px-6 font-semibold text-slate-700 text-right">Records</th>
@@ -99,19 +99,19 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
                         {logs.map(log => {
                             const maxScale = log.mapping_config?.raw_scale_max;
                             const scaleStr = maxScale ? `1 to ${maxScale}` : 'N/A';
-                            const uploadDate = new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const uploadDate = new Date(log.created_at).toLocaleString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
                             return (
                                 <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="py-3 px-6 font-medium text-slate-900 whitespace-nowrap">{log.assessment_date}</td>
-                                    <td className="py-3 px-6 text-slate-600 whitespace-nowrap">{uploadDate}</td>
-                                    <td className="py-3 px-6 capitalize font-medium text-slate-900 whitespace-nowrap">{log.data_type}</td>
+                                    <td className="py-3 px-4 text-slate-600 whitespace-nowrap text-[13px]">{uploadDate}</td>
+                                    <td className="py-3 px-4 capitalize font-medium text-slate-900 whitespace-nowrap text-[13px]">{log.data_type}</td>
                                     <td className="py-3 px-6 whitespace-nowrap text-slate-800">
                                         <span className="font-medium">{log.cohort || 'All'}</span>
                                         <span className="text-slate-400 mx-1.5">•</span>
                                         {log.term}
                                     </td>
-                                    <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.projects?.name || '-'}</td>
-                                    <td className="py-3 px-6 text-slate-700 font-medium truncate max-w-[200px]" title={log.file_name || ''}>{log.file_name || '-'}</td>
+                                    <td className="py-3 px-4 whitespace-nowrap text-slate-800 text-[13px] truncate max-w-[120px]" title={log.projects?.name || '-'}>{log.projects?.name || '-'}</td>
+                                    <td className="py-3 px-6 text-slate-700 font-medium truncate max-w-[180px]" title={log.file_name || ''}>{log.file_name || '-'}</td>
                                     <td className="py-3 px-6 text-slate-700 whitespace-nowrap">{scaleStr}</td>
                                     <td className="py-3 px-6 text-right font-medium text-slate-900">{log.records_inserted}</td>
                                     <td className="py-3 px-6 text-right flex justify-end gap-2">
