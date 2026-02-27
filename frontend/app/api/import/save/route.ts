@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
 
                 // If maxFoundScore <= 5, assume a 5-point scale, else assume 10.
                 const detectedScale = maxFoundScore <= 5 ? 5 : 10;
+                mappingConfig.raw_scale_max = detectedScale;
 
                 // 2. Pass 2: Extract Data
                 for (let rIdx = headerRowIndex + 1; rIdx < rows.length; rIdx++) {

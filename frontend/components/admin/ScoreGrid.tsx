@@ -236,9 +236,16 @@ export function ScoreGrid({
                                                 <div
                                                     className={`w-full h-full min-h-[40px] flex items-center justify-center cursor-pointer transition-colors ${cellBg} ${cellText}`}
                                                     onClick={() => handleCellClick(student.id, param.id, score)}
-                                                    title={assessment ? `${param.name}\nRaw: ${assessment.raw_score} / ${assessment.raw_scale_max}\nSource: ${assessment.source_file}` : param.name}
+                                                    title={assessment ? `${param.name}\nRaw: ${assessment.raw_score} / ${assessment.raw_scale_max}\nNormalized: ${assessment.normalized_score}\nSource: ${assessment.source_file}` : param.name}
                                                 >
-                                                    {score !== null ? score : <span className="text-slate-600">-</span>}
+                                                    {score !== null ? (
+                                                        <span className="flex flex-col items-center">
+                                                            <span className="leading-none">{typeof score === 'number' ? parseFloat(score.toFixed(1)) : score}</span>
+                                                            {displayScore === 'raw' && assessment?.raw_scale_max && (
+                                                                <span className="text-[9px] opacity-40 leading-none mt-0.5">/{assessment.raw_scale_max}</span>
+                                                            )}
+                                                        </span>
+                                                    ) : <span className="text-slate-600">-</span>}
                                                 </div>
                                             )}
                                         </td>
