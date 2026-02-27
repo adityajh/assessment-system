@@ -80,7 +80,7 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
                 </div>
             </div>
 
-            <div className="bg-white border text-sm border-slate-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="bg-white border text-sm border-slate-200 shadow-sm rounded-xl overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
