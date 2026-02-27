@@ -23,6 +23,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
     const [program, setProgram] = useState<string>(initialPrograms?.[0]?.name || 'UG-MED');
     const [cohort, setCohort] = useState<string>(''); // Added cohort state
     const [term, setTerm] = useState<string>('Year 1');
+    const [rawScaleMin, setRawScaleMin] = useState<number>(1);
+    const [rawScaleMax, setRawScaleMax] = useState<number>(10);
 
     const [isUploading, setIsUploading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -138,6 +140,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     cohort: cohort,
                     term: term,
                     date: assessmentDate,
+                    rawScaleMin: rawScaleMin,
+                    rawScaleMax: rawScaleMax,
                     fileName: file.name,
                     records: recordsToSave
                 }),
@@ -362,6 +366,33 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                         className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950 placeholder:font-normal placeholder:text-slate-400"
                                         value={term}
                                         onChange={e => setTerm(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <p className="text-xl font-black text-slate-950 mb-4 mt-6 flex items-center gap-3">
+                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-950 text-white text-sm">3</span>
+                                Score Sensitivity (Manual Scale)
+                            </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Min Raw Score</label>
+                                    <input
+                                        type="number"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950"
+                                        value={rawScaleMin}
+                                        onChange={e => setRawScaleMin(parseInt(e.target.value))}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Max Raw Score</label>
+                                    <input
+                                        type="number"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950"
+                                        value={rawScaleMax}
+                                        onChange={e => setRawScaleMax(parseInt(e.target.value))}
                                         required
                                     />
                                 </div>

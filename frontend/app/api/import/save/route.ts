@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
         const data = await request.json();
-        const { type, projectId, program, cohort, term, date, fileName, records: sheetsData } = data;
+        const { type, projectId, program, cohort, term, date, rawScaleMin, rawScaleMax, fileName, records: sheetsData } = data;
 
         if (!sheetsData || Object.keys(sheetsData).length === 0) {
             return NextResponse.json({ error: 'No records provided' }, { status: 400 });
@@ -102,21 +102,11 @@ export async function POST(request: NextRequest) {
                 // For now, assuming matrix format since that's what was uploaded.
 
                 // 1. Pass 1: Detect scale
-                let maxFoundScore = 0;
-                for (let rIdx = headerRowIndex + 1; rIdx < rows.length; rIdx++) {
-                    const row = rows[rIdx];
-                    if (!row) continue;
-                    Object.keys(studentCols).forEach(colIdxStr => {
-                        const scoreVal = parseFloat(String(row[parseInt(colIdxStr, 10)] || ''));
-                        if (!isNaN(scoreVal) && scoreVal > maxFoundScore) {
-                            maxFoundScore = scoreVal;
-                        }
-                    });
-                }
-
-                // If maxFoundScore <= 5, assume a 5-point scale, else assume 10.
-                const detectedScale = maxFoundScore <= 5 ? 5 : 10;
-                mappingConfig.raw_scale_max = detectedScale;
+                // Use manually provided scale
+                const detectedMin = rawScaleMin !== undefined ? rawScaleMin : 1;
+                const detectedMax = rawScaleMax !== undefined ? rawScaleMax : 10;
+                mappingConfig.raw_scale_max = detectedMax;
+                mappingConfig.raw_scale_min = detectedMin;
 
                 // 2. Pass 2: Extract Data
                 for (let rIdx = headerRowIndex + 1; rIdx < rows.length; rIdx++) {
@@ -152,13 +142,10 @@ export async function POST(request: NextRequest) {
                         let rawScore = parseFloat(scoreStr);
                         if (isNaN(rawScore)) return;
 
-                        // Normalize to 1-10
+                        // Normalize to 1-10 using manual scale
                         let normalizedScore = rawScore;
-                        if (detectedScale === 5) {
-                            normalizedScore = ((rawScore - 1) / (5 - 1)) * 9 + 1;
-                        } else if (detectedScale === 10) {
-                            // Already 1-10, keep as is
-                            normalizedScore = rawScore;
+                        if (detectedMax > detectedMin) {
+                            normalizedScore = ((rawScore - detectedMin) / (detectedMax - detectedMin)) * 9 + 1;
                         }
 
                         inserts.push({
@@ -167,8 +154,8 @@ export async function POST(request: NextRequest) {
                             parameter_id: param.id,
                             assessment_type: type,
                             raw_score: rawScore,
-                            raw_scale_min: 1,
-                            raw_scale_max: detectedScale,
+                            raw_scale_min: detectedMin,
+                            raw_scale_max: detectedMax,
                             normalized_score: normalizedScore,
                             source_file: fileName
                         });
