@@ -47,6 +47,17 @@ export type Assessment = {
     source_file: string | null;
 };
 
+export type SelfAssessmentQuestion = {
+    id: string;
+    project_id: string;
+    parameter_id: string;
+    assessment_log_id: string;
+    question_text: string;
+    question_order: number;
+    rating_scale_min: number;
+    rating_scale_max: number;
+};
+
 // Data required for the admin score browser grid
 export async function getMentorAssessmentData(supabase: SupabaseClient) {
     const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult, logsResult] = await Promise.all([
@@ -76,13 +87,14 @@ export async function getMentorAssessmentData(supabase: SupabaseClient) {
 }
 
 export async function getSelfAssessmentData(supabase: SupabaseClient) {
-    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult, logsResult] = await Promise.all([
+    const [studentsResult, projectsResult, domainsResult, paramsResult, assessmentsResult, logsResult, questionsResult] = await Promise.all([
         supabase.from('students').select('*').order('student_number'),
         supabase.from('projects').select('*').order('sequence').order('sequence_label'),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('readiness_parameters').select('*').order('param_number'),
         supabase.from('assessments').select('*').eq('assessment_type', 'self'),
-        supabase.from('assessment_logs').select('*').eq('data_type', 'self').order('assessment_date', { ascending: false })
+        supabase.from('assessment_logs').select('*').eq('data_type', 'self').order('assessment_date', { ascending: false }),
+        supabase.from('self_assessment_questions').select('*')
     ]);
 
     if (studentsResult.error) throw studentsResult.error;
@@ -91,6 +103,7 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
     if (paramsResult.error) throw paramsResult.error;
     if (assessmentsResult.error) throw assessmentsResult.error;
     if (logsResult.error) throw logsResult.error;
+    if (questionsResult.error) throw questionsResult.error;
 
     return {
         students: studentsResult.data as Student[],
@@ -99,6 +112,7 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
         parameters: paramsResult.data as ReadinessParameter[],
         assessments: assessmentsResult.data as Assessment[],
         assessmentLogs: logsResult.data as AssessmentLog[],
+        questions: questionsResult.data as SelfAssessmentQuestion[],
     };
 }
 

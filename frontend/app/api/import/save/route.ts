@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         };
 
         let inserts: any[] = [];
-        let mappingConfig: Record<string, string> = {}; // for the assessment log
+        let mappingConfig: Record<string, any> = {}; // for the assessment log
 
         if (type === 'mentor' || type === 'self') {
             // Process the sheetsData (Matrix Format)
@@ -72,14 +72,23 @@ export async function POST(request: NextRequest) {
 
                 const headerRow = rows[headerRowIndex];
 
+                // Find question column if applicable
+                let questionColIdx = -1;
+
                 // Identify which columns belong to which students
                 const studentCols: Record<number, string> = {};
                 for (let colIdx = 1; colIdx < headerRow.length; colIdx++) {
                     const headerVal = String(headerRow[colIdx] || '').trim();
                     if (!headerVal || headerVal.toLowerCase() === 'nan') continue;
 
+                    const lowHeader = headerVal.toLowerCase();
+                    if (lowHeader.includes('question') || lowHeader.includes('prompt') || lowHeader.includes('helper text')) {
+                        questionColIdx = colIdx;
+                        continue;
+                    }
+
                     // If it is 'I-Statement Prompt' or 'Domain' or 'Parameter', skip it
-                    if (['domain', 'parameter', 'i-statement prompt'].includes(headerVal.toLowerCase())) continue;
+                    if (['domain', 'parameter', 'i-statement prompt'].includes(lowHeader)) continue;
 
                     // Try to match standard UI student columns
                     const studentId = getStudentId(headerVal);
@@ -121,6 +130,17 @@ export async function POST(request: NextRequest) {
                     if (!param) continue;
 
                     mappingConfig[codeVal] = param.id;
+
+                    if (type === 'self' && questionColIdx !== -1) {
+                        mappingConfig.questions = mappingConfig.questions || [];
+                        const qText = String(row[questionColIdx] || '').trim();
+                        if (qText) {
+                            mappingConfig.questions.push({
+                                parameter_id: param.id,
+                                question_text: qText
+                            });
+                        }
+                    }
 
                     // Extract scores for each matched student
                     Object.entries(studentCols).forEach(([colStr, sId]) => {
@@ -188,6 +208,38 @@ export async function POST(request: NextRequest) {
 
             // 2. Stamp all inserts with the log ID
             inserts = inserts.map(i => ({ ...i, assessment_log_id: logData.id }));
+
+            // If it's a self assessment and we have question mappings, save them first
+            if (type === 'self' && mappingConfig.questions?.length > 0) {
+                const questionsToInsert = mappingConfig.questions.map((q: any) => ({
+                    assessment_log_id: logData.id,
+                    project_id: projectId,
+                    parameter_id: q.parameter_id,
+                    question_text: q.question_text,
+                    question_order: 0,
+                    rating_scale_min: 1,
+                    rating_scale_max: mappingConfig.raw_scale_max || 10
+                }));
+
+                const { data: insertedQuestions, error: qErr } = await supabase
+                    .from('self_assessment_questions')
+                    .upsert(questionsToInsert, {
+                        onConflict: 'assessment_log_id,parameter_id'
+                    })
+                    .select('id, parameter_id');
+
+                if (qErr) {
+                    console.error('Error saving self assessment questions:', qErr);
+                }
+
+                // Map the newly inserted question IDs back to the score inserts
+                const questionMap = new Map((insertedQuestions || []).map(q => [q.parameter_id, q.id]));
+                inserts.forEach(ins => {
+                    if (ins.parameter_id && questionMap.has(ins.parameter_id)) {
+                        ins.self_assessment_question_id = questionMap.get(ins.parameter_id);
+                    }
+                });
+            }
 
             // 3. Upsert Assessments
             const { error: upsertError } = await supabase
@@ -372,7 +424,7 @@ export async function POST(request: NextRequest) {
                 lastColMap = colMap;
 
                 if (colMap['student'] === undefined || colMap['metric'] === undefined || colMap['value'] === undefined) {
-                     return; // Skip sheet if missing required columns
+                    return; // Skip sheet if missing required columns
                 }
 
                 for (let r = headerRowIdx + 1; r < rows.length; r++) {
@@ -441,12 +493,12 @@ export async function POST(request: NextRequest) {
             const finalInserts = termInserts.map(insert => {
                 const ex = existingMap.get(insert.student_id);
                 const payload: any = {
-                     student_id: insert.student_id,
-                     term: insert.term,
-                     assessment_log_id: log.id,
-                     cbp_count: insert.cbp_count !== undefined ? insert.cbp_count : (ex?.cbp_count || 0),
-                     conflexion_count: insert.conflexion_count !== undefined ? insert.conflexion_count : (ex?.conflexion_count || 0),
-                     bow_score: insert.bow_score !== undefined ? insert.bow_score : (ex?.bow_score || 0)
+                    student_id: insert.student_id,
+                    term: insert.term,
+                    assessment_log_id: log.id,
+                    cbp_count: insert.cbp_count !== undefined ? insert.cbp_count : (ex?.cbp_count || 0),
+                    conflexion_count: insert.conflexion_count !== undefined ? insert.conflexion_count : (ex?.conflexion_count || 0),
+                    bow_score: insert.bow_score !== undefined ? insert.bow_score : (ex?.bow_score || 0)
                 };
                 if (ex && ex.id) {
                     payload.id = ex.id;
@@ -501,7 +553,7 @@ export async function POST(request: NextRequest) {
                 lastColMap = colMap;
 
                 if (colMap['student'] === undefined || colMap['notes'] === undefined) {
-                     return; // Skip sheet if missing required columns
+                    return; // Skip sheet if missing required columns
                 }
 
                 for (let r = headerRowIdx + 1; r < rows.length; r++) {
@@ -529,7 +581,7 @@ export async function POST(request: NextRequest) {
                     if (mentorName && mentorName.toLowerCase() !== 'nan') {
                         notesByStudent[studentId].mentors.add(mentorName);
                     }
-                    
+
                     const prefix = mentorName && mentorName.toLowerCase() !== 'nan' ? `${mentorName}: ` : '';
                     notesByStudent[studentId].notes.push(`${prefix}${noteText}`);
                 }
@@ -566,7 +618,7 @@ export async function POST(request: NextRequest) {
 
             // Note: `mentor_notes` table does not have an assessment_log_id column yet according to schema,
             // but we logged the event in assessment_logs. We insert directly into mentor_notes.
-            
+
             const { error: notesErr } = await supabase
                 .from('mentor_notes')
                 .insert(finalInserts);

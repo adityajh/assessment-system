@@ -24,6 +24,7 @@ export default async function SelfAssessmentsPage() {
                 initialParameters={data.parameters}
                 initialAssessments={data.assessments}
                 initialLogs={data.assessmentLogs}
+                initialQuestions={data.questions}
             />
         </div>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog } from '@/lib/supabase/queries/assessments';
+import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog, SelfAssessmentQuestion } from '@/lib/supabase/queries/assessments';
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
 import { ScoreGrid } from '@/components/admin/ScoreGrid';
@@ -13,6 +13,7 @@ interface SelfAssessmentsProps {
     initialParameters: ReadinessParameter[];
     initialAssessments: Assessment[];
     initialLogs: AssessmentLog[];
+    initialQuestions: SelfAssessmentQuestion[];
 }
 
 export default function SelfAssessmentsClientPage({
@@ -21,7 +22,8 @@ export default function SelfAssessmentsClientPage({
     initialDomains,
     initialParameters,
     initialAssessments,
-    initialLogs
+    initialLogs,
+    initialQuestions
 }: SelfAssessmentsProps) {
     const [assessments, setAssessments] = useState(initialAssessments);
     const [selectedProject, setSelectedProject] = useState<string>(initialProjects[0]?.id || '');
@@ -39,6 +41,19 @@ export default function SelfAssessmentsClientPage({
         if (selectedLog === 'all') return assessments;
         return assessments.filter(a => a.assessment_log_id === selectedLog);
     }, [assessments, selectedLog]);
+
+    const displayQuestions = useMemo(() => {
+        let logsToConsider = availableLogs;
+        if (selectedLog !== 'all') {
+            logsToConsider = logsToConsider.filter(l => l.id === selectedLog);
+        } else if (logsToConsider.length > 0) {
+            // default to latest log for 'all' mode
+            logsToConsider = [logsToConsider[0]];
+        }
+
+        const logIds = new Set(logsToConsider.map(l => l.id));
+        return initialQuestions.filter(q => q.project_id === selectedProject && logIds.has(q.assessment_log_id));
+    }, [initialQuestions, selectedProject, selectedLog, availableLogs]);
 
     const handleScoreUpdate = (updatedAssessment: Assessment) => {
         setAssessments(prev => {
@@ -120,6 +135,40 @@ export default function SelfAssessmentsClientPage({
                     />
                 )}
             </div>
+
+            {displayQuestions.length > 0 && (
+                <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col shrink-0">
+                    <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+                        <div>
+                            <h3 className="text-lg font-medium text-slate-200">Mapped Questions</h3>
+                            <p className="text-sm text-slate-400">The explicit prompts students self-evaluated against for the selected import event.</p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-950 text-slate-400">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium">Code</th>
+                                    <th className="px-4 py-3 font-medium">Parameter</th>
+                                    <th className="px-4 py-3 font-medium">Question / Prompt</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800">
+                                {displayQuestions.map(q => {
+                                    const param = initialParameters.find(p => p.id === q.parameter_id);
+                                    return (
+                                        <tr key={q.id} className="hover:bg-slate-800/50">
+                                            <td className="px-4 py-3 font-medium text-slate-300 w-24">{param?.code || '-'}</td>
+                                            <td className="px-4 py-3 text-slate-300 w-64">{param?.name || '-'}</td>
+                                            <td className="px-4 py-3 text-slate-400 whitespace-pre-wrap">{q.question_text}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

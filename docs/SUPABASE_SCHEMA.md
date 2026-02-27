@@ -326,7 +326,8 @@ CREATE TABLE self_assessment_questions (
     rating_scale_min INT NOT NULL DEFAULT 1,
     rating_scale_max INT NOT NULL,               -- 5 or 10
     is_open_ended BOOLEAN DEFAULT FALSE,         -- TRUE for text questions
-    UNIQUE(project_id, question_order)
+    assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
+    UNIQUE(assessment_log_id, parameter_id)
 );
 ```
 

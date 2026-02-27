@@ -82,9 +82,17 @@ export async function POST(request: NextRequest) {
             // Matrix Format Detection (Headers are students)
             if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
                 const studentCols: number[] = [];
+                let hasQuestionCol = false;
+
                 headerRow.forEach((cell, idx) => {
                     const cellStr = String(cell || '').trim();
+                    const low = cellStr.toLowerCase();
                     if (!cellStr || isKnownMetadata(cellStr)) return;
+
+                    if (low.includes('question') || low.includes('prompt') || low.includes('helper text')) {
+                        hasQuestionCol = true;
+                        return;
+                    }
 
                     const student = checkStudent(cellStr);
                     if (student) {
@@ -165,7 +173,7 @@ export async function POST(request: NextRequest) {
                         if (student) recognizedStudents.add(student.canonical_name);
                         else unrecognizedStudents.add(cellStr);
                     }
-                    
+
                     if (colMap['metric'] !== undefined) {
                         const metricStr = String(row[colMap['metric']] || '').trim().toLowerCase();
                         if (metricStr && metricStr !== 'nan') {
