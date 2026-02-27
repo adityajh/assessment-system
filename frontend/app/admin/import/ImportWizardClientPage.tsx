@@ -222,7 +222,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                 </h3>
 
                 <div
-                    className={`border - 2 border - dashed rounded - xl p - 8 flex flex - col items - center justify - center text - center transition - colors cursor - pointer ${file ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
+                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${file ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
                         } `}
                     onClick={() => !isUploading && fileInputRef.current?.click()}
                 >
