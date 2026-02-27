@@ -9,6 +9,7 @@ type LogRow = {
     assessment_date: string;
     program_id: string;
     term: string;
+    cohort?: string | null;
     data_type: 'self' | 'mentor' | 'peer' | 'term';
     project_id: string | null;
     file_name: string | null;
@@ -83,46 +84,59 @@ export default function AssessmentLogsClientPage({ logs, parameters }: { logs: L
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th className="py-3 px-6 font-semibold text-slate-700">Date</th>
+                            <th className="py-3 px-6 font-semibold text-slate-700">Assessment Date</th>
+                            <th className="py-3 px-6 font-semibold text-slate-700">Upload Date</th>
                             <th className="py-3 px-6 font-semibold text-slate-700">Type</th>
-                            <th className="py-3 px-6 font-semibold text-slate-700">Program / Term</th>
+                            <th className="py-3 px-6 font-semibold text-slate-700">Cohort / Term</th>
                             <th className="py-3 px-6 font-semibold text-slate-700">Project</th>
                             <th className="py-3 px-6 font-semibold text-slate-700">File Name</th>
+                            <th className="py-3 px-6 font-semibold text-slate-700">Raw Scale</th>
                             <th className="py-3 px-6 font-semibold text-slate-700 text-right">Records</th>
                             <th className="py-3 px-6 font-semibold text-slate-700 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {logs.map(log => (
-                            <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="py-3 px-6 font-medium text-slate-900 whitespace-nowrap">{log.assessment_date}</td>
-                                <td className="py-3 px-6 capitalize font-medium text-slate-900 whitespace-nowrap">{log.data_type}</td>
-                                <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.programs?.name || 'Unknown'} <span className="text-slate-400 mx-1">•</span> {log.term}</td>
-                                <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.projects?.name || '-'}</td>
-                                <td className="py-3 px-6 text-slate-700 font-medium truncate max-w-[200px]" title={log.file_name || ''}>{log.file_name || '-'}</td>
-                                <td className="py-3 px-6 text-right font-medium text-slate-900">{log.records_inserted}</td>
-                                <td className="py-3 px-6 text-right flex justify-end gap-2">
-                                    <button
-                                        onClick={() => setSelectedLog(log)}
-                                        className="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
-                                    >
-                                        <Eye size={14} /> View Map
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(log.id)}
-                                        disabled={isDeleting === log.id}
-                                        className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
-                                    >
-                                        {isDeleting === log.id ? (
-                                            <RefreshCcw size={14} className="animate-spin" />
-                                        ) : (
-                                            <Trash2 size={14} />
-                                        )}
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {logs.map(log => {
+                            const maxScale = log.mapping_config?.raw_scale_max;
+                            const scaleStr = maxScale ? `1 to ${maxScale}` : 'N/A';
+                            const uploadDate = new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            return (
+                                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="py-3 px-6 font-medium text-slate-900 whitespace-nowrap">{log.assessment_date}</td>
+                                    <td className="py-3 px-6 text-slate-600 whitespace-nowrap">{uploadDate}</td>
+                                    <td className="py-3 px-6 capitalize font-medium text-slate-900 whitespace-nowrap">{log.data_type}</td>
+                                    <td className="py-3 px-6 whitespace-nowrap text-slate-800">
+                                        <span className="font-medium">{log.cohort || 'All'}</span>
+                                        <span className="text-slate-400 mx-1.5">•</span>
+                                        {log.term}
+                                    </td>
+                                    <td className="py-3 px-6 whitespace-nowrap text-slate-800">{log.projects?.name || '-'}</td>
+                                    <td className="py-3 px-6 text-slate-700 font-medium truncate max-w-[200px]" title={log.file_name || ''}>{log.file_name || '-'}</td>
+                                    <td className="py-3 px-6 text-slate-700 whitespace-nowrap">{scaleStr}</td>
+                                    <td className="py-3 px-6 text-right font-medium text-slate-900">{log.records_inserted}</td>
+                                    <td className="py-3 px-6 text-right flex justify-end gap-2">
+                                        <button
+                                            onClick={() => setSelectedLog(log)}
+                                            className="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
+                                        >
+                                            <Eye size={14} /> View Map
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(log.id)}
+                                            disabled={isDeleting === log.id}
+                                            className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            {isDeleting === log.id ? (
+                                                <RefreshCcw size={14} className="animate-spin" />
+                                            ) : (
+                                                <Trash2 size={14} />
+                                            )}
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            )
+                        })}
                         {logs.length === 0 && (
                             <tr>
                                 <td colSpan={7} className="py-8 text-center text-slate-500">No assessment logs found. Import data to see logs here.</td>

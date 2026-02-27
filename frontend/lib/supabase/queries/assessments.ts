@@ -23,6 +23,7 @@ export type AssessmentLog = {
     assessment_date: string;
     program_id: string;
     term: string;
+    cohort?: string | null;
     data_type: 'self' | 'mentor' | 'peer' | 'term';
     project_id: string | null;
     file_name: string | null;

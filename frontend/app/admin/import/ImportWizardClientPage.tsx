@@ -5,6 +5,7 @@ import { UploadCloud, FileSpreadsheet, CheckCircle2, AlertCircle, ArrowRight } f
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { createClient } from '@/lib/supabase/client'; // Added for duplicate check
 
 interface ImportWizardProps {
     initialStudents: Student[];
@@ -20,6 +21,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
     const [projectId, setProjectId] = useState<string>('');
     const [assessmentDate, setAssessmentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [program, setProgram] = useState<string>(initialPrograms?.[0]?.name || 'UG-MED');
+    const [cohort, setCohort] = useState<string>(''); // Added cohort state
     const [term, setTerm] = useState<string>('Year 1');
 
     const [isUploading, setIsUploading] = useState(false);
@@ -83,11 +85,34 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
             setError("Please select a project before importing assessments.");
             return;
         }
+        if (!program || !term || !assessmentDate || !cohort) {
+            setError("Please fill out Assessment Date, Program, Cohort, and Term.");
+            return;
+        }
 
         setIsProcessing(true);
         setError(null);
 
         try {
+            // DUPLICATE CHECK
+            const supabase = createClient();
+            if (projectId) {
+                const { data: existingLogs, error: logError } = await supabase
+                    .from('assessment_logs')
+                    .select('id, data_type, project_id, cohort')
+                    .eq('data_type', detectedType)
+                    .eq('project_id', projectId)
+                    .eq('cohort', cohort);
+
+                if (!logError && existingLogs && existingLogs.length > 0) {
+                    const proceed = window.confirm(`An assessment log for Project "${initialProjects.find(p => p.id === projectId)?.name || projectId}", Cohort "${cohort}", and Type "${detectedType}" already exists.Are you sure you want to upload another ? This may duplicate or overwrite records.`);
+                    if (!proceed) {
+                        setIsProcessing(false);
+                        return; // user cancelled
+                    }
+                }
+            }
+
             // 1. Transform previewData into backend-ready records
             // Note: Full robust parsing logic replicating Phase 2 Python scripts 
             // is complex to do purely client-side without a python backend. 
@@ -110,6 +135,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     type: detectedType,
                     projectId: projectId,
                     program: program,
+                    cohort: cohort,
                     term: term,
                     date: assessmentDate,
                     fileName: file.name,
@@ -192,8 +218,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                 </h3>
 
                 <div
-                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${file ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
-                        }`}
+                    className={`border - 2 border - dashed rounded - xl p - 8 flex flex - col items - center justify - center text - center transition - colors cursor - pointer ${file ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
+                        } `}
                     onClick={() => !isUploading && fileInputRef.current?.click()}
                 >
                     <input
@@ -288,37 +314,55 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-2 border-t border-slate-100 pt-6 mt-2">
-                                <label className="text-md font-black text-slate-950 uppercase tracking-wide">Date of Assessment</label>
-                                <input
-                                    type="date"
-                                    className="input bg-white border-2 border-slate-300 text-slate-950 font-black h-12"
-                                    value={assessmentDate}
-                                    onChange={(e) => setAssessmentDate(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-black text-slate-950 uppercase">Program</label>
+                            <p className="text-xl font-black text-slate-950 mb-4 flex items-center gap-3">
+                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-950 text-white text-sm">2</span>
+                                General Details
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Assessment Date</label>
+                                    <input
+                                        type="date"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950"
+                                        value={assessmentDate}
+                                        onChange={e => setAssessmentDate(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Program</label>
                                     <select
-                                        className="input bg-white border-2 border-slate-300 text-slate-950 font-black h-12"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950"
                                         value={program}
-                                        onChange={(e) => setProgram(e.target.value)}
+                                        onChange={e => setProgram(e.target.value)}
+                                        required
                                     >
+                                        <option value="">Select Program...</option>
                                         {initialPrograms.map(p => (
                                             <option key={p.id} value={p.name}>{p.name}</option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-black text-slate-950 uppercase">Term</label>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Cohort</label>
                                     <input
                                         type="text"
-                                        className="input bg-white border-2 border-slate-300 text-slate-950 font-black h-12"
-                                        placeholder="e.g. Year 1"
+                                        placeholder="e.g. 2025"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950 placeholder:font-normal placeholder:text-slate-400"
+                                        value={cohort}
+                                        onChange={e => setCohort(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Term</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Phase 1, Term 2"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950 placeholder:font-normal placeholder:text-slate-400"
                                         value={term}
-                                        onChange={(e) => setTerm(e.target.value)}
+                                        onChange={e => setTerm(e.target.value)}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -326,7 +370,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                             <button
                                 className="w-full bg-slate-950 text-white rounded-xl py-4 font-black text-lg hover:bg-indigo-600 transition-all shadow-xl flex items-center justify-center gap-3 mt-4"
                                 onClick={handleImport}
-                                disabled={isProcessing || detectedType === 'unknown' || ((detectedType === 'mentor' || detectedType === 'self') && (!projectId || !assessmentDate || !program || !term))}
+                                disabled={isProcessing || detectedType === 'unknown' || ((detectedType === 'mentor' || detectedType === 'self') && (!projectId || !assessmentDate || !program || !term || !cohort))}
                             >
                                 {isProcessing ? (
                                     <span className="flex items-center gap-2"><LoadingSpinner size={24} /> Executing Import...</span>
@@ -399,7 +443,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-black text-slate-600 uppercase">Detected Raw Scale</span>
                                             <span className="text-xs font-black text-slate-950 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                                                {previewData?.detectedScale ? `1 to ${previewData.detectedScale}` : '1 to 10 (Default)'}
+                                                {previewData?.detectedScale ? `1 to ${previewData.detectedScale} ` : '1 to 10 (Default)'}
                                             </span>
                                         </div>
                                     </div>

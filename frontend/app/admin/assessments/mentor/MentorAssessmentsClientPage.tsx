@@ -42,7 +42,17 @@ export default function MentorAssessmentsClientPage({
     const displayAssessments = useMemo(() => {
         if (selectedLog === 'all') return assessments;
         return assessments.filter(a => a.assessment_log_id === selectedLog);
-    }, [assessments, selectedLog]);
+    }, [initialAssessments, selectedProject, selectedLog, availableLogs]);
+
+    const maxRawScale = useMemo(() => {
+        let max = 5;
+        for (const a of displayAssessments) {
+            if (a.raw_scale_max && a.raw_scale_max > max) {
+                max = a.raw_scale_max;
+            }
+        }
+        return max;
+    }, [displayAssessments]);
 
     const handleScoreUpdate = (updatedAssessment: Assessment) => {
         setAssessments(prev => {
@@ -95,7 +105,7 @@ export default function MentorAssessmentsClientPage({
                         onClick={() => setDisplayScore('raw')}
                         className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'raw' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                        Raw Scores
+                        Raw Scores (1 to {maxRawScale})
                     </button>
                     <button
                         onClick={() => setDisplayScore('normalized')}

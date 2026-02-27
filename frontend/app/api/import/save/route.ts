@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
         const data = await request.json();
-        const { type, projectId, program, term, date, fileName, records: sheetsData } = data;
+        const { type, projectId, program, cohort, term, date, fileName, records: sheetsData } = data;
 
         if (!sheetsData || Object.keys(sheetsData).length === 0) {
             return NextResponse.json({ error: 'No records provided' }, { status: 400 });
@@ -195,6 +195,7 @@ export async function POST(request: NextRequest) {
                     assessment_date: date,
                     program_id: resolvedProgramId,
                     term: term,
+                    cohort: cohort || null,
                     data_type: type,
                     project_id: projectId,
                     file_name: fileName,
@@ -369,6 +370,7 @@ export async function POST(request: NextRequest) {
                     assessment_date: date,
                     program_id: resolvedProgramId,
                     term: term,
+                    cohort: cohort || null,
                     data_type: 'peer',
                     project_id: projectId || null,
                     file_name: fileName,
@@ -470,6 +472,7 @@ export async function POST(request: NextRequest) {
                     assessment_date: date,
                     program_id: resolvedProgramId,
                     term: term,
+                    cohort: cohort || null,
                     data_type: 'term',
                     project_id: projectId || null,
                     file_name: fileName,
@@ -606,6 +609,7 @@ export async function POST(request: NextRequest) {
                     assessment_date: date,
                     program_id: resolvedProgramId,
                     term: term,
+                    cohort: cohort || null,
                     data_type: 'mentor_notes',
                     project_id: projectId || null,
                     file_name: fileName,
