@@ -87,6 +87,8 @@ Your header row must contain columns that match these keywords:
 2. **Mentor Name:** Header must contain `mentor`.
 3. **Notes:** Header must contain `note`.
 
+> **Note on Projects:** Project association is done via the "Associated Project" dropdown in the Import Wizard UI, not in the spreadsheet itself. If left blank, the notes will be saved as "General (No Project)".
+
 ### Example Expected Format (Mentor Notes)
 
 | Sr. | Student Name | Mentor | Notes |

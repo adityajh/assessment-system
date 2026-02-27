@@ -213,7 +213,7 @@ CREATE TABLE assessment_logs (
     assessment_date DATE NOT NULL,
     program_id UUID REFERENCES programs(id) NOT NULL,
     term TEXT NOT NULL,
-    data_type TEXT NOT NULL CHECK (data_type IN ('self', 'mentor', 'peer', 'term')),
+    data_type TEXT NOT NULL CHECK (data_type IN ('self', 'mentor', 'peer', 'term', 'mentor_notes')),
     project_id UUID REFERENCES projects(id),
     file_name TEXT,
     mapping_config JSONB,
@@ -289,7 +289,7 @@ CREATE TABLE term_tracking (
     bow_score NUMERIC DEFAULT 0.0,
     term TEXT DEFAULT 'Year 1',         -- for future multi-year support
     updated_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(student_id, term)
+    UNIQUE(student_id, term, assessment_log_id)
 );
 ```
 
