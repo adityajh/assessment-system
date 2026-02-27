@@ -178,38 +178,64 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
             <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-2xl">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                     <div>
-                        <h3 className="text-xl font-extrabold text-slate-950 mb-1">Golden Data Templates</h3>
-                        <p className="text-sm text-slate-700 font-bold">Use these established formats for 100% recognition accuracy.</p>
-                    </div>
-                    <div className="flex flex-wrap gap-4 mt-4">
-                        <a
-                            href="/templates/Golden_Template_Matrix.xlsx"
-                            download
-                            className="bg-slate-950 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-slate-950 hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm"
-                        >
-                            <FileSpreadsheet size={16} /> Matrix Template
-                        </a>
-                        <a
-                            href="/templates/Golden_Template_PeerFeedback.xlsx"
-                            download
-                            className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-indigo-500 hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-sm"
-                        >
-                            <FileSpreadsheet size={16} /> Peer Template
-                        </a>
-                        <a
-                            href="/templates/GoldenTemplate_Term Report.xlsx"
-                            download
-                            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-emerald-500 hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-sm"
-                        >
-                            <FileSpreadsheet size={16} /> Term Report Template
-                        </a>
-                        <a
-                            href="/templates/Golden_Template_MentorNotes.xlsx"
-                            download
-                            className="bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-bold border-2 border-amber-500 hover:bg-amber-700 transition-all flex items-center gap-2 shadow-sm"
-                        >
-                            <FileSpreadsheet size={16} /> Mentor Notes Template
-                        </a>
+                        <h3 className="text-xl font-extrabold text-slate-950 mb-1">Import Guidelines & Nomenclature</h3>
+                        <p className="text-sm text-slate-700 font-bold mb-6">Follow these rules for successful automatic data recognition.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-slate-800">
+                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                <h4 className="font-extrabold text-slate-950 mb-3 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-indigo-600 rounded-full"></span>
+                                    1. File Naming Patterns
+                                </h4>
+                                <ul className="space-y-2 text-sm">
+                                    <li className="flex justify-between">
+                                        <span className="font-bold">Mentor Assessment:</span>
+                                        <span className="text-slate-500 italic">Default</span>
+                                    </li>
+                                    <li className="flex justify-between">
+                                        <span className="font-bold">Self Assessment:</span>
+                                        <span className="bg-indigo-100 px-1.5 rounded text-indigo-700 font-mono">Self</span>
+                                    </li>
+                                    <li className="flex justify-between">
+                                        <span className="font-bold">Peer Feedback:</span>
+                                        <span className="bg-indigo-100 px-1.5 rounded text-indigo-700 font-mono">Peer</span>
+                                    </li>
+                                    <li className="flex justify-between">
+                                        <span className="font-bold">Term Metrics:</span>
+                                        <span className="bg-indigo-100 px-1.5 rounded text-indigo-700 font-mono">Term</span>
+                                    </li>
+                                    <li className="flex justify-between">
+                                        <span className="font-bold">Mentor Notes:</span>
+                                        <span className="bg-indigo-100 px-1.5 rounded text-indigo-700 font-mono">Notes</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                <h4 className="font-extrabold text-slate-950 mb-3 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-emerald-600 rounded-full"></span>
+                                    2. Required Column Headers
+                                </h4>
+                                <ul className="space-y-3 text-sm">
+                                    <li>
+                                        <span className="font-bold block mb-1">Mentor/Self Matrix</span>
+                                        <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Code</code> (Col A), Student Names as headers.
+                                    </li>
+                                    <li>
+                                        <span className="font-bold block mb-1">Self Assessment (Extra)</span>
+                                        <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Question</code> or <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Prompt</code> column.
+                                    </li>
+                                    <li>
+                                        <span className="font-bold block mb-1">Peer Feedback</span>
+                                        <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Recipient Name</code>, <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Giver Name</code>, <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Project</code>.
+                                    </li>
+                                    <li>
+                                        <span className="font-bold block mb-1">Term Metrics</span>
+                                        <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Student Name</code>, <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Metric</code>, <code className="text-[11px] bg-slate-200 px-1.5 rounded text-slate-700">Value</code>.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

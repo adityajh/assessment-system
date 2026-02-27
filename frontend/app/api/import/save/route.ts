@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
                     mappingConfig[codeVal] = param.id;
 
-                    if (type === 'self' && questionColIdx !== -1) {
+                    if ((type === 'self' || type === 'mentor') && questionColIdx !== -1) {
                         mappingConfig.questions = mappingConfig.questions || [];
                         const qText = String(row[questionColIdx] || '').trim();
                         if (qText) {
