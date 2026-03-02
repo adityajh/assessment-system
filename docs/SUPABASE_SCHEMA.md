@@ -1,72 +1,17 @@
 # Supabase Database Schema — Let's Entreprise Assessment System
 
-> **Last Updated:** 2026-02-24  
-> **Purpose:** Database structure for the per-student assessment dashboard and the automated input-to-dashboard tool.
+> **Last Updated:** 2026-03-02
+> **Purpose:** Definitive reference for the database architecture of the Assessment System.
 
 ---
 
-## 1. Self-Assessment Question → Readiness Domain Mapping (DRAFT — For Review)
+## 1. Self-Assessment Question Mapping
 
-Before designing the schema, here is the proposed mapping of self-assessment questions to readiness domains and sub-parameters. **Please review and confirm/adjust before we finalize.**
+Question → readiness parameter mappings are **not hardcoded** in this document. They are stored dynamically in the `self_assessment_questions` table, which links each upload's question text to the appropriate `readiness_parameters` row.
 
-### 1.1 Business X-Ray Self-Assessment (20 questions, Scale 1–5)
+This allows different projects to have different question sets, and the Import Wizard to accept any compliant self-assessment file without code changes.
 
-| Q# | Question (shortened) | → Readiness Domain | → Sub-Parameter |
-|----|---------------------|-------------------|----------------|
-| 1  | How confidently can I calculate and interpret key financial metrics like break-even, cost structure, and ROI? | **Commercial** | Financial Literacy & Analysis |
-| 2  | How accurately was I able to estimate revenues, costs, and financial risks using field data and assumptions? | **Commercial** | Budgeting & Forecasting |
-| 3  | How effectively did I communicate with owners/staff to gather accurate operational and financial information? | **Commercial** | Negotiation & Vendor Management |
-| 4  | How well was I able to identify customer needs, frustrations, and emerging opportunities? | **Entrepreneurial** | Market Research & Opportunity Recognition |
-| 5  | How clearly can I map and explain the business model (BMC) and identify what drives value? | **Entrepreneurial** | Business Model & Lean Execution |
-| 6  | How confidently and clearly was I able to present insights and defend my analysis during the pitch? | **Entrepreneurial** | Networking & Pitching |
-| 7  | How clearly and persuasively did I communicate complex insights in my slides, visuals, and presentation? | **Marketing** | Content & Communication |
-| 8  | How well do I understand the target customers, competitive landscape, and external forces? | **Marketing** | Marketing Strategy & Execution |
-| 9  | How effectively could I identify inefficiencies, risks, or optimization opportunities in the business? | **Marketing** | Analysis & Optimization |
-| 10 | How creatively was I able to uncover deeper patterns or hidden levers affecting the business? | **Innovation** | Ideation & Creativity |
-| 11 | How well did I understand customer behavior and translate it into meaningful insights? | **Innovation** | Customer-Centered Insights |
-| 12 | How accurately and completely was I able to map the business system using strategy frameworks? | **Innovation** | Business & System Mapping |
-| 13 | How effectively did I plan tasks and collaborate with my team to complete all project requirements? | **Operational** | Planning & Collaboration |
-| 14 | How well was I able to identify key risks and explain business vulnerabilities? | **Operational** | Problem-Solving & Risk Management |
-| 15 | How effectively did I analyze business processes and manage my workflow? | **Operational** | Process & Project Management |
-| 16 | How thorough and well-organized was my documentation across all frameworks and deliverables? | **Operational** | Documentation & Reporting |
-| 17 | How well can I explain the different roles, functions, and systems that make a business run? | **Commercial** | Accounting & Compliance |
-| 18 | How professionally did I conduct myself during field visits, interviews, and team interactions? | **Professional** | Professional Conduct & Ethics |
-| 19 | How deeply did I reflect on my learnings and apply feedback throughout the project? | **Professional** | Continuous Growth & Reflection |
-| 20 | How confidently did I build rapport and ask meaningful questions to people involved in the business? | **Professional** | Networking & Presence |
-
-**Summary by domain:**
-- Commercial Readiness: Q1, Q2, Q3, Q17 (4 questions)
-- Entrepreneurial Readiness: Q4, Q5, Q6 (3 questions)
-- Marketing Readiness: Q7, Q8, Q9 (3 questions)
-- Innovation Readiness: Q10, Q11, Q12 (3 questions)
-- Operational Readiness: Q13, Q14, Q15, Q16 (4 questions)
-- Professional Readiness: Q18, Q19, Q20 (3 questions)
-
-> **Note:** Entrepreneurial is missing "Sales & Outreach" mapping. Marketing is missing "Sales Enablement" mapping. Professional is missing "Career Planning & Awareness" mapping. Innovation is missing "Prototyping & Agile Development". This is expected — the Business X-Ray project doesn't exercise every sub-parameter.
-
----
-
-### 1.2 Accounting Project Self-Assessment (9 scored questions, Scale 1–10)
-
-| Q# | Question (shortened) | → Readiness Domain | → Sub-Parameter |
-|----|---------------------|-------------------|----------------|
-| 1  | I can interpret financial statements and explain what they reveal about a business's health and performance. | **Commercial** | Financial Literacy & Analysis |
-| 2  | I correctly applied accounting principles to record transactions and prepare financial statements. | **Commercial** | Accounting & Compliance |
-| 3  | I understand how different business activities connect and reflect across financial statements as one system. | **Commercial** | Financial Literacy & Analysis |
-| 4  | I identified accounting entries and recorded them with accuracy. | **Commercial** | Accounting & Compliance |
-| 5  | I followed a structured process to complete accounting tasks. | **Operational** | Process & Project Management |
-| 6  | I clearly documented my work and communicated accounting outcomes through statements and presentations. | **Operational** | Documentation & Reporting |
-| 7  | I demonstrated honesty, responsibility, and professionalism while completing accounting work. | **Professional** | Professional Conduct & Ethics |
-| 8  | I steadily improved my approach and applied my learning as the project progressed. | **Professional** | Continuous Growth & Reflection |
-| 9  | I engaged professionally with mentors and asked meaningful questions during sessions. | **Professional** | Networking & Presence |
-
-**Summary by domain:**
-- Commercial Readiness: Q1, Q2, Q3, Q4 (4 questions)
-- Operational Readiness: Q5, Q6 (2 questions)
-- Professional Readiness: Q7, Q8, Q9 (3 questions)
-- Entrepreneurial, Marketing, Innovation: Not assessed (expected — Accounts project focuses on commercial/operational/professional skills)
-
-> **Note:** Q10 ("What is one specific skill or insight you gained?") is open-ended text — not scored. Can be stored as a qualitative note.
+> See [`DATA_IMPORT_RULES.md`](./DATA_IMPORT_RULES.md) for the required `Question` / `Prompt` column format.
 
 ---
 
@@ -213,12 +158,13 @@ CREATE TABLE assessment_logs (
     assessment_date DATE NOT NULL,
     program_id UUID REFERENCES programs(id) NOT NULL,
     term TEXT NOT NULL,
+    cohort TEXT,
     data_type TEXT NOT NULL CHECK (data_type IN ('self', 'mentor', 'peer', 'term', 'mentor_notes')),
     project_id UUID REFERENCES projects(id),
     file_name TEXT,
-    mapping_config JSONB,
+    mapping_config JSONB,             -- Stores raw_scale_max, question mappings, etc.
     records_inserted INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now() -- Used as "Upload Date" in UI
 );
 ```
 
@@ -238,8 +184,8 @@ CREATE TABLE assessments (
     assessment_framework_id UUID REFERENCES assessment_frameworks(id),
     self_assessment_question_id UUID REFERENCES self_assessment_questions(id),
     raw_score NUMERIC,                  -- original score as entered
-    raw_scale_min INT,                  -- 1 (for all scales)
-    raw_scale_max INT,                  -- 5 or 10 depending on source
+    raw_scale_min INT,                  -- 1 (default)
+    raw_scale_max INT,                  -- Captured from Import Wizard input
     normalized_score NUMERIC,           -- normalized to 1-10 scale
     source_file TEXT,                   -- which Excel file this came from (legacy)
     created_at TIMESTAMPTZ DEFAULT now(),
@@ -247,8 +193,7 @@ CREATE TABLE assessments (
 );
 
 -- Normalization formula: normalized = (raw - raw_min) / (raw_max - raw_min) * 9 + 1
--- This maps any scale to 1-10.
--- Example: Business X-Ray score of 4 (on 1-5 scale) → (4-1)/(5-1)*9+1 = 7.75
+-- Implementation detail: raw_max is retrieved from the associated assessment_log's mapping_config or the assessment row itself.
 ```
 
 ---

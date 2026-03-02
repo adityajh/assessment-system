@@ -8,15 +8,10 @@ A data pipeline + admin tool + student dashboard for the Let's Entreprise Year 1
 
 ```
 AssessmentSystem/
-├── data/               ← Source Excel files (assessments, peer feedback, term reports)
-├── docs/               ← Architecture docs (CONTEXT.md, SUPABASE_SCHEMA.md, FRONTEND_PLAN.md)
-├── scripts/            ← Python ETL scripts + SQL migrations
-│   ├── import_data.py      ← Ingests all 5 Excel files into Supabase
-│   ├── run_migration.py    ← Applies SQL schema to Supabase
-│   ├── migrations/         ← SQL schema files
-│   └── venv/               ← Python virtual environment
-├── frontend/           ← Next.js 16 app (admin panel + student dashboard)
-└── STATUS.md           ← Project roadmap and agent coordination
+├── docs/               ← Architecture docs (CONTEXT.md, SUPABASE_SCHEMA.md, DATA_IMPORT_RULES.md)
+├── scripts/            ← Python utility scripts (backfills, migrations)
+├── frontend/           ← Next.js 15 app (Admin Panel + Student Dashboard)
+└── README.md           ← Project overview
 ```
 
 ---
