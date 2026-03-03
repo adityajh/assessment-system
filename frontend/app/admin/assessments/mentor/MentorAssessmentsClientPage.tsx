@@ -170,8 +170,8 @@ export default function MentorAssessmentsClientPage({
                     <span>Log={selectedLog?.slice(0, 8) || 'NONE'}</span>
                     <span>Rows={displayAssessments.length}</span>
                     <span>TotalFetched={assessments.length}</span>
+                    <span>ProjectsInData={[...new Set(assessments.map(a => a.project_id?.slice(0, 4)))].join(',')}</span>
                     <span>ActiveStudents={activeStudents.length}</span>
-                    <span>Params={initialParameters.length}</span>
                 </div>
                 {!selectedProject ? (
                     <div className="flex-1 flex items-center justify-center text-slate-500">
