@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog, SelfAssessmentQuestion } from '@/lib/supabase/queries/assessments';
+import { useState, useMemo, useEffect } from 'react';
+import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog, SelfAssessmentQuestion, getAssessmentsByLog } from '@/lib/supabase/queries/assessments';
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
 import { ScoreGrid } from '@/components/admin/ScoreGrid';
 import { ScoreDisplayToggle } from '@/components/admin/ScoreDisplayToggle';
+import { createClient } from '@/lib/supabase/client';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 interface SelfAssessmentsProps {
     initialStudents: Student[];
@@ -26,9 +28,10 @@ export default function SelfAssessmentsClientPage({
     initialLogs,
     initialQuestions
 }: SelfAssessmentsProps) {
-    const [assessments, setAssessments] = useState(initialAssessments);
+    const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [selectedProject, setSelectedProject] = useState<string>(initialProjects[0]?.id || '');
     const [displayScore, setDisplayScore] = useState<'raw' | 'normalized'>('normalized');
+    const [isLoading, setIsLoading] = useState(true);
 
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
 
@@ -40,13 +43,32 @@ export default function SelfAssessmentsClientPage({
         initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || ''))[0]?.id || ''
     );
 
+    useEffect(() => {
+        const fetchAssessments = async () => {
+            if (!selectedLog) {
+                setAssessments([]);
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                const supabase = createClient();
+                const data = await getAssessmentsByLog(supabase, selectedLog, 'self');
+                setAssessments(data);
+            } catch (error) {
+                console.error('Error fetching assessments:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAssessments();
+    }, [selectedLog]);
+
     const displayAssessments = useMemo(() => {
-        let filtered = assessments.filter(a => a.project_id === selectedProject);
-        if (selectedLog) {
-            filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
-        }
-        return filtered;
-    }, [assessments, selectedProject, selectedLog]);
+        return assessments; // Already filtered by log in the fetch
+    }, [assessments]);
 
     const displayQuestions = useMemo(() => {
         const logsToConsider = selectedLog
@@ -152,7 +174,12 @@ export default function SelfAssessmentsClientPage({
                 />
             </div>
 
-            <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">
+            <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col relative">
+                {isLoading && (
+                    <div className="absolute inset-0 z-50 bg-slate-950/40 backdrop-blur-[2px] flex items-center justify-center">
+                        <LoadingSpinner size={48} />
+                    </div>
+                )}
                 {!selectedProject ? (
                     <div className="flex-1 flex items-center justify-center text-slate-500">
                         Please select a project to view scores

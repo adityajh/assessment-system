@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog } from '@/lib/supabase/queries/assessments';
+import { useState, useMemo, useEffect } from 'react';
+import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog, getAssessmentsByLog } from '@/lib/supabase/queries/assessments';
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
 import { ScoreGrid } from '@/components/admin/ScoreGrid';
 import { ScoreDisplayToggle } from '@/components/admin/ScoreDisplayToggle';
+import { createClient } from '@/lib/supabase/client';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 interface MentorAssessmentsProps {
     initialStudents: Student[];
@@ -24,9 +26,10 @@ export default function MentorAssessmentsClientPage({
     initialAssessments,
     initialLogs
 }: MentorAssessmentsProps) {
-    const [assessments, setAssessments] = useState(initialAssessments);
+    const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [selectedProject, setSelectedProject] = useState<string>(initialProjects[0]?.id || '');
     const [displayScore, setDisplayScore] = useState<'raw' | 'normalized'>('normalized');
+    const [isLoading, setIsLoading] = useState(true);
 
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
 
@@ -39,34 +42,32 @@ export default function MentorAssessmentsClientPage({
         initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || ''))[0]?.id || ''
     );
 
+    useEffect(() => {
+        const fetchAssessments = async () => {
+            if (!selectedLog) {
+                setAssessments([]);
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                const supabase = createClient();
+                const data = await getAssessmentsByLog(supabase, selectedLog, 'mentor');
+                setAssessments(data);
+            } catch (error) {
+                console.error('Error fetching assessments:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAssessments();
+    }, [selectedLog]);
+
     const displayAssessments = useMemo(() => {
-        let filtered = assessments.filter(a => a.project_id === selectedProject);
-        if (selectedLog) {
-            filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
-        }
-
-        // Debugging logs for Business X-Ray data visibility
-        console.log('--- MENTOR GRID DEBUG ---');
-        console.log('Project:', selectedProject, '| Log:', selectedLog);
-        console.log('Filtered Row Count:', filtered.length);
-        if (filtered.length > 0) {
-            console.log('Sample Row:', {
-                student: filtered[0].student_id,
-                param: filtered[0].parameter_id,
-                score: filtered[0].raw_score
-            });
-        }
-        console.log('Active Students Count:', activeStudents.length);
-        if (activeStudents.length > 0) {
-            console.log('Sample Student:', {
-                id: activeStudents[0].id,
-                name: activeStudents[0].canonical_name
-            });
-        }
-        console.log('Total Parameters Count:', initialParameters.length);
-
-        return filtered;
-    }, [assessments, selectedProject, selectedLog, activeStudents, initialParameters]);
+        return assessments; // Already filtered by log in the fetch
+    }, [assessments]);
 
     const scaleInfo = useMemo(() => {
         if (displayAssessments.length === 0) return { min: null, max: null };
@@ -164,15 +165,12 @@ export default function MentorAssessmentsClientPage({
                 />
             </div>
 
-            <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">
-                <div className="bg-amber-950/20 border-b border-amber-500/20 p-2 text-[10px] text-amber-200/60 font-mono flex gap-4 overflow-x-auto whitespace-nowrap">
-                    <span>DEBUG: Project={selectedProject.slice(0, 8)}</span>
-                    <span>Log={selectedLog?.slice(0, 8) || 'NONE'}</span>
-                    <span>Rows={displayAssessments.length}</span>
-                    <span>TotalFetched={assessments.length}</span>
-                    <span>ProjectsInData={[...new Set(assessments.map(a => a.project_id?.slice(0, 4)))].join(',')}</span>
-                    <span>ActiveStudents={activeStudents.length}</span>
-                </div>
+            <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col relative">
+                {isLoading && (
+                    <div className="absolute inset-0 z-50 bg-slate-950/40 backdrop-blur-[2px] flex items-center justify-center">
+                        <LoadingSpinner size={48} />
+                    </div>
+                )}
                 {!selectedProject ? (
                     <div className="flex-1 flex items-center justify-center text-slate-500">
                         Please select a project to view scores
