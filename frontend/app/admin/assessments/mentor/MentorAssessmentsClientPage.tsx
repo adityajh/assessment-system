@@ -165,6 +165,13 @@ export default function MentorAssessmentsClientPage({
             </div>
 
             <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">
+                <div className="bg-amber-950/20 border-b border-amber-500/20 p-2 text-[10px] text-amber-200/60 font-mono flex gap-4 overflow-x-auto whitespace-nowrap">
+                    <span>DEBUG: Project={selectedProject.slice(0, 8)}</span>
+                    <span>Log={selectedLog?.slice(0, 8) || 'NONE'}</span>
+                    <span>Rows={displayAssessments.length}</span>
+                    <span>ActiveStudents={activeStudents.length}</span>
+                    <span>Params={initialParameters.length}</span>
+                </div>
                 {!selectedProject ? (
                     <div className="flex-1 flex items-center justify-center text-slate-500">
                         Please select a project to view scores
