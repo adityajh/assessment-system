@@ -27,15 +27,25 @@ export default function PeerFeedbackClientPage({
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
 
     const availableLogs = useMemo(() => {
-        return initialLogs.filter(log => log.project_id === selectedProject || log.project_id === null); // Support null for generic term/peer imports
+        if (selectedProject === 'unassigned') {
+            return initialLogs.filter(log => log.project_id === null);
+        }
+        return initialLogs.filter(log => log.project_id === selectedProject);
     }, [initialLogs, selectedProject]);
 
-    const [selectedLog, setSelectedLog] = useState<string>(
-        initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || '') || log.project_id === null)[0]?.id || ''
-    );
+    const [selectedLog, setSelectedLog] = useState<string>(() => {
+        const firstAvailable = initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || ''))[0];
+        return firstAvailable?.id || '';
+    });
 
     const displayFeedback = useMemo(() => {
-        let filtered = initialFeedback.filter(f => f.project_id === selectedProject);
+        let filtered = initialFeedback;
+        if (selectedProject === 'unassigned') {
+            filtered = filtered.filter(f => f.project_id === null || f.project_id === undefined);
+        } else {
+            filtered = filtered.filter(f => f.project_id === selectedProject);
+        }
+
         if (selectedLog) {
             filtered = filtered.filter(f => f.assessment_log_id === selectedLog);
         }
@@ -125,13 +135,18 @@ export default function PeerFeedbackClientPage({
                         value={selectedProject}
                         onChange={(e) => {
                             setSelectedProject(e.target.value);
-                            const firstLog = initialLogs.filter(l => l.project_id === e.target.value || l.project_id === null)[0];
+                            const firstLog = initialLogs.filter(l =>
+                                (e.target.value === 'unassigned' ? l.project_id === null : l.project_id === e.target.value)
+                            )[0];
                             setSelectedLog(firstLog?.id || '');
                         }}
                     >
                         {initialProjects.map(p => (
                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
                         ))}
+                        {initialLogs.some(l => l.project_id === null) && (
+                            <option value="unassigned">Unassigned / Legacy Events</option>
+                        )}
                     </select>
                 </div>
 
