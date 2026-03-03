@@ -44,7 +44,6 @@ export default function MentorAssessmentsClientPage({
         if (selectedLog) {
             filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
         }
-        console.log('[DEBUG] Mentor Page - Project:', selectedProject, 'Log:', selectedLog, 'Rows:', filtered.length);
         return filtered;
     }, [assessments, selectedProject, selectedLog]);
 
