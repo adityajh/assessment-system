@@ -4,12 +4,14 @@ All notable changes to the Let's Entreprise Assessment System are documented her
 
 Format: `## [YYYY-MM-DD] — Description`
 
-## [2026-03-03] — UI Normalization & Scaling Alignment
+## [2026-03-03] — Scalability Refactor & On-Demand Data
 
-- **Unified Normalization:** Standardized Mentor, Self, and Peer assessment normalization to use Linear (Min-Max) Interpolation (`normalized = (raw - min) / (max - min) * 9 + 1`).
-- **Dynamic Score Toggle:** Created a centralized `<ScoreDisplayToggle />` component that dynamically extracts the exact raw score range (`min`/`max`) selected during import and displays it in the toggle label (e.g., "Raw Scores (1-4)").
-- **Query Limits:** Increased the Supabase frontend fetch limit for assessment rows to 5000 to ensure full data visibility (e.g., Business X-Ray datasets).
-- **Clean Grid Display:** Removed the `/max` suffix (e.g., `/10`) from all assessment score cells for a cleaner look.
+- **Fetch-on-Demand Architecture:** Migrated Mentor and Self-Assessment pages from global fetching (which hit a 1,000-row Supabase limit) to reactive, log-specific fetching. This allows the system to scale to infinite records.
+- **Loading States:** Added `<LoadingSpinner />` to assessment grids for better UX during on-demand data retrieval.
+- **Peer Feedback Selector Fix**: Implemented strict project filtering for assessment events. Added an **"Unassigned / Legacy"** project category to prevent unlinked import logs (like "Legacy peer.xlsx") from appearing under specific projects.
+- **Unified Normalization:** Standardized Mentor, Self, and Peer assessment normalization to use Linear (Min-Max) Interpolation.
+- **Dynamic Score Toggle:** Created a centralized `<ScoreDisplayToggle />` component.
+- **Vercel Build Stability**: Fixed TypeScript `never` type inference errors on the Student Dashboard caused by the empty initial assessment state.
 
 ---
 

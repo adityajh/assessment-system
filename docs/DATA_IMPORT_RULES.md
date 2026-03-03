@@ -95,7 +95,7 @@ Your header row must contain columns that match these keywords:
 2. **Mentor Name:** Header must contain `mentor`.
 3. **Notes:** Header must contain `note`.
 
-> **Note on Projects:** Project association is done via the "Associated Project" dropdown in the Import Wizard UI, not in the spreadsheet itself. If left blank, the notes will be saved as "General (No Project)".
+> **Note on Projects:** Project association is done via the "Associated Project" dropdown in the Import Wizard UI, not in the spreadsheet itself. If left blank, the data will be saved as **"Unassigned / Legacy"**. These can be accessed in the Peer Feedback admin panel by selecting the "Unassigned" project option.
 
 ### Example Expected Format (Mentor Notes)
 

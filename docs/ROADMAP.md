@@ -1,6 +1,6 @@
 # Project Roadmap — Next 10 Steps
 
-> **Last Updated:** 2026-03-02
+> **Last Updated:** 2026-03-03
 > **Related:** [VISION.md](./VISION.md) | [CHANGELOG.md](./CHANGELOG.md)
 
 ---
@@ -8,8 +8,8 @@
 ### Step 1 — Fix data import bugs
 Audit and resolve all known import edge cases: scale mismatches, duplicate rows, unmatched student names. Add pre-commit validation warnings so the user can catch and fix issues before data is saved.
 
-### Step 2 — Student dashboard v1 (mentor view)
-Design and ship the student dashboard for mentor use during 1:1 coaching sessions. Core sections: readiness overview, project breakdown, peer feedback, term tracking, mentor notes. Shareable via URL — no login required.
+### Step 2 — Student dashboard v1 (mentor view) [SHIPPED]
+Design and ship the student dashboard for mentor use during 1:1 coaching sessions. Core sections: readiness overview, project breakdown, peer feedback, term tracking, mentor notes.
 
 ### Step 3 — Iterate on dashboard visualisations
 Collect feedback from mentors using the dashboard. Refine chart design, improve tooltips, drill-downs, and mobile responsiveness based on real use.
