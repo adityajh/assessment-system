@@ -80,7 +80,7 @@ export async function getMentorAssessmentData(supabase: SupabaseClient) {
         projects: projectsResult.data as Project[],
         domains: domainsResult.data as ReadinessDomain[],
         parameters: paramsResult.data as ReadinessParameter[],
-        assessments: [], // assessments will be fetched by log
+        assessments: [] as Assessment[], // assessments will be fetched by log
         assessmentLogs: logsResult.data as AssessmentLog[],
     };
 }
@@ -107,7 +107,7 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
         projects: projectsResult.data as Project[],
         domains: domainsResult.data as ReadinessDomain[],
         parameters: paramsResult.data as ReadinessParameter[],
-        assessments: [], // assessments will be fetched by log
+        assessments: [] as Assessment[], // assessments will be fetched by log
         assessmentLogs: logsResult.data as AssessmentLog[],
         questions: questionsResult.data as SelfAssessmentQuestion[],
     };

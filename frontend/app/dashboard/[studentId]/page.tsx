@@ -32,15 +32,13 @@ export default async function StudentDashboardPage({ params }: { params: Promise
     const data = await getMentorAssessmentData(supabase);
     const projects = await getProjects(supabase);
 
-    // Also fetch self-assessments
-    const { data: selfAssessments } = await supabase
-        .from('assessments')
-        .select('*')
-        .eq('assessment_type', 'self')
-        .eq('student_id', studentId);
+    // Fetch assessments for this specific student
+    const [{ data: mentorAssessments }, { data: selfAssessments }] = await Promise.all([
+        supabase.from('assessments').select('*').eq('assessment_type', 'mentor').eq('student_id', studentId),
+        supabase.from('assessments').select('*').eq('assessment_type', 'self').eq('student_id', studentId)
+    ]);
 
-    // Filter mentor assessments for this student
-    const studentMentorAssessments = data.assessments.filter(a => a.student_id === studentId);
+    const studentMentorAssessments = mentorAssessments || [];
     const studentSelfAssessments = selfAssessments || [];
 
     // Fetch Term Tracking
