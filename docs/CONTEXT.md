@@ -136,13 +136,15 @@ All scores are normalized to a **1–10 scale** at import time and stored as `no
 
 | Source | Raw Scale | Normalized to |
 |--------|-----------|---------------|
-| Mentor Assessment | 1–10 | 1–10 (identity) |
-| Self Assessment (varies) | 1–5 or 1–10 | 1–10 |
-| Peer Feedback | 1–5 | Stored as-is (separate axis) |
-| Term Report | Counts / credits | Stored as-is |
+| Mentor Assessment | 1–10 (typically) | 1–10 |
+| Self Assessment | 1–4, 1–5, 1–10 | 1–10 |
+| Peer Feedback | 1–5 | 1–10 |
+| Term Report | Counts / credits | Stored as-is (Not normalized) |
 
-**Formula:** `normalized = (raw - min) / (max - min) * 9 + 1`
+**Formula (Linear Min-Max Interpolation):** 
+`normalized = (raw - min) / (max - min) * 9 + 1`
 
+> **Note:** The `min` and `max` values are stored in the `assessments` table row directly, or in the `assessment_logs.mapping_config` JSON block (for Peer Feedback). They are configured manually during the Import Wizard flow.
 ---
 
 ## 6. Student Roster

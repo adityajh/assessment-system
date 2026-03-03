@@ -13,7 +13,7 @@ To ensure flawless data ingestion through the Import Wizard, all CSV or Excel fi
 ### 1. 🗂️ One File per Assessment Event
 **Rule:** Only upload exactly one flat dataset at a time.
 * **Why?** The Import Wizard applies a single set of metadata (Project, Date, Cohort) to the entire file.
-* **Manual Range:** If your file contains scores (Self/Mentor), you will be asked to manually enter the **Raw Score Range** (e.g., 1 to 5, or 1 to 10) in the Wizard to ensure correct normalization.
+* **Manual Range:** If your file contains scores (Mentor/Self/Peer), you will be asked to manually confirm the **Raw Score Range** (e.g., 1 to 5, or 1 to 10) in the Wizard to ensure correct normalization and UI labels.
 
 ### 2. 🧢 First Row is the Header
 **Rule:** The very first row (Row 1) of your sheet must contain your column titles.

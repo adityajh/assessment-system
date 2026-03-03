@@ -4,6 +4,13 @@ All notable changes to the Let's Entreprise Assessment System are documented her
 
 Format: `## [YYYY-MM-DD] — Description`
 
+## [2026-03-03] — UI Normalization & Scaling Alignment
+
+- **Unified Normalization:** Standardized Mentor, Self, and Peer assessment normalization to use Linear (Min-Max) Interpolation (`normalized = (raw - min) / (max - min) * 9 + 1`).
+- **Dynamic Score Toggle:** Created a centralized `<ScoreDisplayToggle />` component that dynamically extracts the exact raw score range (`min`/`max`) selected during import and displays it in the toggle label (e.g., "Raw Scores (1-4)").
+- **Query Limits:** Increased the Supabase frontend fetch limit for assessment rows to 5000 to ensure full data visibility (e.g., Business X-Ray datasets).
+- **Clean Grid Display:** Removed the `/max` suffix (e.g., `/10`) from all assessment score cells for a cleaner look.
+
 ---
 
 ## [2026-03-02] — Architecture doc restructure & CHANGELOG created
