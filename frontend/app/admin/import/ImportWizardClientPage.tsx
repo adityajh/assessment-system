@@ -354,7 +354,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                             <div className="flex flex-col gap-2">
                                 <label className="text-md font-black text-slate-950 uppercase tracking-wide">Detected Data Type</label>
                                 <select
-                                    className="input bg-white border-slate-300 text-black font-medium"
+                                    className="input bg-white border-slate-300 !text-slate-900 !font-bold"
                                     value={detectedType}
                                     onChange={(e) => setDetectedType(e.target.value as ImportType)}
                                 >
@@ -371,7 +371,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                 <div className="flex flex-col gap-2">
                                     <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
                                     <select
-                                        className="input bg-white border-2 border-slate-300 text-slate-950 font-black h-12 focus:border-indigo-600 transition-all"
+                                        className="input bg-white border-2 border-slate-300 !text-slate-900 !font-bold h-12 focus:border-indigo-600 transition-all"
                                         value={projectId}
                                         onChange={(e) => setProjectId(e.target.value)}
                                     >
