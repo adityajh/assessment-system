@@ -32,11 +32,13 @@ export default function PeerFeedbackClientPage({
 
     const [selectedLog, setSelectedLog] = useState<string>('all');
 
-    // Filter feedback based on selected log
     const displayFeedback = useMemo(() => {
-        if (selectedLog === 'all') return initialFeedback;
-        return initialFeedback.filter(f => f.assessment_log_id === selectedLog);
-    }, [initialFeedback, selectedLog]);
+        let filtered = initialFeedback.filter(f => f.project_id === selectedProject);
+        if (selectedLog !== 'all') {
+            filtered = filtered.filter(f => f.assessment_log_id === selectedLog);
+        }
+        return filtered;
+    }, [initialFeedback, selectedProject, selectedLog]);
 
     // Compute exact min/max bounds from logs covering current feedback
     const scaleInfo = useMemo(() => {

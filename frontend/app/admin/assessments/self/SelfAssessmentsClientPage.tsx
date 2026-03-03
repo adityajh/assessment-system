@@ -39,9 +39,12 @@ export default function SelfAssessmentsClientPage({
     const [selectedLog, setSelectedLog] = useState<string>('all');
 
     const displayAssessments = useMemo(() => {
-        if (selectedLog === 'all') return assessments;
-        return assessments.filter(a => a.assessment_log_id === selectedLog);
-    }, [assessments, selectedLog]);
+        let filtered = assessments.filter(a => a.project_id === selectedProject);
+        if (selectedLog !== 'all') {
+            filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
+        }
+        return filtered;
+    }, [assessments, selectedProject, selectedLog]);
 
     const displayQuestions = useMemo(() => {
         let logsToConsider = availableLogs;

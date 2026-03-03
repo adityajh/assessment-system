@@ -41,9 +41,12 @@ export default function MentorAssessmentsClientPage({
     // For now, "all" is fine to show all logs for that project.
 
     const displayAssessments = useMemo(() => {
-        if (selectedLog === 'all') return assessments;
-        return assessments.filter(a => a.assessment_log_id === selectedLog);
-    }, [initialAssessments, selectedProject, selectedLog, availableLogs]);
+        let filtered = assessments.filter(a => a.project_id === selectedProject);
+        if (selectedLog !== 'all') {
+            filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
+        }
+        return filtered;
+    }, [assessments, selectedProject, selectedLog]);
 
     const scaleInfo = useMemo(() => {
         if (displayAssessments.length === 0) return { min: null, max: null };
