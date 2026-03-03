@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { PeerFeedback } from '@/lib/supabase/queries/feedback';
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
+import { ScoreDisplayToggle } from '@/components/admin/ScoreDisplayToggle';
 
 interface PeerFeedbackProps {
     initialStudents: Student[];
@@ -37,6 +38,38 @@ export default function PeerFeedbackClientPage({
         return initialFeedback.filter(f => f.assessment_log_id === selectedLog);
     }, [initialFeedback, selectedLog]);
 
+    // Compute exact min/max bounds from logs covering current feedback
+    const scaleInfo = useMemo(() => {
+        if (displayFeedback.length === 0) return { min: null, max: null };
+
+        let min = Infinity;
+        let max = -Infinity;
+        let found = false;
+
+        // Logs associated with currently displayed feedback
+        const activeLogIds = new Set(displayFeedback.map(f => f.assessment_log_id).filter(Boolean));
+
+        for (const logId of activeLogIds) {
+            const log = availableLogs.find(l => l.id === logId);
+            if (log?.mapping_config?.raw_scale_max) {
+                const rowMin = log.mapping_config.raw_scale_min !== undefined ? Number(log.mapping_config.raw_scale_min) : 1;
+                const rowMax = Number(log.mapping_config.raw_scale_max);
+
+                min = Math.min(min, rowMin);
+                max = Math.max(max, rowMax);
+                found = true;
+            }
+        }
+
+        // Peer Feedback historically is strictly 1-5 if not stamped with metadata
+        if (!found) return { min: 1, max: 5 };
+
+        return {
+            min: min !== Infinity ? min : 1,
+            max: max !== -Infinity ? max : 5,
+        };
+    }, [displayFeedback, availableLogs]);
+
     // Compute averages for each student on the selected project
     const studentAverages = useMemo(() => {
         const metrics = ['quality_of_work', 'initiative_ownership', 'communication', 'collaboration', 'growth_mindset'] as const;
@@ -51,7 +84,11 @@ export default function PeerFeedbackClientPage({
                 if (rawScores.length > 0) {
                     const rawAvg = rawScores.reduce((a, b) => a + b, 0) / rawScores.length;
                     result[student.id][`${metric}_raw`] = Number(rawAvg.toFixed(1));
-                    result[student.id][`${metric}_norm`] = Number(((rawAvg / PEER_SCALE_MAX) * 10).toFixed(1));
+                    // Dynamic Interpolation based on current scale bounds
+                    const sMin = scaleInfo.min || 1;
+                    const sMax = scaleInfo.max || 5;
+                    const normVal = sMax > sMin ? (((rawAvg - sMin) / (sMax - sMin)) * 9 + 1) : rawAvg;
+                    result[student.id][`${metric}_norm`] = Number(normVal.toFixed(1));
                 } else {
                     result[student.id][`${metric}_raw`] = null;
                     result[student.id][`${metric}_norm`] = null;
@@ -61,8 +98,11 @@ export default function PeerFeedbackClientPage({
             const rawScoresAll = metrics.map(m => result[student.id][`${m}_raw`]).filter((s): s is number => s !== null);
             const overallRaw = rawScoresAll.length > 0 ? Number((rawScoresAll.reduce((a, b) => a + b, 0) / rawScoresAll.length).toFixed(1)) : null;
             result[student.id]['overall_raw'] = overallRaw;
-            result[student.id]['overall_norm'] = overallRaw !== null ? Number(((overallRaw / PEER_SCALE_MAX) * 10).toFixed(1)) : null;
-            
+            // Dynamic Interpolation
+            const sMin = scaleInfo.min || 1;
+            const sMax = scaleInfo.max || 5;
+            result[student.id]['overall_norm'] = overallRaw !== null ? Number((sMax > sMin ? (((overallRaw - sMin) / (sMax - sMin)) * 9 + 1) : overallRaw).toFixed(1)) : null;
+
             // Counts
             result[student.id]['count'] = studentFeedback.length; // Received
             result[student.id]['given_count'] = displayFeedback.filter(f => f.giver_id === student.id && f.project_id === selectedProject).length;
@@ -109,20 +149,13 @@ export default function PeerFeedbackClientPage({
                     </select>
                 </div>
 
-                <div className="ml-auto flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800">
-                    <button
-                        onClick={() => setDisplayScore('raw')}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'raw' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
-                    >
-                        Raw (1-5)
-                    </button>
-                    <button
-                        onClick={() => setDisplayScore('normalized')}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'normalized' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
-                    >
-                        Normalized (1-10)
-                    </button>
-                </div>
+                <ScoreDisplayToggle
+                    displayScore={displayScore}
+                    onChange={setDisplayScore}
+                    min={scaleInfo.min}
+                    max={scaleInfo.max}
+                    hasData={displayFeedback.length > 0}
+                />
             </div>
 
             <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">

@@ -72,6 +72,11 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
             setPreviewData(data);
             setDetectedType(data.detectedType as ImportType);
 
+            if (data.detectedScale) {
+                setRawScaleMax(data.detectedScale);
+                setRawScaleMin(1); // Default to 1
+            }
+
         } catch (err: any) {
             setError(err.message);
             setFile(null);

@@ -362,7 +362,7 @@ export async function POST(request: NextRequest) {
                     data_type: 'peer',
                     project_id: projectId || null,
                     file_name: fileName,
-                    mapping_config: lastColMap as any, // Save the column detection for audit
+                    mapping_config: { ...lastColMap, raw_scale_min: rawScaleMin ?? 1, raw_scale_max: rawScaleMax ?? 5 } as any, // Save the column detection and scale for audit
                     records_inserted: peerInserts.length
                 })
                 .select().single();

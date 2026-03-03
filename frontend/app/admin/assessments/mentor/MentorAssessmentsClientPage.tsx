@@ -5,6 +5,7 @@ import { Assessment, ReadinessDomain, ReadinessParameter, AssessmentLog } from '
 import { Student } from '@/lib/supabase/queries/students';
 import { Project } from '@/lib/supabase/queries/projects';
 import { ScoreGrid } from '@/components/admin/ScoreGrid';
+import { ScoreDisplayToggle } from '@/components/admin/ScoreDisplayToggle';
 
 interface MentorAssessmentsProps {
     initialStudents: Student[];
@@ -44,15 +45,42 @@ export default function MentorAssessmentsClientPage({
         return assessments.filter(a => a.assessment_log_id === selectedLog);
     }, [initialAssessments, selectedProject, selectedLog, availableLogs]);
 
-    const maxRawScale = useMemo(() => {
-        let max = 5;
+    const scaleInfo = useMemo(() => {
+        if (displayAssessments.length === 0) return { min: null, max: null };
+
+        let min = Infinity;
+        let max = -Infinity;
+        let found = false;
+
         for (const a of displayAssessments) {
-            if (a.raw_scale_max && a.raw_scale_max > max) {
-                max = a.raw_scale_max;
+            let rowMin = a.raw_scale_min;
+            let rowMax = a.raw_scale_max;
+
+            // Fallback to log if not on row (legacy imports)
+            if (rowMax == null && a.assessment_log_id) {
+                const log = availableLogs.find(l => l.id === a.assessment_log_id);
+                if (log?.mapping_config?.raw_scale_max) {
+                    rowMax = Number(log.mapping_config.raw_scale_max);
+                    rowMin = log.mapping_config.raw_scale_min !== undefined ? Number(log.mapping_config.raw_scale_min) : 1;
+                }
+            }
+
+            if (rowMin !== null && rowMin !== undefined) {
+                min = Math.min(min, rowMin);
+                found = true;
+            }
+            if (rowMax !== null && rowMax !== undefined) {
+                max = Math.max(max, rowMax);
+                found = true;
             }
         }
-        return max;
-    }, [displayAssessments]);
+
+        if (!found) return { min: null, max: null };
+        return {
+            min: min !== Infinity ? min : 1,
+            max: max !== -Infinity ? max : 10,
+        };
+    }, [displayAssessments, availableLogs]);
 
     const handleScoreUpdate = (updatedAssessment: Assessment) => {
         setAssessments(prev => {
@@ -100,20 +128,13 @@ export default function MentorAssessmentsClientPage({
                     </select>
                 </div>
 
-                <div className="ml-auto flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800">
-                    <button
-                        onClick={() => setDisplayScore('raw')}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'raw' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
-                    >
-                        Raw Scores (1 to {maxRawScale})
-                    </button>
-                    <button
-                        onClick={() => setDisplayScore('normalized')}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${displayScore === 'normalized' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
-                    >
-                        Normalized (1-10)
-                    </button>
-                </div>
+                <ScoreDisplayToggle
+                    displayScore={displayScore}
+                    onChange={setDisplayScore}
+                    min={scaleInfo.min}
+                    max={scaleInfo.max}
+                    hasData={displayAssessments.length > 0}
+                />
             </div>
 
             <div className="flex-1 min-h-[500px] bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">

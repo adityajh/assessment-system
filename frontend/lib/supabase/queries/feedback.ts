@@ -23,7 +23,7 @@ export async function getPeerFeedbackData(supabase: SupabaseClient) {
         supabase.from('students').select('*').order('student_number'),
         supabase.from('projects').select('*').order('sequence').order('sequence_label'),
         supabase.from('peer_feedback').select('*').order('created_at', { ascending: false }),
-        supabase.from('assessment_logs').select('id, assessment_date, file_name, project_id').eq('data_type', 'peer').order('assessment_date', { ascending: false })
+        supabase.from('assessment_logs').select('id, assessment_date, file_name, project_id, mapping_config').eq('data_type', 'peer').order('assessment_date', { ascending: false })
     ]);
 
     if (studentsResult.error) throw studentsResult.error;

@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        const detectedScale = maxFoundScore > 0 ? (maxFoundScore <= 5 ? 5 : 10) : null;
+        const detectedScale = maxFoundScore > 0 ? (maxFoundScore <= 4 ? 4 : (maxFoundScore <= 5 ? 5 : 10)) : null;
 
         return NextResponse.json({
             success: true,

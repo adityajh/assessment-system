@@ -1,22 +1,30 @@
 # 📊 Golden Rules for Assessment Data Uploads
 
-To ensure flawless data ingestion through the Import Wizard, all CSV or Excel templates must adhere strictly to the following format rules:
+To ensure flawless data ingestion through the Import Wizard, all CSV or Excel files must follow these rules:
+
+### 0. 🏷️ File Naming Nomenclature
+**CRITICAL:** The Import Wizard uses the filename to automatically detect the **Data Type**. Your filename **MUST** contain one of the following keywords:
+*   **"Self"** → For Student Self-Assessments
+*   **"Peer"** → For Peer Feedback Matrices
+*   **"Term"** → For Term Tracking (CBP/Conflexion/BOW)
+*   **"Notes"** → For Mentor Qualitative Notes
+*   *(No keyword defaults to Mentor Assessments)*
 
 ### 1. 🗂️ One File per Assessment Event
-**Rule:** Only upload exactly one flat dataset at a time based on the specific event you are assessing.
-* **Why?** The Import Wizard dropdowns (Program, Term, Date) apply exactly one set of metadata to the entire file. If you mix "Kickstart Mentor" and "Kickstart Self" into the same spreadsheet, the upload will fail or mislabel the origin.
-* **Example:** `Kickstart_Mentor_Data.xlsx` & `Kickstart_Self_Data.xlsx` are uploaded separately.
+**Rule:** Only upload exactly one flat dataset at a time.
+* **Why?** The Import Wizard applies a single set of metadata (Project, Date, Cohort) to the entire file.
+* **Manual Range:** If your file contains scores (Self/Mentor), you will be asked to manually enter the **Raw Score Range** (e.g., 1 to 5, or 1 to 10) in the Wizard to ensure correct normalization.
 
 ### 2. 🧢 First Row is the Header
 **Rule:** The very first row (Row 1) of your sheet must contain your column titles.
 * **Why?** The backend parser scans downward. If it hits merged title rows (like "Assessment Matrix 2026") taking up Row 1 and 2, it might misread the actual column bindings. Keep it clean.
 
 ### 3. ⚓ Column A is the Anchor (The Code)
-**Rule:** The leftmost column where data begins must contain the alphanumeric parameter **Code** (e.g., `C1`, `C2`, `E4`).
-* **Why?** The engine relies exclusively on this Code column to identify which metric a student's score belongs to. Do not use the full parameter text (e.g., "1. Financial Literacy") as the anchor.
+**Rule:** For **Mentor** and **Self** assessments, the leftmost column (Column A) must contain the alphanumeric parameter **Code** (e.g., `C1`, `E4`).
+* **Special Rule for Self-Assessments:** You **MUST** include a column named exactly **"Question"** or **"Prompt"** containing the text of the self-reflection prompt. This is used to map responses to the correct readiness parameters.
 
 ### 4. 🧑‍🎓 Student Names as Headers
-**Rule:** Write the students' names as the horizontal column headers (starting anywhere to the right of the Code column).
+**Rule:** For **Mentor** and **Self** assessments, write the students' names as the horizontal column headers (starting anywhere to the right of the Code column).
 * **Why?** The system will automatically iterate over these headers and run "alias checks" against your master database to securely link the score column beneath it to the correct profile.
 
 ### 5. ⏭️ Ignore the Middle
@@ -25,13 +33,13 @@ To ensure flawless data ingestion through the Import Wizard, all CSV or Excel te
 
 ---
 
-## Example Expected Format
+## Example Expected Format (Self/Mentor)
 
-| Code | Domain | Helper Text / Question | Jane Doe | John Smith |
+| Code | Question | Domain | Jane Doe | John Smith |
 | :--- | :--- | :--- | :--- | :--- |
-| **C1** | Commercial | Could I explain our profit/loss... | 3.0 | 4.0 |
-| **C2** | Commercial | If I had ₹1,000 more... | 2.5 | 3.5 |
-| **E1** | Entrepreneurial | Am I willing to take calculated risks... | 4.0 | 5.0 |
+| **C1** | I can interpret financial... | Commercial | 3.0 | 4.0 |
+| **C2** | I correctly applied... | Commercial | 2.5 | 3.5 |
+| **E1** | I identified trends... | Entrepreneurial | 4.0 | 5.0 |
 
 ---
 

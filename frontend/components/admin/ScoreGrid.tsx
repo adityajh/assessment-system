@@ -95,8 +95,12 @@ export function ScoreGrid({
             if (existingAssessment && existingAssessment.id) {
                 // Determine normalized score based on existing scale
                 let normalizedScore = newValue;
-                if (newValue !== null && existingAssessment.raw_scale_max === 5) {
-                    normalizedScore = ((newValue - 1) / (5 - 1)) * 9 + 1;
+                if (newValue !== null && existingAssessment.raw_scale_min !== null && existingAssessment.raw_scale_max !== null) {
+                    const min = existingAssessment.raw_scale_min;
+                    const max = existingAssessment.raw_scale_max;
+                    if (max > min) {
+                        normalizedScore = ((newValue - min) / (max - min)) * 9 + 1;
+                    }
                 }
 
                 // Update existing
@@ -241,9 +245,6 @@ export function ScoreGrid({
                                                     {score !== null ? (
                                                         <span className="flex flex-col items-center">
                                                             <span className="leading-none">{typeof score === 'number' ? parseFloat(score.toFixed(1)) : score}</span>
-                                                            {displayScore === 'raw' && assessment?.raw_scale_max && (
-                                                                <span className="text-[9px] opacity-40 leading-none mt-0.5">/{assessment.raw_scale_max}</span>
-                                                            )}
                                                         </span>
                                                     ) : <span className="text-slate-600">-</span>}
                                                 </div>

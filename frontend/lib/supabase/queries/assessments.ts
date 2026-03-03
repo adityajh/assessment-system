@@ -66,7 +66,7 @@ export async function getMentorAssessmentData(supabase: SupabaseClient) {
         supabase.from('projects').select('*').order('sequence').order('sequence_label'),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('readiness_parameters').select('*').order('param_number'),
-        supabase.from('assessments').select('*').eq('assessment_type', 'mentor'),
+        supabase.from('assessments').select('*').eq('assessment_type', 'mentor').limit(5000),
         supabase.from('assessment_logs').select('*').eq('data_type', 'mentor').order('assessment_date', { ascending: false })
     ]);
 
@@ -93,7 +93,7 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
         supabase.from('projects').select('*').order('sequence').order('sequence_label'),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('readiness_parameters').select('*').order('param_number'),
-        supabase.from('assessments').select('*').eq('assessment_type', 'self'),
+        supabase.from('assessments').select('*').eq('assessment_type', 'self').limit(5000),
         supabase.from('assessment_logs').select('*').eq('data_type', 'self').order('assessment_date', { ascending: false }),
         supabase.from('self_assessment_questions').select('*')
     ]);

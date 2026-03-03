@@ -194,6 +194,7 @@ CREATE TABLE assessments (
 
 -- Normalization formula: normalized = (raw - raw_min) / (raw_max - raw_min) * 9 + 1
 -- Implementation detail: raw_max is retrieved from the associated assessment_log's mapping_config or the assessment row itself.
+-- Performance Note: Frontend queries for mentor/self assessments are currently limited to 5000 rows to ensure full visibility as data scales.
 ```
 
 ---
