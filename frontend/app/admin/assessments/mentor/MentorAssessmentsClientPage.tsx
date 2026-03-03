@@ -169,6 +169,7 @@ export default function MentorAssessmentsClientPage({
                     <span>DEBUG: Project={selectedProject.slice(0, 8)}</span>
                     <span>Log={selectedLog?.slice(0, 8) || 'NONE'}</span>
                     <span>Rows={displayAssessments.length}</span>
+                    <span>TotalFetched={assessments.length}</span>
                     <span>ActiveStudents={activeStudents.length}</span>
                     <span>Params={initialParameters.length}</span>
                 </div>
