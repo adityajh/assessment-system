@@ -30,11 +30,13 @@ export default function PeerFeedbackClientPage({
         return initialLogs.filter(log => log.project_id === selectedProject || log.project_id === null); // Support null for generic term/peer imports
     }, [initialLogs, selectedProject]);
 
-    const [selectedLog, setSelectedLog] = useState<string>('all');
+    const [selectedLog, setSelectedLog] = useState<string>(
+        initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || '') || log.project_id === null)[0]?.id || ''
+    );
 
     const displayFeedback = useMemo(() => {
         let filtered = initialFeedback.filter(f => f.project_id === selectedProject);
-        if (selectedLog !== 'all') {
+        if (selectedLog) {
             filtered = filtered.filter(f => f.assessment_log_id === selectedLog);
         }
         return filtered;
@@ -123,7 +125,8 @@ export default function PeerFeedbackClientPage({
                         value={selectedProject}
                         onChange={(e) => {
                             setSelectedProject(e.target.value);
-                            setSelectedLog('all'); // Reset log filter when project changes
+                            const firstLog = initialLogs.filter(l => l.project_id === e.target.value || l.project_id === null)[0];
+                            setSelectedLog(firstLog?.id || '');
                         }}
                     >
                         {initialProjects.map(p => (
@@ -142,12 +145,14 @@ export default function PeerFeedbackClientPage({
                         value={selectedLog}
                         onChange={(e) => setSelectedLog(e.target.value)}
                     >
-                        <option value="all">All Available Data</option>
-                        {availableLogs.map(log => (
-                            <option key={log.id} value={log.id}>
-                                {log.assessment_date} • {log.file_name || 'Import'}
-                            </option>
-                        ))}
+                        {availableLogs.length === 0
+                            ? <option value="">No events available</option>
+                            : availableLogs.map(log => (
+                                <option key={log.id} value={log.id}>
+                                    {log.assessment_date} • {log.file_name || 'Import'}
+                                </option>
+                            ))
+                        }
                     </select>
                 </div>
 

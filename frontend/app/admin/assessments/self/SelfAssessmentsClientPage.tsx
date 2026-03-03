@@ -36,24 +36,22 @@ export default function SelfAssessmentsClientPage({
         return initialLogs.filter(log => log.project_id === selectedProject);
     }, [initialLogs, selectedProject]);
 
-    const [selectedLog, setSelectedLog] = useState<string>('all');
+    const [selectedLog, setSelectedLog] = useState<string>(
+        initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || ''))[0]?.id || ''
+    );
 
     const displayAssessments = useMemo(() => {
         let filtered = assessments.filter(a => a.project_id === selectedProject);
-        if (selectedLog !== 'all') {
+        if (selectedLog) {
             filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
         }
         return filtered;
     }, [assessments, selectedProject, selectedLog]);
 
     const displayQuestions = useMemo(() => {
-        let logsToConsider = availableLogs;
-        if (selectedLog !== 'all') {
-            logsToConsider = logsToConsider.filter(l => l.id === selectedLog);
-        } else if (logsToConsider.length > 0) {
-            // default to latest log for 'all' mode
-            logsToConsider = [logsToConsider[0]];
-        }
+        const logsToConsider = selectedLog
+            ? availableLogs.filter(l => l.id === selectedLog)
+            : availableLogs.slice(0, 1); // default to first log if none selected
 
         const logIds = new Set(logsToConsider.map(l => l.id));
         return initialQuestions.filter(q => q.project_id === selectedProject && logIds.has(q.assessment_log_id));
@@ -116,7 +114,8 @@ export default function SelfAssessmentsClientPage({
                         value={selectedProject}
                         onChange={(e) => {
                             setSelectedProject(e.target.value);
-                            setSelectedLog('all');
+                            const firstLog = initialLogs.filter(l => l.project_id === e.target.value)[0];
+                            setSelectedLog(firstLog?.id || '');
                         }}
                     >
                         {initialProjects.filter(p => p.project_type === 'standard').map(p => (
@@ -133,12 +132,14 @@ export default function SelfAssessmentsClientPage({
                         onChange={(e) => setSelectedLog(e.target.value)}
                         disabled={availableLogs.length === 0}
                     >
-                        <option value="all">All Events for Project</option>
-                        {availableLogs.map(log => (
-                            <option key={log.id} value={log.id}>
-                                {log.assessment_date} • {log.file_name || 'Import'} ({log.records_inserted} records)
-                            </option>
-                        ))}
+                        {availableLogs.length === 0
+                            ? <option value="">No events available</option>
+                            : availableLogs.map(log => (
+                                <option key={log.id} value={log.id}>
+                                    {log.assessment_date} • {log.file_name || 'Import'} ({log.records_inserted} records)
+                                </option>
+                            ))
+                        }
                     </select>
                 </div>
 

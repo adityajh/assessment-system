@@ -35,14 +35,13 @@ export default function MentorAssessmentsClientPage({
         return initialLogs.filter(log => log.project_id === selectedProject);
     }, [initialLogs, selectedProject]);
 
-    const [selectedLog, setSelectedLog] = useState<string>('all');
-
-    // Auto-select the first log when project changes if "all" isn't preferred or if we want to default to something.
-    // For now, "all" is fine to show all logs for that project.
+    const [selectedLog, setSelectedLog] = useState<string>(
+        initialLogs.filter(log => log.project_id === (initialProjects[0]?.id || ''))[0]?.id || ''
+    );
 
     const displayAssessments = useMemo(() => {
         let filtered = assessments.filter(a => a.project_id === selectedProject);
-        if (selectedLog !== 'all') {
+        if (selectedLog) {
             filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
         }
         return filtered;
@@ -105,7 +104,9 @@ export default function MentorAssessmentsClientPage({
                         value={selectedProject}
                         onChange={(e) => {
                             setSelectedProject(e.target.value);
-                            setSelectedLog('all');
+                            // Auto-select first log for the new project
+                            const firstLog = initialLogs.filter(l => l.project_id === e.target.value)[0];
+                            setSelectedLog(firstLog?.id || '');
                         }}
                     >
                         {initialProjects.filter(p => p.project_type === 'standard').map(p => (
@@ -122,12 +123,14 @@ export default function MentorAssessmentsClientPage({
                         onChange={(e) => setSelectedLog(e.target.value)}
                         disabled={availableLogs.length === 0}
                     >
-                        <option value="all">All Events for Project</option>
-                        {availableLogs.map(log => (
-                            <option key={log.id} value={log.id}>
-                                {log.assessment_date} • {log.file_name || 'Import'} ({log.records_inserted} records)
-                            </option>
-                        ))}
+                        {availableLogs.length === 0
+                            ? <option value="">No events available</option>
+                            : availableLogs.map(log => (
+                                <option key={log.id} value={log.id}>
+                                    {log.assessment_date} • {log.file_name || 'Import'} ({log.records_inserted} records)
+                                </option>
+                            ))
+                        }
                     </select>
                 </div>
 
