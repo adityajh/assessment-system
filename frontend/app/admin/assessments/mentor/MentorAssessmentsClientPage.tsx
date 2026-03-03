@@ -44,8 +44,29 @@ export default function MentorAssessmentsClientPage({
         if (selectedLog) {
             filtered = filtered.filter(a => a.assessment_log_id === selectedLog);
         }
+
+        // Debugging logs for Business X-Ray data visibility
+        console.log('--- MENTOR GRID DEBUG ---');
+        console.log('Project:', selectedProject, '| Log:', selectedLog);
+        console.log('Filtered Row Count:', filtered.length);
+        if (filtered.length > 0) {
+            console.log('Sample Row:', {
+                student: filtered[0].student_id,
+                param: filtered[0].parameter_id,
+                score: filtered[0].raw_score
+            });
+        }
+        console.log('Active Students Count:', activeStudents.length);
+        if (activeStudents.length > 0) {
+            console.log('Sample Student:', {
+                id: activeStudents[0].id,
+                name: activeStudents[0].canonical_name
+            });
+        }
+        console.log('Total Parameters Count:', initialParameters.length);
+
         return filtered;
-    }, [assessments, selectedProject, selectedLog]);
+    }, [assessments, selectedProject, selectedLog, activeStudents, initialParameters]);
 
     const scaleInfo = useMemo(() => {
         if (displayAssessments.length === 0) return { min: null, max: null };
