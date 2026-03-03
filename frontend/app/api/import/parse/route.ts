@@ -230,6 +230,19 @@ export async function POST(request: NextRequest) {
 
         const detectedScale = maxFoundScore > 0 ? (maxFoundScore <= 4 ? 4 : (maxFoundScore <= 5 ? 5 : 10)) : null;
 
+        // Detect if a Questions or Prompts column is present in any sheet
+        let detectedPromptColumn: string | null = null;
+        Object.values(sheetsData).forEach((rows: any) => {
+            if (detectedPromptColumn || !rows || rows.length === 0) return;
+            const headerRow = rows[0] as any[];
+            headerRow.forEach((cell: any) => {
+                const cellStr = String(cell || '').toLowerCase().trim();
+                if (!detectedPromptColumn && (cellStr.includes('question') || cellStr.includes('prompt') || cellStr.includes('statement'))) {
+                    detectedPromptColumn = String(cell).trim();
+                }
+            });
+        });
+
         return NextResponse.json({
             success: true,
             filename: file.name,
@@ -237,6 +250,7 @@ export async function POST(request: NextRequest) {
             sheetsData,
             detectedType: finalDetectedType,
             detectedScale,
+            detectedPromptColumn,
             recognition: {
                 studentCount: recognizedStudents.size,
                 students: Array.from(recognizedStudents).sort(),

@@ -35,6 +35,9 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
     const [error, setError] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [duplicateMessage, setDuplicateMessage] = useState('');
+    const [proceedAfterDuplicate, setProceedAfterDuplicate] = useState<(() => void) | null>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -88,12 +91,20 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
     const handleImport = async () => {
         if (!file || !previewData || detectedType === 'unknown') return;
-        if ((detectedType === 'mentor' || detectedType === 'self') && !projectId) {
-            setError("Please select a project before importing assessments.");
+        if (!program || !assessmentDate) {
+            setError("Please fill out Assessment Date and Program.");
             return;
         }
-        if (!program || !term || !assessmentDate || !cohort) {
-            setError("Please fill out Assessment Date, Program, Cohort, and Term.");
+        if (!cohort) {
+            setError("Please select a Cohort year.");
+            return;
+        }
+        if (!term) {
+            setError("Please fill out the Term field.");
+            return;
+        }
+        if ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId) {
+            setError("Please select a project before importing.");
             return;
         }
 
@@ -112,32 +123,38 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     .eq('cohort', cohort);
 
                 if (!logError && existingLogs && existingLogs.length > 0) {
-                    const proceed = window.confirm(`An assessment log for Project "${initialProjects.find(p => p.id === projectId)?.name || projectId}", Cohort "${cohort}", and Type "${detectedType}" already exists.Are you sure you want to upload another ? This may duplicate or overwrite records.`);
-                    if (!proceed) {
-                        setIsProcessing(false);
-                        return; // user cancelled
-                    }
+                    const projectName = initialProjects.find(p => p.id === projectId)?.name || projectId;
+                    const msg = `An assessment log for Project "${projectName}", Cohort "${cohort}", and Type "${detectedType}" already exists. Proceeding may create duplicate records.`;
+                    setDuplicateMessage(msg);
+                    // Store a continuation function and pause
+                    setProceedAfterDuplicate(() => () => runImport());
+                    setShowDuplicateModal(true);
+                    setIsProcessing(false);
+                    return;
                 }
             }
 
-            // 1. Transform previewData into backend-ready records
-            // Note: Full robust parsing logic replicating Phase 2 Python scripts 
-            // is complex to do purely client-side without a python backend. 
-            // For this wizard, we are scaffolding the UI and sending the request to the Next.js API.
-            // In a real scenario, the parsing logic resides in the backend API.
+            // No duplicate found — proceed directly
+            await runImport();
 
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Core import execution (called directly or after duplicate confirmation)
+    const runImport = async () => {
+        setIsProcessing(true);
+        setError(null);
+        try {
             const recordsToSave = transformDataForDatabase(previewData, detectedType, projectId, initialStudents);
+            if (recordsToSave.length === 0) throw new Error("No valid records found to import.");
 
-            if (recordsToSave.length === 0) {
-                throw new Error("No valid records found to import.");
-            }
-
-            // 2. Send to API to save
             const response = await fetch('/api/import/save', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: detectedType,
                     projectId: projectId,
@@ -147,19 +164,13 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     date: assessmentDate,
                     rawScaleMin: rawScaleMin,
                     rawScaleMax: rawScaleMax,
-                    fileName: file.name,
-                    records: recordsToSave
+                    fileName: file!.name,
+                    records: recordsToSave,
                 }),
             });
-
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to import data');
-            }
-
+            if (!response.ok) throw new Error(result.error || 'Failed to import data');
             setImportResult(result);
-
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -167,10 +178,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
         }
     };
 
-    // Mock transformation function for scaffolding purposes
+    // Mock transformation function
     const transformDataForDatabase = (preview: any, type: ImportType, projId: string, students: Student[]) => {
-        // Since we are sending the raw sheetsData to the backend for actual parsing now, 
-        // we'll just return the raw preview data payload and let the backend securely parse it!
         return preview.sheetsData;
     };
 
@@ -299,9 +308,34 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                 </div>
 
                 {error && (
-                    <div className="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-3 text-red-400">
-                        <AlertCircle size={20} className="shrink-0 mt-0.5" />
-                        <div className="text-sm">{error}</div>
+                    <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-300 flex items-start gap-3 text-red-800">
+                        <AlertCircle size={20} className="shrink-0 mt-0.5 text-red-600" />
+                        <div className="text-sm font-semibold">{error}</div>
+                    </div>
+                )}
+
+                {/* Duplicate Warning Modal */}
+                {showDuplicateModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="bg-white rounded-2xl border-2 border-amber-400 shadow-2xl max-w-lg w-full mx-4 p-8 animate-in zoom-in-95">
+                            <div className="flex items-start gap-3 mb-6">
+                                <AlertCircle size={24} className="text-amber-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h4 className="text-lg font-black text-slate-950 mb-2">Duplicate Data Warning</h4>
+                                    <p className="text-sm text-slate-700 font-medium">{duplicateMessage}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    className="px-6 py-3 rounded-xl border-2 border-slate-300 text-slate-800 font-bold hover:bg-slate-100 transition-all"
+                                    onClick={() => { setShowDuplicateModal(false); setIsProcessing(false); }}
+                                >Cancel</button>
+                                <button
+                                    className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-all"
+                                    onClick={() => { setShowDuplicateModal(false); if (proceedAfterDuplicate) proceedAfterDuplicate(); }}
+                                >Import Anyway</button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -379,15 +413,19 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Cohort</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. 2025"
-                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950 placeholder:font-normal placeholder:text-slate-400"
+                                    <label className="block text-sm font-bold text-slate-800 mb-1">Cohort <span className="text-red-500">*</span></label>
+                                    <select
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-bold text-slate-950"
                                         value={cohort}
                                         onChange={e => setCohort(e.target.value)}
                                         required
-                                    />
+                                    >
+                                        <option value="">-- Select Cohort Year --</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Term</label>
@@ -430,9 +468,15 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                             </div>
 
                             <button
-                                className="w-full bg-slate-950 text-white rounded-xl py-4 font-black text-lg hover:bg-indigo-600 transition-all shadow-xl flex items-center justify-center gap-3 mt-4"
+                                className={`w-full rounded-xl py-4 font-black text-lg transition-all shadow-xl flex items-center justify-center gap-3 mt-4 ${isProcessing || detectedType === 'unknown' || !assessmentDate || !program || !cohort || !term ||
+                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId)
+                                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                    : 'bg-slate-950 text-white hover:bg-indigo-600 cursor-pointer'
+                                    }`}
                                 onClick={handleImport}
-                                disabled={isProcessing || detectedType === 'unknown' || ((detectedType === 'mentor' || detectedType === 'self') && (!projectId || !assessmentDate || !program || !term || !cohort))}
+                                disabled={isProcessing || detectedType === 'unknown' || !assessmentDate || !program || !cohort || !term ||
+                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId)
+                                }
                             >
                                 {isProcessing ? (
                                     <span className="flex items-center gap-2"><LoadingSpinner size={24} /> Executing Import...</span>
@@ -505,8 +549,25 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-black text-slate-600 uppercase">Detected Raw Scale</span>
                                             <span className="text-xs font-black text-slate-950 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                                                {previewData?.detectedScale ? `1 to ${previewData.detectedScale} ` : '1 to 10 (Default)'}
+                                                {previewData?.detectedScale ? `1 to ${previewData.detectedScale}` : '1 to 10 (Default)'}
                                             </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(detectedType === 'self') && (
+                                    <div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-xs font-black text-slate-600 uppercase">Questions / Prompts Column</span>
+                                            {previewData?.detectedPromptColumn ? (
+                                                <span className="text-xs font-black text-slate-950 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                                                    ✓ {previewData.detectedPromptColumn}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                                                    Not Detected
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 )}
