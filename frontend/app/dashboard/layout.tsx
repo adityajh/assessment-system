@@ -1,8 +1,11 @@
+"use client";
+
 import '../../styles/dashboard.css';
 import { Inter, Roboto_Mono } from 'next/font/google';
 import { LayoutDashboard, Users, FileText, ArrowLeft, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { PrintButton } from '@/components/dashboard/PrintButton';
 
@@ -14,13 +17,17 @@ export default function DashboardLayout({
 }: {
     children: ReactNode;
 }) {
+    const pathname = usePathname();
+    const isIndex = pathname === '/dashboard';
+    const backHref = isIndex ? '/' : '/dashboard';
+
     return (
         <div className={`min-h-screen bg-slate-50 flex flex-col dashboard-theme ${inter.variable} ${robotoMono.variable} font-sans`}>
             {/* Top Navigation Bar - Hidden when printing */}
             <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 print:hidden shadow-sm">
                 <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <Link href="/dashboard" className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 text-sm font-medium transition-colors">
+                        <Link href={backHref} className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 text-sm font-medium transition-colors">
                             <ArrowLeft size={16} /> Back
                         </Link>
                         <div className="h-6 w-px bg-slate-300"></div>
