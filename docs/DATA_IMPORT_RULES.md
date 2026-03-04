@@ -1,107 +1,65 @@
-# 📊 Golden Rules for Assessment Data Uploads
+# ⚙️ Import Engine Technical Specification
 
-To ensure flawless data ingestion through the Import Wizard, all CSV or Excel files must follow these rules:
+This document details the logic used by the Assessment System to parse, recognize, deduplicate, and normalize data during the import process.
 
-### 0. 🏷️ File Naming Nomenclature
-**CRITICAL:** The Import Wizard uses the filename to automatically detect the **Data Type**. Your filename **MUST** contain one of the following keywords:
-*   **"Self"** → For Student Self-Assessments
-*   **"Peer"** → For Peer Feedback Matrices
-*   **"Term"** → For Term Tracking (CBP/Conflexion/BOW)
-*   **"Notes"** → For Mentor Qualitative Notes
-*   *(No keyword defaults to Mentor Assessments)*
+## 1. 🏷️ Discovery & Data Type Detection
 
-### 1. 🗂️ One File per Assessment Event
-**Rule:** Only upload exactly one flat dataset at a time.
-* **Why?** The Import Wizard applies a single set of metadata (Project, Date, Cohort) to the entire file.
-* **Manual Range:** If your file contains scores (Mentor/Self/Peer), you will be asked to manually confirm the **Raw Score Range** (e.g., 1 to 5, or 1 to 10) in the Wizard to ensure correct normalization and UI labels.
+The system uses the filename as the primary signal for data type detection during the initial upload.
 
-### 2. 🧢 First Row is the Header
-**Rule:** The very first row (Row 1) of your sheet must contain your column titles.
-* **Why?** The backend parser scans downward. If it hits merged title rows (like "Assessment Matrix 2026") taking up Row 1 and 2, it might misread the actual column bindings. Keep it clean.
+| Keyword in Filename | Target Data Type | Format Type |
+| :--- | :--- | :--- |
+| **"Self"** | Student Self-Assessments | Matrix |
+| **"Peer"** | Peer Feedback Matrices | Flat (Transactional) |
+| **"Term"** | Term Tracking (CBP/Conflexion/BOW) | Flat (Value-Key) |
+| **"Notes"** | Mentor Qualitative Notes | Flat (Textual) |
+| *No keyword* | Mentor Assessments | Matrix |
 
-### 3. ⚓ Column A is the Anchor (The Code)
-**Rule:** For **Mentor** and **Self** assessments, the leftmost column (Column A) must contain the alphanumeric parameter **Code** (e.g., `C1`, `E4`).
-* **Special Rule for Self-Assessments:** You **MUST** include a column named exactly **"Question"** or **"Prompt"** containing the text of the self-reflection prompt. This is used to map responses to the correct readiness parameters.
+## 2. 🧑‍🎓 Student Recognition Logic
 
-### 4. 🧑‍🎓 Student Names as Headers
-**Rule:** For **Mentor** and **Self** assessments, write the students' names as the horizontal column headers (starting anywhere to the right of the Code column).
-* **Why?** The system will automatically iterate over these headers and run "alias checks" against your master database to securely link the score column beneath it to the correct profile.
+The engine uses a fuzzy-tolerant alias system to link spreadsheet columns/rows to database IDs.
 
-### 5. ⏭️ Ignore the Middle
-**Rule:** You are free to place any helper text between the `Code` column and the first Student column.
-* **Why?** You can safely add columns like "Domain", "Parameter Description", or "I-Statement Prompt". The data engine is smart enough to step over columns that do not match known student aliases.
+1.  **Normalization**: All names are trimmed, lowercased, and internal whitespace is collapsed.
+2.  **Exact Matching**: Compares the cell against the `canonical_name` in the `students` table.
+3.  **Alias Matching**: If exact matching fails, it iterates through the `aliases` JSON array for each student.
+4.  **Safety**: Any column header or cell that does not match a canonical name or known alias is automatically skipped, allowing helper columns (like "Parameter Description") to exist without breaking the import.
 
----
+## 3. 📉 Extraction Logic
 
-## Example Expected Format (Self/Mentor)
+### Matrix Format (Mentor / Self)
+- **Anchor**: Column A must contain the alphanumeric parameter **Code** (e.g., `C1`, `E4`).
+- **Headers**: Student names start from Column B onwards.
+- **Self-Assessment Question**: If a column named **"Question"** or **"Prompt"** is found, the engine extracts the question text and maps it to the specific parameter for that import event.
 
-| Code | Question | Domain | Jane Doe | John Smith |
-| :--- | :--- | :--- | :--- | :--- |
-| **C1** | I can interpret financial... | Commercial | 3.0 | 4.0 |
-| **C2** | I correctly applied... | Commercial | 2.5 | 3.5 |
-| **E1** | I identified trends... | Entrepreneurial | 4.0 | 5.0 |
+### Flat Format (Peer Feedback)
+- The engine scans the header row for keywords to map transactional data:
+    - **Recipient**: Contains `recipient` or `to:`.
+    - **Giver**: Contains `giver`, `your name`, or `from:`.
+    - **Metrics**: Keywords like `quality`, `initiative`, `communication`, `collaboration`, `growth` are used to map scores to the 5 peer metrics.
 
----
+## 4. 🧹 Deduplication Policy
 
-## 2. Peer Feedback Format
-**Rule:** Peer feedback is processed differently. It is a "flat" or "transactional" format where each row is a single feedback instance between two students.
+The system handles collisions at two levels to ensure data integrity without requiring manual deletion.
 
-### Required Header Columns
-Your header row must contain columns with words that match these specific keywords (case-insensitive):
-1. **Recipient Name:** The column header must contain `recipient` or `to:`. This is the student receiving feedback.
-2. **Giver Name:** The column header must contain `giver`, `your name`, or `from:`. This is the student giving feedback.
-3. **Project Name (Optional but Recommended):** The header must contain `project`. If left blank, the wizard's dropdown selection will be used.
-4. **Metrics:** You must have columns containing the following keywords to map to the 5 standard peer metrics:
-   * `quality` (maps to Quality of Work)
-   * `initiative` or `ownership` (maps to Initiative & Ownership)
-   * `communication` (maps to Communication)
-   * `collaboration` (maps to Collaboration)
-   * `growth` (maps to Growth Mindset)
+### Internal Collision (Within the same file)
+- **Rule**: **Last Row Wins**.
+- If a student has multiple rows for the same parameter/metric within the same file, or if multiple sheets are uploaded, the engine keeps only the last occurrence encountered during the scan.
+- *Note: This replaces legacy "averaging" logic.*
 
-### Example Expected Format (Peer Feedback)
+### Database Collision (Historical Overwrites)
+- **Rule**: **Upsert (Update or Insert)**.
+- The database enforces a unique constraint on `(student_id, project_id, parameter_id, assessment_type)`.
+- If you re-import data for the same project/student, the new record will **overwrite** the old one, but it will be linked to a new `assessment_log_id` for auditing.
 
-| Timestamp | Recipient Name | Your Name (Giver) | Project | Quality of Work | Communication | Collaboration |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 10/24 | Jane Doe | John Smith | SDP | 4 | 5 | 5 |
-| 10/24 | John Smith | Jane Doe | SDP | 5 | 4 | 3 |
+## 5. 📏 Normalization Engine
+
+All scores are standardized to a 10-point scale for comparison using **Linear Min-Max Interpolation**.
+
+- **Formula**: `normalized_score = ((raw_score - min) / (max - min)) * 9 + 1`
+- **Scale Sources**:
+    - **Mentor/Self**: The user must explicitly set the `rawScaleMin` and `rawScaleMax` in the UI during import (e.g., 1 to 4).
+    - **Peer**: Defaults to 1 to 5 if not specified.
+- **Inference**: If a calculation results in a `NaN` or divide-by-zero (e.g., `max === min`), the raw score is passed through without normalization.
 
 ---
 
-## 3. Term Report Format
-**Rule:** Term reports track single high-level metrics for students. It expects a row-by-row flat structure mapping a student to a specific metric name and score.
-
-### Required Header Columns
-Your header row must contain columns that match these keywords:
-1. **Student Name:** Header must contain `student` or `name`.
-2. **Metric Type:** Header must contain `metric` (and not 'value'). Accepted values in rows below this column: `cbp`, `conflexion`, `bow`.
-3. **Value:** Header must contain `value`, `score`, or `count`.
-
-### Example Expected Format (Term Report)
-
-| Sr. | Student Name | Metric | Value |
-| :--- | :--- | :--- | :--- |
-| 1 | Jane Doe | cbp | 4 |
-| 2 | Jane Doe | bow | 3.5 |
-| 3 | John Smith | conflexion | 12 |
-
----
-
-## 4. Mentor Notes Format
-**Rule:** For bulk importing qualitative free-text feedback from mentors to students. If multiple rows exist for the same student (from the same or different mentors), the parser will intelligently combine them into a single comprehensive note.
-
-### Required Header Columns
-Your header row must contain columns that match these keywords:
-1. **Student Name:** Header must contain `student` or `name`.
-2. **Mentor Name:** Header must contain `mentor`.
-3. **Notes:** Header must contain `note`.
-
-> **Note on Projects:** Project association is done via the "Associated Project" dropdown in the Import Wizard UI, not in the spreadsheet itself. If left blank, the data will be saved as **"Unassigned / Legacy"**. These can be accessed in the Peer Feedback admin panel by selecting the "Unassigned" project option.
-
-### Example Expected Format (Mentor Notes)
-
-| Sr. | Student Name | Mentor | Notes |
-| :--- | :--- | :--- | :--- |
-| 1 | Jane Doe | Sharjeel | Jane showed excellent leadership today. |
-| 2 | Jane Doe | Aditya | She needs to speak up more in large groups. |
-
-*Following these rules guarantees your data will be safely, cleanly, and permanently ingested into the platform.*
+*Adherence to these technical patterns ensures that data correctly propagates from Excel/CSV to the student dashboard visualisations.*
