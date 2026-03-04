@@ -583,7 +583,8 @@ export async function POST(request: NextRequest) {
                 project_id: data.project_id,
                 note_text: data.notes.join('\n\n'),
                 note_type: 'general',
-                created_by: Array.from(data.mentors).join(', ')
+                created_by: Array.from(data.mentors).join(', '),
+                assessment_log_id: log.id
             }));
 
             if (finalInserts.length === 0) {

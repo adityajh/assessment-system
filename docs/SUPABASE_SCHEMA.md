@@ -252,6 +252,7 @@ CREATE TABLE mentor_notes (
     note_text TEXT NOT NULL,
     note_type TEXT DEFAULT 'general',           -- 'general', 'strength', 'improvement', etc.
     created_by TEXT,                             -- mentor name
+    assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -292,6 +293,7 @@ CREATE TABLE assessment_frameworks (
     assessment_logic TEXT,              -- why / why not
     self_evaluation_question TEXT,      -- question posed to students
     client_evaluation_question TEXT,    -- question posed to client (Moonshine/SIDR)
+    assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(project_id, parameter_id)
 );
