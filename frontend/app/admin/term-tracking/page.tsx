@@ -12,8 +12,8 @@ export default async function TermTrackingPage() {
         <div className="flex flex-col gap-6 w-full max-w-[1600px] h-full">
             <div className="flex justify-between items-center shrink-0">
                 <div>
-                    <h2 className="text-2xl font-semibold mb-1">Term Tracking Data</h2>
-                    <p className="text-slate-400">View CBP count, Conflexion count, and BOW scores for each student.</p>
+                    <h2 className="text-2xl font-semibold mb-1">Metric Tracking Data</h2>
+                    <p className="text-slate-400">View consolidated CBP count, Conflexion count, and BOW scores for each student.</p>
                 </div>
             </div>
 
