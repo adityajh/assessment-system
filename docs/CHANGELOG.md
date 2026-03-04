@@ -4,6 +4,18 @@ All notable changes to the Let's Entreprise Assessment System are documented her
 
 Format: `## [YYYY-MM-DD] — Description`
 
+## [2026-03-04] — Dashboard Reorganization & UI Branding
+
+- **Dashboard Swap:** Promoted the high-fidelity layout (formerly "Report Card") to the primary **Student Dashboard** view (`/dashboard/[studentId]`).
+- **Legacy Preservation:** Migrated the original student dashboard to the Playground as **Dashboard Version 1** (`/admin/playground/v1/[studentId]`).
+- **Unified Branding:** Renamed all instances of "Report Card" to **"Student Dashboard"** across the UI, metadata, and page headers.
+- **Admin Side-Nav Restructuring:** Reorganized sidebar into logical segments: **Import**, **Assessments**, **Tools**, and **System**.
+- **PDF Export Optimization:** Added global print styles to the Admin Layout to automatically hide the sidebar and top navigation when exporting dashboards to PDF.
+- **Enhanced Navigation:** Updated the "Back to Admin" link on the Student Dashboard to simply **"Back"**, returning users to the `/dashboard` student list.
+- **Playground Links:** Added quick-access buttons in the Playground to toggle between the live Student Dashboard and the Legacy Version 1.
+
+---
+
 ## [2026-03-03] — Scalability Refactor & On-Demand Data
 
 - **Fetch-on-Demand Architecture:** Migrated Mentor and Self-Assessment pages from global fetching (which hit a 1,000-row Supabase limit) to reactive, log-specific fetching. This allows the system to scale to infinite records.
