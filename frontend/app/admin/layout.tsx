@@ -147,6 +147,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </div>
             </main>
+            {/* Print specific styles to hide sidebar and header */}
+            <style jsx global>{`
+                @media print {
+                    aside, .admin-header {
+                        display: none !important;
+                    }
+                    .admin-main {
+                        margin-left: 0 !important;
+                    }
+                    .admin-content {
+                        padding: 0 !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

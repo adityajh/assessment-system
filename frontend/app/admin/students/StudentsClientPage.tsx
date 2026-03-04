@@ -95,9 +95,9 @@ export default function StudentsClientPage({ initialStudents, initialPrograms }:
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <Link
-                                                href={`/admin/student/${student.id}`}
+                                                href={`/dashboard/${student.id}`}
                                                 className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10 rounded transition-colors"
-                                                title="View Report Dashboard"
+                                                title="View Student Dashboard"
                                             >
                                                 <BarChart3 size={16} />
                                             </Link>

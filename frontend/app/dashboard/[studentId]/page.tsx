@@ -1,275 +1,250 @@
 import { createClient } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
-import { DomainBarChart } from '@/components/dashboard/RadarChart';
-import { ProgressionChart } from '@/components/dashboard/ProgressionChart';
-import { StudentReportHeader } from '@/components/dashboard/StudentReportHeader';
-import {
-    getMentorAssessmentData,
-    ReadinessDomain,
-    ReadinessParameter
-} from '@/lib/supabase/queries/assessments';
-import { getProjects } from '@/lib/supabase/queries/projects';
+import { getPlaygroundData } from '@/lib/supabase/queries/assessments';
+import StudentDashboardClient from './StudentDashboardClient';
 
-export const dynamic = 'force-dynamic';
+export const metadata = {
+    title: 'Student Dashboard',
+};
 
 export default async function StudentDashboardPage({ params }: { params: Promise<{ studentId: string }> }) {
-    const supabase = await createClient();
     const { studentId } = await params;
 
-    // 1. Fetch Student Details
-    const { data: student, error: studentError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('id', studentId)
-        .single();
+    let gapData = null;
+    let heatmapData = null;
+    let consolidatedHeatmapData = null;
+    let trajectoryData = null;
+    let kpiData = null;
+    let peerRatingData = null;
+    let peerRatingProjects: string[] = [];
+    let projectDomainScores = null;
+    let heatmapProjects: string[] = [];
+    let topStrengths: any[] = [];
+    let growthAreas: any[] = [];
+    let distributionData: any[] = [];
+    let mentorNotes: any[] = [];
+    let studentData = null;
 
-    if (studentError || !student) {
-        notFound();
+    try {
+        const supabase = await createClient();
+        const data = await getPlaygroundData(supabase, studentId);
+
+        const { data: notesData } = await supabase
+            .from('mentor_notes')
+            .select('*, projects(name)')
+            .eq('student_id', studentId)
+            .order('created_at', { ascending: false });
+
+        if (notesData) mentorNotes = notesData;
+
+        studentData = data.student;
+
+        // 1. BUILD GAP DATA (Domain Averages)
+        const domainMap = new Map();
+        data.domains.forEach(d => domainMap.set(d.id, { name: d.name, mentorSum: 0, mentorCount: 0, selfSum: 0, selfCount: 0 }));
+
+        data.assessments.forEach(a => {
+            if (a.normalized_score === null) return;
+            const param = data.parameters.find(p => p.id === a.parameter_id);
+            if (!param) return;
+            const domainEntry = domainMap.get(param.domain_id);
+            if (!domainEntry) return;
+
+            if (a.assessment_type === 'mentor') {
+                domainEntry.mentorSum += a.normalized_score;
+                domainEntry.mentorCount++;
+            } else {
+                domainEntry.selfSum += a.normalized_score;
+                domainEntry.selfCount++;
+            }
+        });
+
+        gapData = Array.from(domainMap.values()).map(d => {
+            const mentor = d.mentorCount > 0 ? Number((d.mentorSum / d.mentorCount).toFixed(1)) : 0;
+            const self = d.selfCount > 0 ? Number((d.selfSum / d.selfCount).toFixed(1)) : 0;
+            return {
+                name: d.name,
+                mentor,
+                self,
+                delta: Number((mentor - self).toFixed(1))
+            };
+        });
+
+        // 2. BUILD HEATMAP DATA (Parameters x Projects)
+        const projectNames: string[] = data.projects.map(p => p.name);
+        heatmapProjects = projectNames;
+
+        heatmapData = data.parameters.map(param => {
+            const domain = data.domains.find(d => d.id === param.domain_id)?.name || '';
+            const scores: Record<string, number | null> = {};
+
+            data.projects.forEach(proj => {
+                const assessment = data.assessments.find(a => a.parameter_id === param.id && a.project_id === proj.id && a.assessment_type === 'mentor');
+                scores[proj.name] = assessment?.normalized_score ? Number(assessment.normalized_score.toFixed(1)) : null;
+            });
+
+            return { parameter: param.name, domain, scores };
+        });
+
+        // 3. BUILD TRAJECTORY DATA (Project Averages)
+        trajectoryData = data.projects.map(proj => {
+            const mentorAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+            const selfAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'self' && a.normalized_score !== null);
+
+            const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : null;
+            const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : null;
+
+            return {
+                project: proj.name,
+                mentor: mentorAvg !== null ? Number(mentorAvg.toFixed(1)) : null,
+                self: selfAvg !== null ? Number(selfAvg.toFixed(1)) : null
+            };
+        });
+
+        // 4. BUILD CONSOLIDATED HEATMAP DATA (Domains x Projects)
+        consolidatedHeatmapData = data.domains.map(domain => {
+            const scores: Record<string, number | null> = {};
+            data.projects.forEach(proj => {
+                const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
+                const asses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+
+                if (asses.length > 0) {
+                    const avg = asses.reduce((sum, a) => sum + a.normalized_score!, 0) / asses.length;
+                    scores[proj.name] = Number(avg.toFixed(1));
+                } else {
+                    scores[proj.name] = null;
+                }
+            });
+            return { domain: domain.name, scores };
+        });
+
+        // 5. BUILD KPI DATA (Dashboard view)
+        const uniqueProjectsAssessed = new Set(data.assessments.map(a => a.project_id)).size;
+        kpiData = {
+            projectsCount: `${uniqueProjectsAssessed}/${data.projects.length}`,
+            cbpCount: data.termTracking?.cbp_count || 0,
+            conflexionCount: data.termTracking?.conflexion_count || 0,
+            bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00"
+        };
+
+        // 6. BUILD PEER RATING DATA (Radar Chart: Questions as axes, Projects as lines)
+        const peerCategories = [
+            { key: 'quality_of_work', label: 'Quality of Work' },
+            { key: 'initiative_ownership', label: 'Initiative & Ownership' },
+            { key: 'communication', label: 'Communication' },
+            { key: 'collaboration', label: 'Collaboration' },
+            { key: 'growth_mindset', label: 'Growth Mindset' }
+        ];
+
+        const radarDataMap: Record<string, any> = {};
+        peerCategories.forEach(c => {
+            radarDataMap[c.key] = { subject: c.label };
+        });
+
+        data.projects.forEach(proj => {
+            const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
+            if (projectFeedback.length > 0) {
+                peerRatingProjects.push(proj.name);
+                peerCategories.forEach(c => {
+                    const scores = projectFeedback.map((f: any) => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
+                    const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
+                    if (avg !== null) {
+                        radarDataMap[c.key][proj.name] = Number(avg.toFixed(1));
+                    }
+                });
+            }
+        });
+
+        peerRatingData = peerCategories.map(c => radarDataMap[c.key]);
+
+        // 7. BUILD GROUPED BAR DATA (Self vs Mentor by domain across projects)
+        projectDomainScores = data.projects.map(proj => {
+            const categories = data.domains.map(domain => {
+                const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
+                const mentorAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+                const selfAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'self' && a.normalized_score !== null);
+
+                const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : 0;
+                const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : 0;
+
+                return {
+                    domain: domain.name,
+                    mentor: mentorAsses.length > 0 ? Number(mentorAvg.toFixed(1)) : null,
+                    self: selfAsses.length > 0 ? Number(selfAvg.toFixed(1)) : null
+                };
+            });
+
+            return {
+                project: proj.name,
+                categories
+            };
+        });
+
+        // 8. BUILD TOP STRENGTHS & GROWTH AREAS
+        const paramAverages: Record<string, { sum: number, count: number, name: string, domain: string }> = {};
+        data.assessments.filter(a => a.assessment_type === 'mentor' && a.normalized_score !== null).forEach(a => {
+            const param = data.parameters.find(p => p.id === a.parameter_id);
+            if (!param) return;
+            if (!paramAverages[param.id]) {
+                const domain = data.domains.find(d => d.id === param.domain_id)?.name || '';
+                paramAverages[param.id] = { sum: 0, count: 0, name: param.name, domain };
+            }
+            paramAverages[param.id].sum += a.normalized_score!;
+            paramAverages[param.id].count++;
+        });
+
+        const sortedParams = Object.values(paramAverages)
+            .map(p => ({ name: p.name, domain: p.domain, score: Number((p.sum / p.count).toFixed(1)) }))
+            .sort((a, b) => b.score - a.score);
+
+        topStrengths = sortedParams.slice(0, 3);
+        growthAreas = sortedParams.slice(-3).reverse();
+
+        // 9. BUILD DISTRIBUTION CURVE DATA
+        data.domains.forEach(domain => {
+            const studentAverages: Record<string, { sum: number, count: number }> = {};
+            data.cohortDomainScores.filter((c: any) => c.domain_name === domain.name && c.domain_score !== null).forEach((c: any) => {
+                if (!studentAverages[c.student_id]) studentAverages[c.student_id] = { sum: 0, count: 0 };
+                studentAverages[c.student_id].sum += Number(c.domain_score);
+                studentAverages[c.student_id].count++;
+            });
+            const cohortAverages = Object.values(studentAverages).map(s => s.sum / s.count);
+            const activeStudentAvg = studentAverages[studentId] ? (studentAverages[studentId].sum / studentAverages[studentId].count) : null;
+
+            const bins = Array(10).fill(0);
+            cohortAverages.forEach(score => {
+                const binIdx = Math.min(Math.floor(score) - 1, 9);
+                if (binIdx >= 0) bins[binIdx]++;
+            });
+
+            distributionData.push({
+                type: 'domain',
+                name: domain.name,
+                studentScore: activeStudentAvg !== null ? Number(activeStudentAvg.toFixed(1)) : null,
+                cohortScores: cohortAverages,
+                bins: bins.map((count, i) => ({ range: `${i + 1}-${i + 2}`, count, studentMarker: activeStudentAvg !== null && activeStudentAvg >= i + 1 && activeStudentAvg < i + 2 ? activeStudentAvg : null }))
+            });
+        });
+
+    } catch (e) {
+        console.error("Failed to load dashboard data", e);
     }
 
-    // 2. Fetch all necessary data for the charts
-    // For simplicity MVP, using the mentor data query which gets domains/params too
-    const data = await getMentorAssessmentData(supabase);
-    const projects = await getProjects(supabase);
-
-    // Fetch assessments for this specific student
-    const [{ data: mentorAssessments }, { data: selfAssessments }] = await Promise.all([
-        supabase.from('assessments').select('*').eq('assessment_type', 'mentor').eq('student_id', studentId),
-        supabase.from('assessments').select('*').eq('assessment_type', 'self').eq('student_id', studentId)
-    ]);
-
-    const studentMentorAssessments = mentorAssessments || [];
-    const studentSelfAssessments = selfAssessments || [];
-
-    // Fetch Term Tracking
-    const { data: termData } = await supabase
-        .from('term_tracking')
-        .select('*')
-        .eq('student_id', studentId)
-        .single();
-
-    // Fetch Peer Feedback for this student
-    const { data: peerData } = await supabase
-        .from('peer_feedback')
-        .select('*, projects(name, sequence_label), giver:students!giver_id(canonical_name)')
-        .eq('recipient_id', studentId);
-
-    const peerFeedback = peerData || [];
-
-    // Prepare Radar Chart Data
-    const radarData = data.domains.map(domain => {
-        const domainParams = data.parameters.filter(p => p.domain_id === domain.id);
-        const paramIds = new Set(domainParams.map(p => p.id));
-
-        // Mentor Avg
-        const mScores = studentMentorAssessments.filter(a => paramIds.has(a.parameter_id)).map(a => a.normalized_score).filter((s): s is number => s !== null);
-        const mAvg = mScores.length ? mScores.reduce((a, b) => a + b, 0) / mScores.length : null;
-
-        // Self Avg
-        const sScores = studentSelfAssessments.filter(a => paramIds.has(a.parameter_id)).map(a => a.normalized_score).filter((s): s is number => s !== null);
-        const sAvg = sScores.length ? sScores.reduce((a, b) => a + b, 0) / sScores.length : null;
-
-        return {
-            subject: domain.short_name || domain.name.split(' ')[0],
-            mentorAvg: mAvg !== null ? Number(mAvg.toFixed(1)) : null,
-            selfAvg: sAvg !== null ? Number(sAvg.toFixed(1)) : null,
-            fullMark: 10
-        };
-    });
-
     return (
-        <div className="flex flex-col gap-8 pb-20 print:pb-0">
-            <StudentReportHeader
-                student={student}
-                projects={projects}
-                mentorAssessments={studentMentorAssessments}
-            />
-
-            {/* Overview Section - Radar and Progression */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:block print:break-inside-avoid">
-                <div className="dash-card flex flex-col h-[500px]">
-                    <h3 className="section-title">Readiness Domains (Comparative)</h3>
-                    <p className="text-sm var(--dash-text-muted) mb-4">
-                        Comparison of Mentor (Subjective + Objective) and Self (Subjective) scores across the 6 major domains.
-                    </p>
-                    <div className="flex-1 min-h-0">
-                        <DomainBarChart data={radarData} />
-                    </div>
-                </div>
-
-                <div className="dash-card flex flex-col h-[500px] print:mt-8">
-                    <h3 className="section-title">Progression Over Time</h3>
-                    <p className="text-sm var(--dash-text-muted) mb-4">
-                        Average Mentor score progression across the assessment timeline.
-                    </p>
-                    <div className="flex-1 min-h-0">
-                        <ProgressionChart
-                            projects={projects}
-                            assessments={studentMentorAssessments}
-                        />
-                    </div>
-                </div>
-            </section>
-
-            {/* Detailed Domain Breakdown Section */}
-            <section className="print:break-before-page">
-                <h3 className="section-title mb-6">Detailed Readiness Breakdown</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {data.domains.map(domain => {
-                        const domainParams = data.parameters.filter(p => p.domain_id === domain.id);
-                        return (
-                            <DomainDetailCard
-                                key={domain.id}
-                                domain={domain}
-                                parameters={domainParams}
-                                mentorAssessments={studentMentorAssessments}
-                                selfAssessments={studentSelfAssessments}
-                            />
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Term Tracking and Peer Feedback */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:break-before-page">
-                <div className="dash-card">
-                    <h3 className="section-title">Term Tracking</h3>
-                    {termData ? (
-                        <div className="grid grid-cols-3 gap-4 mt-4">
-                            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 text-center">
-                                <div className="text-3xl font-bold text-indigo-600">{termData.cbp_count ?? 0}</div>
-                                <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">CBP</div>
-                            </div>
-                            <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 text-center">
-                                <div className="text-3xl font-bold text-emerald-600">{termData.conflexion_count ?? 0}</div>
-                                <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">Conflexion</div>
-                            </div>
-                            <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center">
-                                <div className="text-3xl font-bold text-amber-600">{termData.bow_score?.toFixed(2) ?? '–'}</div>
-                                <div className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">BOW Score</div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="py-8 flex items-center justify-center text-slate-400 text-sm">
-                            No term tracking data available.
-                        </div>
-                    )}
-                </div>
-
-                <div className="dash-card">
-                    <h3 className="section-title">Peer Feedback Highlights</h3>
-                    {peerFeedback.length > 0 ? (
-                        <div className="space-y-3 mt-3">
-                            {Array.from(new Set(peerFeedback.map((p: any) => p.project_id))).map((projId: any) => {
-                                const entries = peerFeedback.filter((p: any) => p.project_id === projId);
-                                const proj = (entries[0] as any)?.projects;
-                                const avg = (key: string) => {
-                                    const vals = entries.map((e: any) => e[key]).filter((v: any) => v !== null && v !== undefined);
-                                    return vals.length ? (vals.reduce((a: number, b: number) => a + b, 0) / vals.length).toFixed(1) : '–';
-                                };
-                                return (
-                                    <div key={projId} className="border border-slate-100 rounded-xl p-4">
-                                        <div className="font-semibold text-sm text-slate-700 mb-3">
-                                            {proj?.sequence_label} — {proj?.name} <span className="text-slate-400 font-normal">({entries.length} reviews)</span>
-                                        </div>
-                                        <div className="grid grid-cols-5 gap-2 text-center">
-                                            {[
-                                                { label: 'Quality', key: 'quality_of_work' },
-                                                { label: 'Initiative', key: 'initiative_ownership' },
-                                                { label: 'Comms', key: 'communication' },
-                                                { label: 'Collab', key: 'collaboration' },
-                                                { label: 'Growth', key: 'growth_mindset' },
-                                            ].map(({ label, key }) => (
-                                                <div key={key} className="rounded-lg bg-slate-50 py-2">
-                                                    <div className="text-lg font-bold text-slate-700">{avg(key)}</div>
-                                                    <div className="text-[10px] text-slate-400 uppercase tracking-wide">{label}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="py-8 flex items-center justify-center text-slate-400 text-sm">
-                            No peer feedback received yet.
-                        </div>
-                    )}
-                </div>
-            </section>
-
-        </div>
+        <StudentDashboardClient
+            studentData={studentData}
+            gapData={gapData}
+            heatmapData={heatmapData}
+            consolidatedHeatmapData={consolidatedHeatmapData}
+            heatmapProjects={heatmapProjects}
+            trajectoryData={trajectoryData}
+            kpiData={kpiData}
+            peerRatingData={peerRatingData}
+            peerRatingProjects={peerRatingProjects}
+            projectDomainScores={projectDomainScores}
+            topStrengths={topStrengths}
+            growthAreas={growthAreas}
+            distributionData={distributionData}
+            mentorNotes={mentorNotes}
+        />
     );
-}
-
-function DomainDetailCard({
-    domain,
-    parameters,
-    mentorAssessments,
-    selfAssessments
-}: {
-    domain: ReadinessDomain,
-    parameters: ReadinessParameter[],
-    mentorAssessments: any[],
-    selfAssessments: any[]
-}) {
-    // Calculate domain averages just for display
-    const mentorScores = parameters.flatMap(p =>
-        mentorAssessments.filter(a => a.parameter_id === p.id).map(a => a.normalized_score).filter((s): s is number => s !== null)
-    );
-    const mentorAvg = mentorScores.length ? (mentorScores.reduce((a, b) => a + b, 0) / mentorScores.length).toFixed(1) : '-';
-
-    return (
-        <div className="dash-card border-t-4" style={{ borderTopColor: getDomainColor(domain.name) }}>
-            <div className="flex justify-between items-start mb-4">
-                <h4 className="font-semibold text-lg text-slate-800">{domain.name}</h4>
-                <div className="flex flex-col items-end">
-                    <span className="text-2xl font-bold" style={{ color: getDomainColor(domain.name) }}>{mentorAvg}</span>
-                    <span className="text-xs text-slate-500 uppercase tracking-widest">Mentor Avg</span>
-                </div>
-            </div>
-
-            <div className="space-y-3 mt-4">
-                {parameters.map(param => {
-                    // Find latest mentor and self scores for this param (simplified logic)
-                    const mScores = mentorAssessments.filter(a => a.parameter_id === param.id && a.normalized_score !== null);
-                    const mLatest = mScores.length > 0 ? mScores[mScores.length - 1].normalized_score : null;
-
-                    const sScores = selfAssessments.filter(a => a.parameter_id === param.id && a.normalized_score !== null);
-                    const sLatest = sScores.length > 0 ? sScores[sScores.length - 1].normalized_score : null;
-
-                    return (
-                        <div key={param.id} className="text-sm border-b border-slate-100 last:border-0 pb-3 last:pb-0">
-                            <div className="font-medium text-slate-700 mb-1 leading-snug">
-                                <span className="text-slate-400 font-mono mr-1.5">[{param.code || `P${param.param_number}`}]</span>
-                                {param.name}
-                            </div>
-                            <div className="flex items-center gap-4 text-xs font-mono">
-                                <div className="flex items-center gap-1.5 border px-1.5 py-0.5 rounded bg-slate-50">
-                                    <span className="text-indigo-600 font-bold">M</span>
-                                    <span className="text-slate-600">{mLatest !== null ? mLatest.toFixed(1) : '-'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 border px-1.5 py-0.5 rounded bg-slate-50">
-                                    <span className="text-cyan-600 font-bold">S</span>
-                                    <span className="text-slate-600">{sLatest !== null ? sLatest.toFixed(1) : '-'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
-
-function getDomainColor(domainName: string) {
-    const map: Record<string, string> = {
-        'Commercial Readiness': '#f59e0b',
-        'Entrepreneurial Readiness': '#10b981',
-        'Marketing Readiness': '#ec4899',
-        'Innovation Readiness': '#8b5cf6',
-        'Operational Readiness': '#3b82f6',
-        'Professional Readiness': '#14b8a6',
-    };
-    return map[domainName] || '#94a3b8';
 }

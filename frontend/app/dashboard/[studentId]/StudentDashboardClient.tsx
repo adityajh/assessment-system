@@ -44,7 +44,7 @@ export default function StudentDashboardClient({
             {/* Action Bar (Hidden in Print) */}
             <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm print:hidden">
                 <div>
-                    <h1 className="text-xl font-bold text-slate-800">Student Dashboard View</h1>
+                    <h1 className="text-xl font-bold text-slate-800">Student Dashboard</h1>
                     <p className="text-sm text-slate-500">Optimized for 1:1 sessions and PDF export. Use landscape mode for best PDF results.</p>
                 </div>
                 <button
@@ -69,7 +69,7 @@ export default function StudentDashboardClient({
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-slate-500 uppercase font-bold tracking-wider">Let's Enterprise</p>
-                            <p className="text-xl font-semibold text-slate-800">Student Readiness Report</p>
+                            <p className="text-xl font-semibold text-slate-800">Student Dashboard</p>
                         </div>
                     </div>
 
