@@ -11,14 +11,16 @@ interface ImportWizardProps {
     initialStudents: Student[];
     initialProjects: Project[];
     initialPrograms: any[];
+    initialMetrics?: any[];
 }
 
 type ImportType = 'mentor' | 'self' | 'peer' | 'term' | 'mentor_notes' | 'unknown';
 
-export default function ImportWizardClientPage({ initialStudents, initialProjects, initialPrograms }: ImportWizardProps) {
+export default function ImportWizardClientPage({ initialStudents, initialProjects, initialPrograms, initialMetrics = [] }: ImportWizardProps) {
     const [file, setFile] = useState<File | null>(null);
     const [detectedType, setDetectedType] = useState<ImportType>('unknown');
     const [projectId, setProjectId] = useState<string>('');
+    const [targetMetricId, setTargetMetricId] = useState<string>('');
     const [assessmentDate, setAssessmentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [program, setProgram] = useState<string>(initialPrograms?.[0]?.name || 'UG-MED');
     const [cohort, setCohort] = useState<string>(''); // Added cohort state
@@ -99,8 +101,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
             setError("Please select a Cohort year.");
             return;
         }
-        if (!term) {
-            setError("Please fill out the Term field.");
+        if (detectedType === 'term' && !targetMetricId) {
+            setError("Please select a Target Metric for this term report.");
             return;
         }
         if ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId) {
@@ -161,6 +163,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     program: program,
                     cohort: cohort,
                     term: term,
+                    targetMetricId: targetMetricId, // Passed for term reports
                     date: assessmentDate,
                     rawScaleMin: rawScaleMin,
                     rawScaleMax: rawScaleMax,
@@ -362,10 +365,27 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     <option value="mentor">Mentor Assessments (Matrix)</option>
                                     <option value="self">Self Assessments</option>
                                     <option value="peer">Peer Feedback</option>
-                                    <option value="term">Term Reports</option>
+                                    <option value="term">Metric Tracking (was Term Reports)</option>
                                     <option value="mentor_notes">Mentor Notes</option>
                                 </select>
                             </div>
+
+                            {detectedType === 'term' && (
+                                <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <label className="text-md font-black text-slate-950 uppercase tracking-wide">Target Metric</label>
+                                    <select
+                                        className="input bg-white border-2 border-indigo-300 !text-slate-900 !font-extrabold h-12 focus:border-indigo-600 shadow-sm transition-all"
+                                        value={targetMetricId}
+                                        onChange={(e) => setTargetMetricId(e.target.value)}
+                                    >
+                                        <option value="">-- Choose Metric (CBP, BoW, etc.) --</option>
+                                        {initialMetrics.map(m => (
+                                            <option key={m.id} value={m.id}>{m.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[10px] text-slate-500 font-bold italic px-1">Choose exactly which metric these values represent.</p>
+                                </div>
+                            )}
 
                             {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && (
                                 <div className="flex flex-col gap-2">

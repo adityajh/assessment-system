@@ -7,10 +7,11 @@ export default async function AdminImportPage() {
     const supabase = await createClient();
 
     // Fetch initial data for the wizard
-    const [students, projects, programsRes] = await Promise.all([
+    const [students, projects, programsRes, metricsRes] = await Promise.all([
         getStudents(supabase),
         getProjects(supabase),
-        supabase.from('programs').select('*').order('name')
+        supabase.from('programs').select('*').order('name'),
+        supabase.from('metrics').select('*').order('name')
     ]);
 
     return (
@@ -27,6 +28,7 @@ export default async function AdminImportPage() {
                     initialStudents={students}
                     initialProjects={projects}
                     initialPrograms={programsRes.data || []}
+                    initialMetrics={metricsRes.data || []}
                 />
             </div>
         </div>

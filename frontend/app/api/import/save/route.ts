@@ -388,7 +388,8 @@ export async function POST(request: NextRequest) {
         }
 
         if (type === 'term') {
-            const updatesByStudent: Record<string, any> = {};
+            const { targetMetricId } = data;
+            let metricInserts: any[] = [];
             let lastColMap: Record<string, number> = {};
 
             Object.entries(sheetsData as Record<string, any[][]>).forEach(([sheetName, rows]) => {
@@ -397,7 +398,7 @@ export async function POST(request: NextRequest) {
                 let headerRowIdx = -1;
                 for (let i = 0; i < Math.min(10, rows.length); i++) {
                     const rowStr = rows[i].join(' ').toLowerCase();
-                    if (rowStr.includes('metric') && rowStr.includes('value')) {
+                    if (rowStr.includes('value') || rowStr.includes('count') || rowStr.includes('score')) {
                         headerRowIdx = i;
                         break;
                     }
@@ -408,12 +409,12 @@ export async function POST(request: NextRequest) {
                 const colMap: Record<string, number> = {};
                 headers.forEach((h, idx) => {
                     if (h.includes('student') || h.includes('name')) colMap['student'] = idx;
-                    else if (h.includes('metric') && !h.includes('value')) colMap['metric'] = idx;
-                    else if (h.includes('value') || h.includes('score') || h.includes('count')) colMap['value'] = idx;
+                    else if (h.includes('value') || h.includes('count') || h.includes('score')) colMap['value'] = idx;
+                    else if (h.includes('metric')) colMap['metric'] = idx;
                 });
                 lastColMap = colMap;
 
-                if (colMap['student'] === undefined || colMap['metric'] === undefined || colMap['value'] === undefined) {
+                if (colMap['student'] === undefined || colMap['value'] === undefined) {
                     return; // Skip sheet if missing required columns
                 }
 
@@ -422,35 +423,38 @@ export async function POST(request: NextRequest) {
                     if (!row || row.length === 0) continue;
 
                     const studentName = String(row[colMap['student']] || '').trim();
-                    const metric = String(row[colMap['metric']] || '').trim().toLowerCase();
                     const valueStr = String(row[colMap['value']] || '').trim();
 
-                    if (!studentName || !metric || !valueStr || valueStr.toLowerCase() === 'nan') continue;
+                    if (!studentName || !valueStr || valueStr.toLowerCase() === 'nan') continue;
 
                     const studentId = getStudentId(studentName);
                     if (!studentId) continue;
 
-                    if (!updatesByStudent[studentId]) {
-                        updatesByStudent[studentId] = { student_id: studentId, term: term };
-                    }
-
                     const valNum = parseFloat(valueStr);
                     if (isNaN(valNum)) continue;
 
-                    if (metric.includes('cbp')) {
-                        updatesByStudent[studentId].cbp_count = Math.round(valNum);
-                    } else if (metric.includes('conflexion')) {
-                        updatesByStudent[studentId].conflexion_count = Math.round(valNum);
-                    } else if (metric.includes('bow')) {
-                        updatesByStudent[studentId].bow_score = valNum;
+                    // If a specific metric was selected in the UI, use it.
+                    // Otherwise, try to detect from the 'metric' column if it exists.
+                    let effectiveMetricId = targetMetricId;
+
+                    if (!effectiveMetricId && colMap['metric'] !== undefined) {
+                        const rowMetric = String(row[colMap['metric']] || '').trim().toLowerCase();
+                        // This is a fallback for older files or if the user didn't select a metric but the sheet has it.
+                        // However, we now prefer the UI selection.
+                    }
+
+                    if (effectiveMetricId) {
+                        metricInserts.push({
+                            student_id: studentId,
+                            metric_id: effectiveMetricId,
+                            value: valNum
+                        });
                     }
                 }
             });
 
-            const termInserts = Object.values(updatesByStudent);
-
-            if (termInserts.length === 0) {
-                return NextResponse.json({ error: 'No valid term report records found.' }, { status: 400 });
+            if (metricInserts.length === 0) {
+                return NextResponse.json({ error: 'No valid metric records found.' }, { status: 400 });
             }
 
             // Create Log
@@ -464,50 +468,30 @@ export async function POST(request: NextRequest) {
                     data_type: 'term',
                     project_id: projectId || null,
                     file_name: fileName,
-                    mapping_config: lastColMap as any,
-                    records_inserted: termInserts.length
+                    mapping_config: { ...lastColMap, targetMetricId } as any,
+                    records_inserted: metricInserts.length
                 })
                 .select().single();
 
             if (logEff) throw logEff;
 
-            // Fetch existing term records to avoid completely overwriting untouched metrics
-            const { data: existingRecords } = await supabase
-                .from('term_tracking')
-                .select('*')
-                .in('student_id', termInserts.map(t => t.student_id))
-                .eq('term', term);
-
-            const existingMap = new Map();
-            (existingRecords || []).forEach(r => existingMap.set(r.student_id, r));
-
-            const finalInserts = termInserts.map(insert => {
-                const ex = existingMap.get(insert.student_id);
-                const payload: any = {
-                    student_id: insert.student_id,
-                    term: insert.term,
-                    assessment_log_id: log.id,
-                    cbp_count: insert.cbp_count !== undefined ? insert.cbp_count : (ex?.cbp_count || 0),
-                    conflexion_count: insert.conflexion_count !== undefined ? insert.conflexion_count : (ex?.conflexion_count || 0),
-                    bow_score: insert.bow_score !== undefined ? insert.bow_score : (ex?.bow_score || 0)
-                };
-                if (ex && ex.id) {
-                    payload.id = ex.id;
-                }
-                return payload;
-            });
+            // Add log ID to inserts
+            const finalInserts = metricInserts.map(ins => ({
+                ...ins,
+                assessment_log_id: log.id
+            }));
 
             const { error: termErr } = await supabase
-                .from('term_tracking')
+                .from('metric_tracking')
                 .upsert(finalInserts, {
-                    onConflict: 'student_id,term,assessment_log_id'
+                    onConflict: 'student_id,metric_id,assessment_log_id'
                 });
 
             if (termErr) throw termErr;
 
             return NextResponse.json({
                 success: true,
-                message: `Imported term tracking metrics for ${finalInserts.length} students.`,
+                message: `Imported ${finalInserts.length} metric records. Linked to Log ID: ${log.id.slice(0, 8)}...`,
                 count: finalInserts.length
             });
         }

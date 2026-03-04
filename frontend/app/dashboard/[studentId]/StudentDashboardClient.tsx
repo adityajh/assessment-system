@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
+import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
@@ -43,9 +44,19 @@ export default function StudentDashboardClient({
         <div className="bg-slate-50 min-h-screen text-slate-900 pb-20 print:pb-0 print:bg-white">
             {/* Action Bar (Hidden in Print) */}
             <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm print:hidden">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800">Student Dashboard</h1>
-                    <p className="text-sm text-slate-500">Optimized for 1:1 sessions and PDF export. Use landscape mode for best PDF results.</p>
+                <div className="flex items-center gap-6">
+                    <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold transition-colors group"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6" /></svg>
+                        Back
+                    </Link>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-800">Student Dashboard</h1>
+                        <p className="text-sm text-slate-500">Optimized for 1:1 sessions and PDF export.</p>
+                    </div>
                 </div>
                 <button
                     onClick={handlePrint}
