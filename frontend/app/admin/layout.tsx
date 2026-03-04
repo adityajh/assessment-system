@@ -4,8 +4,6 @@ import '../../styles/admin.css';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    Users,
-    FolderGit2,
     BarChart3,
     BookOpen,
     PieChart,
@@ -21,17 +19,16 @@ import {
     Briefcase,
     LayoutDashboard,
     StickyNote,
-    BarChart2,
-    LayoutTemplate
+    BarChart2
 } from 'lucide-react';
 import { useEffect } from 'react';
 
 const navSections = [
     {
-        label: 'Students & Projects',
+        label: 'Import',
         items: [
-            { href: '/admin/students', icon: Users, label: 'Students' },
-            { href: '/admin/projects', icon: FolderGit2, label: 'Projects' },
+            { label: 'Data Import', href: '/admin/import', icon: UploadCloud, badge: 'Beta' },
+            { label: 'Assessment Logs', href: '/admin/assessment-logs', icon: FileText },
         ]
     },
     {
@@ -40,18 +37,21 @@ const navSections = [
             { href: '/admin/assessments/mentor', icon: BarChart2, label: 'Mentor Scores' },
             { href: '/admin/assessments/self', icon: FileText, label: 'Self Scores' },
             { href: '/admin/peer-feedback', icon: MessageSquareQuote, label: 'Peer Feedback' },
-            { href: '/admin/notes', icon: StickyNote, label: 'Mentor Notes' },
-            { href: '/admin/metrics', icon: Briefcase, label: 'Metrics' }
+            { href: '/admin/notes', icon: StickyNote, label: 'Mentor Notes' }
         ]
     },
     {
         label: 'Tools',
         items: [
-            { label: 'Data Import', href: '/admin/import', icon: UploadCloud, badge: 'Beta' },
-            { label: 'Assessment Logs', href: '/admin/assessment-logs', icon: FileText },
-            { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen },
-            { label: 'Playground', href: '/admin/playground', icon: LayoutTemplate },
-            { label: 'Settings', href: '/admin/settings', icon: Settings },
+            { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+            { label: 'Metrics', href: '/admin/metrics', icon: Briefcase },
+            { label: 'Rubrics', href: '/admin/rubrics', icon: BookOpen }
+        ]
+    },
+    {
+        label: 'System',
+        items: [
+            { label: 'Settings', href: '/admin/settings', icon: Settings }
         ]
     }
 ];
