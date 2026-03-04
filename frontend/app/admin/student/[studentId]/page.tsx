@@ -1,15 +1,14 @@
-import PlaygroundClientPage from './PlaygroundClientPage';
 import { createClient } from '@/lib/supabase/server';
 import { getPlaygroundData } from '@/lib/supabase/queries/assessments';
-import { getStudents } from '@/lib/supabase/queries/students';
+import StudentDashboardClient from './StudentDashboardClient';
 
 export const metadata = {
-    title: 'Component Playground - Admin Panel',
+    title: 'Student Dashboard - Admin',
 };
 
-export default async function PlaygroundPage({ searchParams }: { searchParams: Promise<{ studentId?: string }> }) {
-    const { studentId } = await searchParams;
-    let mockData = null;
+export default async function StudentDashboardPage({ params }: { params: Promise<{ studentId: string }> }) {
+    const { studentId } = await params;
+
     let gapData = null;
     let heatmapData = null;
     let consolidatedHeatmapData = null;
@@ -22,17 +21,22 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let topStrengths: any[] = [];
     let growthAreas: any[] = [];
     let distributionData: any[] = [];
-    let studentName = "Mock Student";
-    let studentsList: any[] = [];
-    let activeStudentId = studentId || "";
+    let mentorNotes: any[] = [];
+    let studentData = null;
 
     try {
         const supabase = await createClient();
         const data = await getPlaygroundData(supabase, studentId);
-        studentsList = await getStudents(supabase);
 
-        activeStudentId = data.student.id;
-        studentName = data.student.canonical_name;
+        const { data: notesData } = await supabase
+            .from('mentor_notes')
+            .select('*, projects(name)')
+            .eq('student_id', studentId)
+            .order('created_at', { ascending: false });
+
+        if (notesData) mentorNotes = notesData;
+
+        studentData = data.student;
 
         // 1. BUILD GAP DATA (Domain Averages)
         const domainMap = new Map();
@@ -74,7 +78,6 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             const scores: Record<string, number | null> = {};
 
             data.projects.forEach(proj => {
-                // For heatmap, we usually want mentor scores as the source of truth for mastery
                 const assessment = data.assessments.find(a => a.parameter_id === param.id && a.project_id === proj.id && a.assessment_type === 'mentor');
                 scores[proj.name] = assessment?.normalized_score ? Number(assessment.normalized_score.toFixed(1)) : null;
             });
@@ -142,7 +145,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             if (projectFeedback.length > 0) {
                 peerRatingProjects.push(proj.name);
                 peerCategories.forEach(c => {
-                    const scores = projectFeedback.map(f => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
+                    const scores = projectFeedback.map((f: any) => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
                     const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
                     if (avg !== null) {
                         radarDataMap[c.key][proj.name] = Number(avg.toFixed(1));
@@ -197,7 +200,6 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         growthAreas = sortedParams.slice(-3).reverse();
 
         // 9. BUILD DISTRIBUTION CURVE DATA
-        // Domains
         data.domains.forEach(domain => {
             const studentAverages: Record<string, { sum: number, count: number }> = {};
             data.cohortDomainScores.filter((c: any) => c.domain_name === domain.name && c.domain_score !== null).forEach((c: any) => {
@@ -206,7 +208,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 studentAverages[c.student_id].count++;
             });
             const cohortAverages = Object.values(studentAverages).map(s => s.sum / s.count);
-            const activeStudentAvg = studentAverages[activeStudentId] ? (studentAverages[activeStudentId].sum / studentAverages[activeStudentId].count) : null;
+            const activeStudentAvg = studentAverages[studentId] ? (studentAverages[studentId].sum / studentAverages[studentId].count) : null;
 
             const bins = Array(10).fill(0);
             cohortAverages.forEach(score => {
@@ -223,71 +225,26 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             });
         });
 
-        // Peer metrics
-        const peerMetricsMap: Record<string, string> = {
-            'avg_quality_of_work': 'Quality of Work',
-            'avg_initiative_ownership': 'Initiative & Ownership',
-            'avg_communication': 'Communication',
-            'avg_collaboration': 'Collaboration',
-            'avg_growth_mindset': 'Growth Mindset'
-        };
-        Object.entries(peerMetricsMap).forEach(([key, name]) => {
-            const studentAverages: Record<string, { sum: number, count: number }> = {};
-            data.cohortPeerSummary.forEach((c: any) => {
-                const score = c[key];
-                if (score !== null && score !== undefined) {
-                    if (!studentAverages[c.student_id]) studentAverages[c.student_id] = { sum: 0, count: 0 };
-                    studentAverages[c.student_id].sum += Number(score);
-                    studentAverages[c.student_id].count++;
-                }
-            });
-            const cohortAverages = Object.values(studentAverages).map(s => s.sum / s.count);
-            const activeStudentAvg = studentAverages[activeStudentId] ? (studentAverages[activeStudentId].sum / studentAverages[activeStudentId].count) : null;
-
-            const bins = Array(5).fill(0);
-            cohortAverages.forEach(score => {
-                const binIdx = Math.min(Math.floor(score) - 1, 4);
-                if (binIdx >= 0) bins[binIdx]++;
-            });
-
-            distributionData.push({
-                type: 'peer',
-                name: name,
-                studentScore: activeStudentAvg !== null ? Number(activeStudentAvg.toFixed(1)) : null,
-                cohortScores: cohortAverages,
-                bins: bins.map((count, i) => ({ range: `${i + 1}-${i + 2}`, count, studentMarker: activeStudentAvg !== null && activeStudentAvg >= i + 1 && activeStudentAvg < i + 2 ? activeStudentAvg : null }))
-            });
-        });
-
     } catch (e) {
-        console.error("Failed to load playground data", e);
+        console.error("Failed to load dashboard data", e);
     }
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-[1600px] h-full">
-            <div className="flex justify-between items-center shrink-0">
-                <div>
-                    <h2 className="text-2xl font-semibold mb-1">Component Playground</h2>
-                    <p className="text-slate-400">Isolated testing environment. Currently showing real data for student: <span className="text-indigo-400 font-medium">{studentName}</span></p>
-                </div>
-            </div>
-
-            <PlaygroundClientPage
-                gapData={gapData}
-                heatmapData={heatmapData}
-                consolidatedHeatmapData={consolidatedHeatmapData}
-                heatmapProjects={heatmapProjects}
-                trajectoryData={trajectoryData}
-                kpiData={kpiData}
-                peerRatingData={peerRatingData}
-                peerRatingProjects={peerRatingProjects}
-                projectDomainScores={projectDomainScores}
-                topStrengths={topStrengths}
-                growthAreas={growthAreas}
-                distributionData={distributionData}
-                students={studentsList}
-                studentId={activeStudentId}
-            />
-        </div>
+        <StudentDashboardClient
+            studentData={studentData}
+            gapData={gapData}
+            heatmapData={heatmapData}
+            consolidatedHeatmapData={consolidatedHeatmapData}
+            heatmapProjects={heatmapProjects}
+            trajectoryData={trajectoryData}
+            kpiData={kpiData}
+            peerRatingData={peerRatingData}
+            peerRatingProjects={peerRatingProjects}
+            projectDomainScores={projectDomainScores}
+            topStrengths={topStrengths}
+            growthAreas={growthAreas}
+            distributionData={distributionData}
+            mentorNotes={mentorNotes}
+        />
     );
 }

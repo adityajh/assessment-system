@@ -23,6 +23,22 @@ const getHeatmapColor = (score: number | null | undefined) => {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
+
+        // Distribution tooltip
+        if (data.range) {
+            return (
+                <div className="bg-[#1e2233] border border-slate-700 p-3 rounded-md shadow-lg">
+                    <p className="text-slate-200 font-medium mb-1">Score Range: {data.range}</p>
+                    <p className="text-indigo-400 text-sm">Students in Cohort: <span className="text-slate-100 font-medium">{data.count}</span></p>
+                    {data.studentMarker !== null && (
+                        <div className="mt-2 text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">
+                            Student is in this bracket ({data.studentMarker.toFixed(1)})
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
         return (
             <div className="bg-[#1e2233] border border-slate-700 p-3 rounded-md shadow-lg">
                 <p className="text-slate-200 font-medium mb-2">{label}</p>
@@ -48,9 +64,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, students, studentId }: any) {
+export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, distributionData, students, studentId }: any) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [distMetric, setDistMetric] = useState(distributionData && distributionData.length > 0 ? distributionData[0].name : '');
 
     if (!gapData || !heatmapData || !trajectoryData) {
         return (
@@ -122,6 +139,18 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                 >
                     Learning Trajectory (Line)
                 </button>
+                <button
+                    onClick={() => setActiveTab('strengths')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'strengths' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    Top Strengths & Growth Areas
+                </button>
+                <button
+                    onClick={() => setActiveTab('distribution')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'distribution' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    Cohort Distribution
+                </button>
             </div>
 
             {/* Content Area */}
@@ -135,6 +164,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                         {activeTab === 'mastery-consolidated' && 'Program Mastery - Consolidated (Domain Averages)'}
                         {activeTab === 'mastery-detail' && 'Program Mastery - Detail (By Parameter)'}
                         {activeTab === 'trajectory' && 'Learning Trajectory Over Time'}
+                        {activeTab === 'strengths' && 'Top Strengths & Growth Areas'}
+                        {activeTab === 'distribution' && 'Cohort Distribution Curve'}
                     </h3>
                     <p className="text-sm text-slate-400 mt-1">
                         Displaying live production data for the selected student.
@@ -376,6 +407,104 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     {activeTab === 'domain-comparison' && (!projectDomainScores || projectDomainScores.length === 0) && (
                         <div className="flex-1 flex items-center justify-center text-slate-500 italic">
                             No domain-level assessment data recorded for this student.
+                        </div>
+                    )}
+
+                    {activeTab === 'strengths' && topStrengths && (
+                        <div className="flex flex-col md:flex-row gap-6 w-full h-full p-4 overflow-y-auto">
+                            <div className="flex-1 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 flex flex-col gap-4">
+                                <h4 className="text-emerald-400 font-medium text-lg flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400"></div> Top 3 Strengths</h4>
+                                <div className="flex flex-col gap-3">
+                                    {topStrengths.map((item: any, i: number) => (
+                                        <div key={i} className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 flex justify-between items-center transition-transform hover:scale-[1.02]">
+                                            <div>
+                                                <p className="text-slate-200 font-medium">{item.name}</p>
+                                                <p className="text-slate-400 text-xs mt-1">{item.domain}</p>
+                                            </div>
+                                            <div className="bg-emerald-500/10 text-emerald-400 font-bold px-3 py-1 rounded-md border border-emerald-500/20">
+                                                {item.score}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {topStrengths.length === 0 && <span className="text-slate-500 italic">No mentor data yet.</span>}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 flex flex-col gap-4">
+                                <h4 className="text-fuchsia-400 font-medium text-lg flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-fuchsia-400"></div> Primary Areas to Grow</h4>
+                                <div className="flex flex-col gap-3">
+                                    {growthAreas.map((item: any, i: number) => (
+                                        <div key={i} className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 flex justify-between items-center transition-transform hover:scale-[1.02]">
+                                            <div>
+                                                <p className="text-slate-200 font-medium">{item.name}</p>
+                                                <p className="text-slate-400 text-xs mt-1">{item.domain}</p>
+                                            </div>
+                                            <div className="bg-fuchsia-500/10 text-fuchsia-400 font-bold px-3 py-1 rounded-md border border-fuchsia-500/20">
+                                                {item.score}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {growthAreas.length === 0 && <span className="text-slate-500 italic">No mentor data yet.</span>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'distribution' && distributionData && distributionData.length > 0 && (
+                        <div className="w-full h-full flex flex-col">
+                            <div className="mb-4 flex gap-4 overflow-x-auto pb-2 custom-scrollbar shrink-0">
+                                {distributionData.map((d: any) => (
+                                    <button
+                                        key={d.name}
+                                        onClick={() => setDistMetric(d.name)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${distMetric === d.name ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-800 hover:text-slate-200'}`}
+                                    >
+                                        {d.name}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex-1 min-h-0 relative">
+                                {(() => {
+                                    const activeDist = distributionData.find((d: any) => d.name === (distMetric || distributionData[0]?.name));
+                                    if (!activeDist) return null;
+
+                                    // Make student's bar stand out
+                                    const CustomBar = (props: any) => {
+                                        const { x, y, width, height, payload } = props;
+                                        const isStudent = payload.studentMarker !== null;
+                                        return (
+                                            <g>
+                                                <rect x={x} y={y} width={width} height={height} fill={isStudent ? '#8b5cf6' : '#334155'} rx={4} ry={4} />
+                                                {isStudent && (
+                                                    <circle cx={x + width / 2} cy={y - 12} r={4} fill="#c084fc" />
+                                                )}
+                                            </g>
+                                        );
+                                    };
+
+                                    return (
+                                        <div className="w-full h-full flex flex-col">
+                                            <div className="mb-4 text-sm text-slate-300 flex justify-between items-center shrink-0">
+                                                <span>Distribution of <span className="text-indigo-400 font-medium">{activeDist.name}</span> across Cohort</span>
+                                                {activeDist.studentScore !== null && (
+                                                    <span className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                                                        Student Score: <span className="text-indigo-400 font-bold">{activeDist.studentScore}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={activeDist.bins} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                                                    <XAxis dataKey="range" stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} tickMargin={10} />
+                                                    <YAxis stroke="#94a3b8" tick={{ fill: '#64748b', fontSize: 11 }} allowDecimals={false} />
+                                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1e293b', opacity: 0.8 }} />
+                                                    <Bar dataKey="count" shape={<CustomBar />} isAnimationActive={false} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     )}
                 </div>

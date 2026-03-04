@@ -578,16 +578,9 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            const finalInserts = Object.values(notesByStudent).map(data => ({
-                student_id: data.student_id,
-                project_id: data.project_id,
-                note_text: data.notes.join('\n\n'),
-                note_type: 'general',
-                created_by: Array.from(data.mentors).join(', '),
-                assessment_log_id: log.id
-            }));
+            const preInserts = Object.values(notesByStudent);
 
-            if (finalInserts.length === 0) {
+            if (preInserts.length === 0) {
                 return NextResponse.json({ error: 'No valid mentor notes records found.' }, { status: 400 });
             }
 
@@ -603,9 +596,20 @@ export async function POST(request: NextRequest) {
                     project_id: projectId || null,
                     file_name: fileName,
                     mapping_config: lastColMap as any,
-                    records_inserted: finalInserts.length
+                    records_inserted: preInserts.length
                 })
                 .select().single();
+
+            if (logEff) throw logEff;
+
+            const finalInserts = preInserts.map(data => ({
+                student_id: data.student_id,
+                project_id: data.project_id,
+                note_text: data.notes.join('\n\n'),
+                note_type: 'general',
+                created_by: Array.from(data.mentors).join(', '),
+                assessment_log_id: log.id
+            }));
 
             if (logEff) throw logEff;
 
