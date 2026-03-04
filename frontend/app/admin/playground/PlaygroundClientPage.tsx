@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
@@ -92,6 +93,14 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                             <option key={s.id} value={s.id}>{s.canonical_name} ({s.student_number})</option>
                         ))}
                     </select>
+
+                    <button
+                        onClick={() => router.push(`/admin/student/${studentId}`)}
+                        className="flex items-center gap-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-600/20 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+                    >
+                        <BarChart3 size={16} />
+                        Go to Student Report Card
+                    </button>
                 </div>
             )}
 

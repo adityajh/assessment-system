@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Student, Program } from '@/lib/supabase/queries/students';
 import { Badge } from '@/components/shared/Badge';
-import { Edit2, Plus, UserX, UserCheck } from 'lucide-react';
+import { Edit2, Plus, UserX, UserCheck, ExternalLink, BarChart3 } from 'lucide-react';
 import { StudentForm } from '@/components/admin/StudentForm';
+import Link from 'next/link';
 
 export default function StudentsClientPage({ initialStudents, initialPrograms }: { initialStudents: Student[], initialPrograms: Program[] }) {
     const [students, setStudents] = useState<Student[]>(initialStudents);
@@ -92,13 +93,22 @@ export default function StudentsClientPage({ initialStudents, initialPrograms }:
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => { setEditingStudent(student); setIsFormOpen(true); }}
-                                            className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded transition-colors"
-                                            title="Edit Student"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <Link
+                                                href={`/admin/student/${student.id}`}
+                                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10 rounded transition-colors"
+                                                title="View Report Dashboard"
+                                            >
+                                                <BarChart3 size={16} />
+                                            </Link>
+                                            <button
+                                                onClick={() => { setEditingStudent(student); setIsFormOpen(true); }}
+                                                className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded transition-colors"
+                                                title="Edit Student"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             );
