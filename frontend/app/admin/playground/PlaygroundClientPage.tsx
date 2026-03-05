@@ -65,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, distributionData, students, studentId }: any) {
+export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, students, studentId }: any) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [distMetric, setDistMetric] = useState(distributionData && distributionData.length > 0 ? distributionData[0].name : '');
@@ -428,40 +428,80 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'strengths' && topStrengths && (
-                        <div className="flex flex-col md:flex-row gap-6 w-full h-full p-4 overflow-y-auto">
-                            <div className="flex-1 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 flex flex-col gap-4">
-                                <h4 className="text-emerald-400 font-medium text-lg flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400"></div> Top 3 Strengths</h4>
-                                <div className="flex flex-col gap-3">
-                                    {topStrengths.map((item: any, i: number) => (
-                                        <div key={i} className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 flex justify-between items-center transition-transform hover:scale-[1.02]">
-                                            <div>
-                                                <p className="text-slate-200 font-medium">{item.name}</p>
-                                                <p className="text-slate-400 text-xs mt-1">{item.domain}</p>
+                        <div className="flex flex-col gap-8 w-full h-full p-4 overflow-y-auto">
+                            {/* Parameter Level (Top 3 / Bottom 3) */}
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="flex-1 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 flex flex-col gap-4">
+                                    <h4 className="text-emerald-400 font-medium text-lg flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400"></div> Top 3 Strengths (Parameters)</h4>
+                                    <div className="flex flex-col gap-3">
+                                        {topStrengths.map((item: any, i: number) => (
+                                            <div key={i} className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 flex justify-between items-center transition-transform hover:scale-[1.02]">
+                                                <div>
+                                                    <p className="text-slate-200 font-medium">{item.name}</p>
+                                                    <p className="text-slate-400 text-xs mt-1">{item.domain}</p>
+                                                </div>
+                                                <div className="bg-emerald-500/10 text-emerald-400 font-bold px-3 py-1 rounded-md border border-emerald-500/20">
+                                                    {item.score}
+                                                </div>
                                             </div>
-                                            <div className="bg-emerald-500/10 text-emerald-400 font-bold px-3 py-1 rounded-md border border-emerald-500/20">
-                                                {item.score}
+                                        ))}
+                                        {topStrengths.length === 0 && <span className="text-slate-500 italic">No mentor data yet.</span>}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 flex flex-col gap-4">
+                                    <h4 className="text-fuchsia-400 font-medium text-lg flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-fuchsia-400"></div> Primary Areas to Grow (Parameters)</h4>
+                                    <div className="flex flex-col gap-3">
+                                        {growthAreas.map((item: any, i: number) => (
+                                            <div key={i} className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 flex justify-between items-center transition-transform hover:scale-[1.02]">
+                                                <div>
+                                                    <p className="text-slate-200 font-medium">{item.name}</p>
+                                                    <p className="text-slate-400 text-xs mt-1">{item.domain}</p>
+                                                </div>
+                                                <div className="bg-fuchsia-500/10 text-fuchsia-400 font-bold px-3 py-1 rounded-md border border-fuchsia-500/20">
+                                                    {item.score}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                    {topStrengths.length === 0 && <span className="text-slate-500 italic">No mentor data yet.</span>}
+                                        ))}
+                                        {growthAreas.length === 0 && <span className="text-slate-500 italic">No mentor data yet.</span>}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex-1 bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 flex flex-col gap-4">
-                                <h4 className="text-fuchsia-400 font-medium text-lg flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-fuchsia-400"></div> Primary Areas to Grow</h4>
-                                <div className="flex flex-col gap-3">
-                                    {growthAreas.map((item: any, i: number) => (
-                                        <div key={i} className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 flex justify-between items-center transition-transform hover:scale-[1.02]">
-                                            <div>
-                                                <p className="text-slate-200 font-medium">{item.name}</p>
-                                                <p className="text-slate-400 text-xs mt-1">{item.domain}</p>
-                                            </div>
-                                            <div className="bg-fuchsia-500/10 text-fuchsia-400 font-bold px-3 py-1 rounded-md border border-fuchsia-500/20">
-                                                {item.score}
-                                            </div>
+                            {/* Domain Level (Top 2 / Bottom 2) */}
+                            <div className="border-t border-slate-800 pt-8">
+                                <div className="mb-6">
+                                    <h4 className="text-slate-100 font-medium text-lg">Domain-Level Analysis</h4>
+                                    <p className="text-sm text-slate-500">Aggregated performance across the 6 readiness domains.</p>
+                                </div>
+                                <div className="flex flex-col md:flex-row gap-6">
+                                    <div className="flex-1 bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-6 flex flex-col gap-4">
+                                        <h5 className="text-indigo-400 font-medium flex items-center gap-2">Top 2 Strongest Domains</h5>
+                                        <div className="flex flex-col gap-3">
+                                            {topDomainStrengths?.map((item: any, i: number) => (
+                                                <div key={i} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50 flex justify-between items-center">
+                                                    <p className="text-slate-200 font-medium">{item.name}</p>
+                                                    <div className="bg-indigo-500/10 text-indigo-400 font-bold px-3 py-1 rounded-md border border-indigo-500/20">
+                                                        {item.score}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                    {growthAreas.length === 0 && <span className="text-slate-500 italic">No mentor data yet.</span>}
+                                    </div>
+
+                                    <div className="flex-1 bg-amber-500/5 border border-amber-500/10 rounded-xl p-6 flex flex-col gap-4">
+                                        <h5 className="text-amber-400 font-medium flex items-center gap-2">Top 2 Domains for Growth</h5>
+                                        <div className="flex flex-col gap-3">
+                                            {growthDomainAreas?.map((item: any, i: number) => (
+                                                <div key={i} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50 flex justify-between items-center">
+                                                    <p className="text-slate-200 font-medium">{item.name}</p>
+                                                    <div className="bg-amber-500/10 text-amber-400 font-bold px-3 py-1 rounded-md border border-amber-500/20">
+                                                        {item.score}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

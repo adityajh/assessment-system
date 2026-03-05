@@ -9,7 +9,6 @@ export const metadata = {
 
 export default async function PlaygroundPage({ searchParams }: { searchParams: Promise<{ studentId?: string }> }) {
     const { studentId } = await searchParams;
-    let mockData = null;
     let gapData = null;
     let heatmapData = null;
     let consolidatedHeatmapData = null;
@@ -21,6 +20,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let heatmapProjects: string[] = [];
     let topStrengths: any[] = [];
     let growthAreas: any[] = [];
+    let topDomainStrengths: any[] = [];
+    let growthDomainAreas: any[] = [];
     let distributionData: any[] = [];
     let studentName = "Mock Student";
     let studentsList: any[] = [];
@@ -74,7 +75,6 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             const scores: Record<string, number | null> = {};
 
             data.projects.forEach(proj => {
-                // For heatmap, we usually want mentor scores as the source of truth for mastery
                 const assessment = data.assessments.find(a => a.parameter_id === param.id && a.project_id === proj.id && a.assessment_type === 'mentor');
                 scores[proj.name] = assessment?.normalized_score ? Number(assessment.normalized_score.toFixed(1)) : null;
             });
@@ -123,7 +123,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00"
         };
 
-        // 6. BUILD PEER RATING DATA (Radar Chart: Questions as axes, Projects as lines)
+        // 6. BUILD PEER RATING DATA (Radar Chart)
         const peerCategories = [
             { key: 'quality_of_work', label: 'Quality of Work' },
             { key: 'initiative_ownership', label: 'Initiative & Ownership' },
@@ -153,7 +153,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
 
         peerRatingData = peerCategories.map(c => radarDataMap[c.key]);
 
-        // 7. BUILD GROUPED BAR DATA (Self vs Mentor by domain across projects)
+        // 7. BUILD GROUPED BAR DATA
         projectDomainScores = data.projects.map(proj => {
             const categories = data.domains.map(domain => {
                 const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
@@ -176,7 +176,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             };
         });
 
-        // 8. BUILD TOP STRENGTHS & GROWTH AREAS
+        // 8. BUILD TOP STRENGTHS & GROWTH AREAS (Parameters)
         const paramAverages: Record<string, { sum: number, count: number, name: string, domain: string }> = {};
         data.assessments.filter(a => a.assessment_type === 'mentor' && a.normalized_score !== null).forEach(a => {
             const param = data.parameters.find(p => p.id === a.parameter_id);
@@ -197,7 +197,6 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         growthAreas = sortedParams.slice(-3).reverse();
 
         // 9. BUILD DISTRIBUTION CURVE DATA
-        // Domains
         data.domains.forEach(domain => {
             const studentAverages: Record<string, { sum: number, count: number }> = {};
             data.cohortDomainScores.filter((c: any) => c.domain_name === domain.name && c.domain_score !== null).forEach((c: any) => {
@@ -232,17 +231,17 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             'avg_growth_mindset': 'Growth Mindset'
         };
         Object.entries(peerMetricsMap).forEach(([key, name]) => {
-            const studentAverages: Record<string, { sum: number, count: number }> = {};
+            const metricAverages: Record<string, { sum: number, count: number }> = {};
             data.cohortPeerSummary.forEach((c: any) => {
                 const score = c[key];
                 if (score !== null && score !== undefined) {
-                    if (!studentAverages[c.student_id]) studentAverages[c.student_id] = { sum: 0, count: 0 };
-                    studentAverages[c.student_id].sum += Number(score);
-                    studentAverages[c.student_id].count++;
+                    if (!metricAverages[c.student_id]) metricAverages[c.student_id] = { sum: 0, count: 0 };
+                    metricAverages[c.student_id].sum += Number(score);
+                    metricAverages[c.student_id].count++;
                 }
             });
-            const cohortAverages = Object.values(studentAverages).map(s => s.sum / s.count);
-            const activeStudentAvg = studentAverages[activeStudentId] ? (studentAverages[activeStudentId].sum / studentAverages[activeStudentId].count) : null;
+            const cohortAverages = Object.values(metricAverages).map(s => s.sum / s.count);
+            const activeStudentAvg = metricAverages[activeStudentId] ? (metricAverages[activeStudentId].sum / metricAverages[activeStudentId].count) : null;
 
             const bins = Array(5).fill(0);
             cohortAverages.forEach(score => {
@@ -259,13 +258,29 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             });
         });
 
+        // 10. BUILD DOMAIN-LEVEL STRENGTHS & GROWTH AREAS
+        const domainAveragesList = data.domains.map(domain => {
+            const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
+            const mentorAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.assessment_type === 'mentor' && a.normalized_score !== null);
+
+            if (mentorAsses.length > 0) {
+                const avg = mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length;
+                return { name: domain.name, score: Number(avg.toFixed(1)) };
+            }
+            return { name: domain.name, score: null };
+        }).filter(d => d.score !== null) as { name: string, score: number }[];
+
+        const sortedDomains = [...domainAveragesList].sort((a, b) => b.score - a.score);
+        topDomainStrengths = sortedDomains.slice(0, 2);
+        growthDomainAreas = sortedDomains.slice(-2).reverse();
+
     } catch (e) {
         console.error("Failed to load playground data", e);
     }
 
     return (
         <div className="flex flex-col gap-6 w-full max-w-[1600px] h-full">
-            <div className="flex justify-between items-center shrink-0">
+            <div className="flex justify-between items-center shrink-0 border-b border-slate-800 pb-4">
                 <div>
                     <h2 className="text-2xl font-semibold mb-1">Component Playground</h2>
                     <p className="text-slate-400">Isolated testing environment. Currently showing real data for student: <span className="text-indigo-400 font-medium">{studentName}</span></p>
@@ -284,6 +299,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 projectDomainScores={projectDomainScores}
                 topStrengths={topStrengths}
                 growthAreas={growthAreas}
+                topDomainStrengths={topDomainStrengths}
+                growthDomainAreas={growthDomainAreas}
                 distributionData={distributionData}
                 students={studentsList}
                 studentId={activeStudentId}
