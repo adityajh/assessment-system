@@ -30,7 +30,7 @@ The Year 1 Assessment System is a **Next.js web application** backed by **Supaba
 │  Per-student readiness profile               │
 │  Progression over time (multi-project)       │
 │  Peer feedback summary                       │
-│  Term tracking (CBP / Conflexion / BOW)      │
+│  Metric tracking (CBP / Conflexion / BoW)    │
 │  Mentor notes feed                           │
 └──────────────────────────────────────────────┘
 ```
@@ -50,7 +50,7 @@ Import Wizard (Admin UI)
              │
              ├── assessments (mentor / self scores)
              ├── peer_feedback
-             ├── term_tracking
+             ├── metric_tracking (CBP / Conflexion / BoW)
              ├── mentor_notes
              └── assessment_logs (audit trail)
 ```
@@ -66,7 +66,7 @@ The system ingests **four types** of assessment data. All uploads go through the
 | **Mentor Assessment** | *(default)* | `assessments` (type='mentor') | 1–10 |
 | **Self Assessment** | `Self` | `assessments` (type='self') | 1–5 or 1–10 |
 | **Peer Feedback** | `Peer` | `peer_feedback` | 1–5 |
-| **Term Report** | `Term` | `term_tracking` | Counts/credits |
+| **Term Report** | `Term` | `metric_tracking` | Counts/credits |
 | **Mentor Notes** | `Notes` | `mentor_notes` | Qualitative text |
 
 > All scored data is **normalized to a 1–10 scale** at import time. The raw score range (min/max) is entered manually in the wizard per upload.

@@ -36,6 +36,10 @@ The engine uses a fuzzy-tolerant alias system to link spreadsheet columns/rows t
     - **Giver**: Contains `giver`, `your name`, or `from:`.
     - **Metrics**: Keywords like `quality`, `initiative`, `communication`, `collaboration`, `growth` are used to map scores to the 5 peer metrics.
 
+### Flat Format (Term Tracking)
+- **Target Metric**: For "Term" data types, the user must select a **Target Metric** (CBP, Conflexion, or BoW) during the import process. 
+- **Mapping**: The values in the primary data column are mapped to the selected metric in the `metric_tracking` table. Multiple imports of different metrics can be performed against the same Term Report file if it contains multiple columns.
+
 ## 4. 🧹 Deduplication Policy
 
 The system handles collisions at two levels to ensure data integrity without requiring manual deletion.

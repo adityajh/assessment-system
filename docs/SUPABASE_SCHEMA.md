@@ -33,22 +33,22 @@ This allows different projects to have different question sets, and the Import W
      ┌────────┴─────────────────────┴──────────────┘
      │
      ▼
-┌─────────────────────┐    ┌─────────────────────┐    ┌──────────────────┐
-│    assessments      │    │   peer_feedback     │    │  term_tracking   │
-│ (student × project  │    │ (recipient × giver  │    │ (student level)  │
-│  × parameter × type)│    │  × project)         │    │                  │
-└─────────────────────┘    └─────────────────────┘    └──────────────────┘
-            │                         │                        │
-            ▼                         ▼                        ▼
-     ┌────────────────────────────────────────────────────────────┐
-     │                      assessment_logs                       │
-     │      (Master Import Event: type × program × project)       │
-     └────────────────────────────────────────────────────────────┘
+ ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+ │    assessments      │    │   peer_feedback     │    │   metric_tracking   │
+ │ (student × project  │    │ (recipient × giver  │    │ (student × metric   │
+ │  × parameter × type)│    │  × project)         │    │  × log)             │
+ └─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+             │                         │                        │
+             ▼                         ▼                        ▼
+      ┌────────────────────────────────────────────────────────────┐
+      │                      assessment_logs                       │
+      │      (Master Import Event: type × program × project)         │
+      └────────────────────────────────────────────────────────────┘
 
-┌─────────────────────┐    ┌─────────────────────────────┐
-│   mentor_notes      │    │  self_assessment_questions   │
-│ (student × project) │    │  (question → parameter map)  │
-└─────────────────────┘    └─────────────────────────────┘
+ ┌─────────────────────┐    ┌─────────────────────────────┐    ┌──────────────┐
+ │   mentor_notes      │    │  self_assessment_questions   │    │   metrics    │
+ │ (student × project) │    │  (question → parameter map)  │    │ (lookup tbl) │
+ └─────────────────────┘    └─────────────────────────────┘    └──────────────┘
 
 ┌──────────────────────────┐
 │  assessment_frameworks   │
@@ -222,20 +222,32 @@ CREATE TABLE peer_feedback (
 
 ---
 
-#### `term_tracking`
-CBP, Conflexion, BOW per student. Links to `assessment_logs` for auditability.
+#### `metrics` (NEW - Phase 10)
+Lookup table for different types of term-level metrics.
 
 ```sql
-CREATE TABLE term_tracking (
+CREATE TABLE metrics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,          -- 'CBP', 'Conflexion', 'BoW'
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+#### `metric_tracking` (REFACTORED - Phase 10)
+Individual score records for term-level metrics. Replaces the legacy column-based `term_tracking`.
+
+```sql
+CREATE TABLE metric_tracking (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID NOT NULL REFERENCES students(id),
+    metric_id UUID NOT NULL REFERENCES metrics(id),
     assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
-    cbp_count INT DEFAULT 0,
-    conflexion_count INT DEFAULT 0,
-    bow_score NUMERIC DEFAULT 0.0,
-    term TEXT DEFAULT 'Year 1',         -- for future multi-year support
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(student_id, term, assessment_log_id)
+    value NUMERIC NOT NULL DEFAULT 0.0,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(student_id, metric_id, assessment_log_id)
 );
 ```
 
@@ -359,18 +371,28 @@ GROUP BY pf.recipient_id, s.canonical_name, pf.project_id, p.name, p.sequence;
 ```
 
 #### `v_student_dashboard` — Full student profile for the dashboard
+Displays the latest aggregated metric totals for each active student.
 
 ```sql
 CREATE VIEW v_student_dashboard AS
+WITH latest_metrics AS (
+    SELECT 
+        mt.student_id,
+        m.name AS metric_name,
+        mt.value,
+        ROW_NUMBER() OVER (PARTITION BY mt.student_id, mt.metric_id ORDER BY al.assessment_date DESC, al.created_at DESC) as rnk
+    FROM metric_tracking mt
+    JOIN metrics m ON m.id = mt.metric_id
+    JOIN assessment_logs al ON al.id = mt.assessment_log_id
+)
 SELECT
     s.id AS student_id,
     s.student_number,
     s.canonical_name,
-    t.cbp_count,
-    t.conflexion_count,
-    t.bow_score
+    COALESCE((SELECT value FROM latest_metrics l WHERE l.student_id = s.id AND l.metric_name = 'CBP' AND l.rnk = 1), 0) as cbp_count,
+    COALESCE((SELECT value FROM latest_metrics l WHERE l.student_id = s.id AND l.metric_name = 'Conflexion' AND l.rnk = 1), 0) as conflexion_count,
+    COALESCE((SELECT value FROM latest_metrics l WHERE l.student_id = s.id AND l.metric_name = 'BoW' AND l.rnk = 1), 0) as bow_score
 FROM students s
-LEFT JOIN term_tracking t ON t.student_id = s.id
 WHERE s.is_active = TRUE;
 ```
 
@@ -383,9 +405,9 @@ WHERE s.is_active = TRUE;
 | **1. Self + Mentor assessment (project × domain)** | `assessments` → `v_domain_scores` | Filter by `student_id`, group by `project`, `domain`, `assessment_type` |
 | **2. Project-wise peer feedback** | `peer_feedback` → `v_peer_feedback_summary` | Filter by `student_id` (as recipient), group by `project` |
 | **3. Industry project assessments (self + mentor)** | `assessments` (where project = Moonshine/SIDR) + `assessment_frameworks` | Filter by `student_id` + `project_type = 'client'` |
-| **4. CBP count** | `term_tracking` | Direct lookup by `student_id` |
-| **5. Conflexion count** | `term_tracking` | Direct lookup by `student_id` |
-| **6. BOW score** | `term_tracking` | Direct lookup by `student_id` |
+| **4. CBP count** | `metric_tracking` | Sum/Latest for metric 'CBP' |
+| **5. Conflexion count** | `metric_tracking` | Sum/Latest for metric 'Conflexion' |
+| **6. BOW score** | `metric_tracking` | Latest for metric 'BoW' |
 | **7. Note from mentors** | `mentor_notes` | Filter by `student_id`, optionally by `project_id` |
 
 ---

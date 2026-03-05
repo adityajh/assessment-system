@@ -4,15 +4,25 @@ All notable changes to the Let's Entreprise Assessment System are documented her
 
 Format: `## [YYYY-MM-DD] — Description`
 
-## [2026-03-04] — Dashboard Reorganization & UI Branding
+## [2026-03-05] — Metric Tracking Refactor & Navigation Consolidation
 
-- **Dashboard Swap:** Promoted the high-fidelity layout (formerly "Report Card") to the primary **Student Dashboard** view (`/dashboard/[studentId]`).
-- **Legacy Preservation:** Migrated the original student dashboard to the Playground as **Dashboard Version 1** (`/admin/playground/v1/[studentId]`).
-- **Unified Branding:** Renamed all instances of "Report Card" to **"Student Dashboard"** across the UI, metadata, and page headers.
-- **Admin Side-Nav Restructuring:** Reorganized sidebar into logical segments: **Import**, **Assessments**, **Tools**, and **System**.
-- **PDF Export Optimization:** Added global print styles to the Admin Layout to automatically hide the sidebar and top navigation when exporting dashboards to PDF.
-- **Enhanced Navigation:** Refined the "Back" button to be dynamic: it correctly leads from a student's dashboard back to the student list, and from the student list back to the application homepage.
-- **Playground Links:** Added quick-access buttons in the Playground to toggle between the live Student Dashboard and the Legacy Version 1.
+- **Metric Tracking Architecture:**
+    - Replaced the column-based `term_tracking` table with a more flexible row-based `metric_tracking` table linked to a `metrics` lookup table.
+    - This allows for granular tracking of disparate metrics (CBP, Conflexion, BoW) tied to specific import events (`assessment_logs`).
+    - Added "Target Metric" selection to the Import Wizard for Term Reports to specify which metric is being uploaded.
+- **Metrics UI Enhancement:**
+    - Refactored the "Metrics & Tracking" admin page to filter "Dataset Override" dropdowns by metric type.
+    - Updated logic to pull real-time student scores from the consolidated `metric_tracking` data.
+- **Navigation Consolidation:**
+    - Unified the dashboard header UI into a single `DashboardLayout` component.
+    - Removed redundant internal "Back" buttons and secondary action bars from the Dashboard Index and Student Report pages.
+    - Implemented dynamic header titles ("Let's Entreprise Dashboard" vs "Student Analysis Dashboard") and standardized the "Print / Export PDF" button.
+- **Consolidated Backend Queries:**
+    - Refined `getPlaygroundData` and dashboard views (`v_student_dashboard`) to fetch aggregated metric totals from the new row-based tracking system.
+
+---
+
+## [2026-03-04] — Dashboard Reorganization & UI Branding
 
 ---
 
