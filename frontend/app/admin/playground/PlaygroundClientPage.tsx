@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BarChart3, LayoutDashboard } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
     if (delta <= -1.5) return '#ef4444'; // Red (highly overconfident)
@@ -65,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, students, studentId }: any) {
+export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, scatterData, peerStackedData, students, studentId }: any) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [distMetric, setDistMetric] = useState(distributionData && distributionData.length > 0 ? distributionData[0].name : '');
@@ -127,6 +127,18 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     Peer Rating (Radial)
                 </button>
                 <button
+                    onClick={() => setActiveTab('peer-stacked')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'peer-stacked' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    Peer Rating (Stacked)
+                </button>
+                <button
+                    onClick={() => setActiveTab('peer-vs-mentor')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'peer-vs-mentor' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    Peer vs Mentor (Scatter)
+                </button>
+                <button
                     onClick={() => setActiveTab('domain-comparison')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'domain-comparison' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
                 >
@@ -176,6 +188,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     <h3 className="text-xl font-medium text-slate-100">
                         {activeTab === 'dashboard' && 'KPI Dashboard'}
                         {activeTab === 'peer-rating' && 'Peer Rating Feedback by Project'}
+                        {activeTab === 'peer-stacked' && 'Peer Rating by Project (Stacked Bar)'}
+                        {activeTab === 'peer-vs-mentor' && 'Peer Perception vs Mentor Score Scatter'}
                         {activeTab === 'domain-comparison' && 'Self vs Mentor Readiness by Project'}
                         {activeTab === 'self-awareness' && 'Self-Awareness Gap Visualization'}
                         {activeTab === 'mastery-consolidated' && 'Program Mastery - Consolidated (Domain Averages)'}
@@ -343,23 +357,75 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'dashboard' && kpiData && (
-                        <div className="flex gap-6 w-full h-full p-4 items-center justify-center">
-                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 flex flex-col justify-center items-center h-48 shadow-lg">
+                        <div className="flex gap-6 w-full h-full p-4 items-center justify-center flex-wrap">
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 min-w-[200px] flex flex-col justify-center items-center h-48 shadow-lg">
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">Projects Assessed</h4>
                                 <span className="text-5xl font-bold text-indigo-400">{kpiData.projectsCount}</span>
                             </div>
-                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 flex flex-col justify-center items-center h-48 shadow-lg">
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 min-w-[200px] flex flex-col justify-center items-center h-48 shadow-lg">
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">CBPs Completed</h4>
                                 <span className="text-5xl font-bold text-emerald-400">{kpiData.cbpCount}</span>
                             </div>
-                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 flex flex-col justify-center items-center h-48 shadow-lg">
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 min-w-[200px] flex flex-col justify-center items-center h-48 shadow-lg">
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">Conflexions</h4>
                                 <span className="text-5xl font-bold text-cyan-400">{kpiData.conflexionCount}</span>
                             </div>
-                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 flex flex-col justify-center items-center h-48 shadow-lg">
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 min-w-[200px] flex flex-col justify-center items-center h-48 shadow-lg">
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">BOW Score</h4>
                                 <span className="text-5xl font-bold text-amber-400">{kpiData.bowScore}</span>
                             </div>
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 min-w-[200px] flex flex-col justify-center items-center h-48 shadow-lg relative overflow-hidden">
+                                <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-fuchsia-500 to-indigo-500"></div>
+                                <h4 className="text-slate-400 text-sm font-medium mb-3">Engagement Index</h4>
+                                <span className="text-5xl font-bold text-fuchsia-400">{kpiData.engagementScore}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'peer-vs-mentor' && scatterData && scatterData.length > 0 && (
+                        <div className="w-full h-full flex flex-col">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                    <XAxis type="number" dataKey="mentor" name="Mentor Score" domain={[0, 10]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} label={{ value: 'Average Mentor Score', position: 'insideBottom', offset: -10, fill: '#94a3b8' }} />
+                                    <YAxis type="number" dataKey="peer" name="Peer Score (Scaled)" domain={[0, 10]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} label={{ value: 'Average Peer Perception (Scaled to 10)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8' }} />
+                                    <ZAxis type="category" dataKey="project" name="Project" />
+                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <Scatter name="Projects" data={scatterData} fill="#8b5cf6">
+                                        {scatterData.map((entry: any, index: number) => (
+                                            <Cell key={`cell-${index}`} fill={['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899'][index % 6]} />
+                                        ))}
+                                    </Scatter>
+                                </ScatterChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+                    {activeTab === 'peer-vs-mentor' && (!scatterData || scatterData.length === 0) && (
+                        <div className="flex-1 flex items-center justify-center text-slate-500 italic">
+                            Insufficient data to generate scatter plot.
+                        </div>
+                    )}
+
+                    {activeTab === 'peer-stacked' && peerStackedData && peerStackedData.length > 0 && (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={peerStackedData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                <XAxis dataKey="project" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 25]} />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                <Bar dataKey="quality_of_work" name="Quality of Work" stackId="a" fill="#8b5cf6" />
+                                <Bar dataKey="initiative_ownership" name="Initiative & Ownership" stackId="a" fill="#0ea5e9" />
+                                <Bar dataKey="communication" name="Communication" stackId="a" fill="#10b981" />
+                                <Bar dataKey="collaboration" name="Collaboration" stackId="a" fill="#f59e0b" />
+                                <Bar dataKey="growth_mindset" name="Growth Mindset" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                    {activeTab === 'peer-stacked' && (!peerStackedData || peerStackedData.length === 0) && (
+                        <div className="flex-1 flex items-center justify-center text-slate-500 italic">
+                            No peer feedback recorded for this student.
                         </div>
                     )}
 

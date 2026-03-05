@@ -24,6 +24,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let growthDomainAreas: any[] = [];
     let distributionData: any[] = [];
     let studentName = "Mock Student";
+    let peerStackedData: any[] = [];
+    let scatterData: any[] = [];
     let studentsList: any[] = [];
     let activeStudentId = studentId || "";
 
@@ -123,6 +125,16 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00"
         };
 
+        // Calculate Engagement Score (out of 100)
+        // Assumption: Max targets -> CBP: 5, Conflexion: 5, BoW: 10
+        // Weights: CBP (35%), Conflexion (35%), BoW (30%)
+        const cbpVal = Math.min(kpiData.cbpCount, 5);
+        const confVal = Math.min(kpiData.conflexionCount, 5);
+        const bowVal = kpiData.bowScore ? Math.min(Number(kpiData.bowScore), 10) : 0;
+        (kpiData as any).engagementScore = Math.round((cbpVal / 5) * 35 + (confVal / 5) * 35 + (bowVal / 10) * 30);
+
+
+
         // 6. BUILD PEER RATING DATA (Radar Chart)
         const peerCategories = [
             { key: 'quality_of_work', label: 'Quality of Work' },
@@ -152,6 +164,52 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         });
 
         peerRatingData = peerCategories.map(c => radarDataMap[c.key]);
+
+        // BUILD PEER STACKED BAR DATA
+        data.projects.forEach(proj => {
+            const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
+            if (projectFeedback.length > 0) {
+                const entry: any = { project: proj.name };
+                peerCategories.forEach(c => {
+                    const scores = projectFeedback.map(f => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
+                    const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
+                    entry[c.key] = avg !== null ? Number(avg.toFixed(1)) : 0;
+                });
+                peerStackedData.push(entry);
+            }
+        });
+
+        // BUILD PEER VS MENTOR SCATTER DATA
+        data.projects.forEach(proj => {
+            const mentorAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+            const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : null;
+
+            const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
+            let peerAvg = null;
+            if (projectFeedback.length > 0) {
+                let sum = 0;
+                let count = 0;
+                projectFeedback.forEach(f => {
+                    peerCategories.forEach(c => {
+                        const score = f[c.key as keyof typeof f];
+                        if (score !== null && score !== undefined) {
+                            sum += Number(score);
+                            count++;
+                        }
+                    });
+                });
+                peerAvg = count > 0 ? (sum / count) * 2 : null; // scale peer avg (0-5) to mentor scale (0-10)
+            }
+
+            if (mentorAvg !== null && peerAvg !== null) {
+                scatterData.push({
+                    project: proj.name,
+                    mentor: Number(mentorAvg.toFixed(1)),
+                    peer: Number(peerAvg.toFixed(1))
+                });
+            }
+        });
+
 
         // 7. BUILD GROUPED BAR DATA
         projectDomainScores = data.projects.map(proj => {
@@ -302,6 +360,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 topDomainStrengths={topDomainStrengths}
                 growthDomainAreas={growthDomainAreas}
                 distributionData={distributionData}
+                scatterData={scatterData}
+                peerStackedData={peerStackedData}
                 students={studentsList}
                 studentId={activeStudentId}
             />
