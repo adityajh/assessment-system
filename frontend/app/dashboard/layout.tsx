@@ -27,18 +27,22 @@ export default function DashboardLayout({
             <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 print:hidden shadow-sm">
                 <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <Link href={backHref} className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 text-sm font-medium transition-colors">
-                            <ArrowLeft size={16} /> Back
+                        <Link
+                            href={backHref}
+                            className="bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-all border border-slate-200"
+                        >
+                            <ArrowLeft size={16} strokeWidth={2.5} /> Back
                         </Link>
-                        <div className="h-6 w-px bg-slate-300"></div>
-                        <div className="flex items-center gap-2 text-slate-800 font-semibold tracking-tight">
+                        <div className="h-6 w-px bg-slate-200"></div>
+                        <div className="flex items-center gap-2 text-slate-800 font-bold tracking-tight">
                             <LayoutDashboard className="text-indigo-600" size={20} />
-                            Let's Entreprise Dashboard
+                            <span className="text-slate-900">
+                                {isIndex ? "Let's Entreprise Dashboard" : "Student Analysis Dashboard"}
+                            </span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {/* Real implementation would have a student selector here for teachers to quickly switch */}
                         <PrintButton />
                     </div>
                 </div>
