@@ -21,6 +21,7 @@ export default async function MetricsPage() {
                 initialStudents={data.students}
                 initialTracking={data.tracking}
                 initialLogs={data.logs}
+                initialMetrics={data.metrics}
             />
         </div>
     );

@@ -1,30 +1,42 @@
 "use client";
 
 import { useMemo, useState } from 'react';
-import { TermTracking, AssessmentLog } from '@/lib/supabase/queries/metrics';
+import { MetricRecord, AssessmentLog, MetricType } from '@/lib/supabase/queries/metrics';
 import { Student } from '@/lib/supabase/queries/students';
 
 interface MetricsProps {
     initialStudents: Student[];
-    initialTracking: TermTracking[];
+    initialTracking: MetricRecord[];
     initialLogs: AssessmentLog[];
+    initialMetrics: MetricType[];
 }
 
 export default function MetricsClientPage({
     initialStudents,
     initialTracking,
-    initialLogs
+    initialLogs,
+    initialMetrics
 }: MetricsProps) {
     const activeStudents = useMemo(() => initialStudents.filter(s => s.is_active), [initialStudents]);
 
+    // Find metric IDs for filtering
+    const cbpMetric = useMemo(() => initialMetrics.find(m => m.name === 'CBP'), [initialMetrics]);
+    const conflexionMetric = useMemo(() => initialMetrics.find(m => m.name === 'Conflexion'), [initialMetrics]);
+    const bowMetric = useMemo(() => initialMetrics.find(m => m.name === 'BoW'), [initialMetrics]);
+
+    // Filter logs by their target metric
+    const cbpLogs = useMemo(() => initialLogs.filter(log => log.mapping_config?.targetMetricId === cbpMetric?.id), [initialLogs, cbpMetric]);
+    const conflexionLogs = useMemo(() => initialLogs.filter(log => log.mapping_config?.targetMetricId === conflexionMetric?.id), [initialLogs, conflexionMetric]);
+    const bowLogs = useMemo(() => initialLogs.filter(log => log.mapping_config?.targetMetricId === bowMetric?.id), [initialLogs, bowMetric]);
+
     // Independent selections for each metric dataset
-    const [cbpLogId, setCbpLogId] = useState<string>(initialLogs.length > 0 ? initialLogs[0].id : '');
-    const [conflexionLogId, setConflexionLogId] = useState<string>(initialLogs.length > 0 ? initialLogs[0].id : '');
-    const [bowLogId, setBowLogId] = useState<string>(initialLogs.length > 0 ? initialLogs[0].id : '');
+    const [cbpLogId, setCbpLogId] = useState<string>(cbpLogs.length > 0 ? cbpLogs[0].id : '');
+    const [conflexionLogId, setConflexionLogId] = useState<string>(conflexionLogs.length > 0 ? conflexionLogs[0].id : '');
+    const [bowLogId, setBowLogId] = useState<string>(bowLogs.length > 0 ? bowLogs[0].id : '');
 
     // Group tracking records by student ID
     const studentData = useMemo(() => {
-        const result: Record<string, TermTracking[]> = {};
+        const result: Record<string, MetricRecord[]> = {};
         activeStudents.forEach(student => {
             result[student.id] = initialTracking.filter(t => t.student_id === student.id);
         });
@@ -48,7 +60,7 @@ export default function MetricsClientPage({
                         onChange={(e) => setCbpLogId(e.target.value)}
                     >
                         <option value="">-- Latest Available --</option>
-                        {initialLogs.map(log => (
+                        {cbpLogs.map(log => (
                             <option key={log.id} value={log.id}>{renderLogOption(log)}</option>
                         ))}
                     </select>
@@ -61,7 +73,7 @@ export default function MetricsClientPage({
                         onChange={(e) => setConflexionLogId(e.target.value)}
                     >
                         <option value="">-- Latest Available --</option>
-                        {initialLogs.map(log => (
+                        {conflexionLogs.map(log => (
                             <option key={log.id} value={log.id}>{renderLogOption(log)}</option>
                         ))}
                     </select>
@@ -74,7 +86,7 @@ export default function MetricsClientPage({
                         onChange={(e) => setBowLogId(e.target.value)}
                     >
                         <option value="">-- Latest Available --</option>
-                        {initialLogs.map(log => (
+                        {bowLogs.map(log => (
                             <option key={log.id} value={log.id}>{renderLogOption(log)}</option>
                         ))}
                     </select>
@@ -97,11 +109,19 @@ export default function MetricsClientPage({
                         <tbody className="divide-y divide-slate-800">
                             {activeStudents.map(student => {
                                 const records = studentData[student.id] || [];
-                                
-                                // Resolvers for specific logs or latest fallback
-                                const cbpRecord = cbpLogId ? records.find(r => r.assessment_log_id === cbpLogId) : records[records.length - 1];
-                                const conflexRecord = conflexionLogId ? records.find(r => r.assessment_log_id === conflexionLogId) : records[records.length - 1];
-                                const bowRecord = bowLogId ? records.find(r => r.assessment_log_id === bowLogId) : records[records.length - 1];
+
+                                // Find records for selected log or latest fallback
+                                const getVal = (logId: string, metricId?: string) => {
+                                    if (!metricId) return null;
+                                    const matching = logId
+                                        ? records.find(r => r.assessment_log_id === logId && r.metric_id === metricId)
+                                        : records.filter(r => r.metric_id === metricId).sort((a, b) => b.assessment_log_id.localeCompare(a.assessment_log_id))[0];
+                                    return matching ? matching.value : null;
+                                };
+
+                                const currentCbp = getVal(cbpLogId, cbpMetric?.id);
+                                const currentConflex = getVal(conflexionLogId, conflexionMetric?.id);
+                                const currentBow = getVal(bowLogId, bowMetric?.id);
 
                                 return (
                                     <tr key={student.id} className="hover:bg-slate-800/50 transition-colors">
@@ -109,14 +129,14 @@ export default function MetricsClientPage({
                                             <div className="font-semibold text-slate-200">{student.canonical_name}</div>
                                             <div className="text-xs text-slate-500 font-mono">#{student.student_number}</div>
                                         </td>
-                                        <td className={`px-6 py-3 text-center font-mono font-bold ${cbpRecord && cbpRecord.cbp_count > 0 ? 'text-emerald-400' : 'text-slate-600'}`}>
-                                            {cbpRecord?.cbp_count ?? '-'}
+                                        <td className={`px-6 py-3 text-center font-mono font-bold ${currentCbp && currentCbp > 0 ? 'text-emerald-400' : 'text-slate-600'}`}>
+                                            {currentCbp ?? '-'}
                                         </td>
-                                        <td className={`px-6 py-3 text-center font-mono font-bold ${conflexRecord && conflexRecord.conflexion_count > 0 ? 'text-amber-400' : 'text-slate-600'}`}>
-                                            {conflexRecord?.conflexion_count ?? '-'}
+                                        <td className={`px-6 py-3 text-center font-mono font-bold ${currentConflex && currentConflex > 0 ? 'text-amber-400' : 'text-slate-600'}`}>
+                                            {currentConflex ?? '-'}
                                         </td>
-                                        <td className={`px-6 py-3 text-center font-mono font-bold border-l border-slate-800 ${bowRecord && bowRecord.bow_score > 0 ? 'text-indigo-400' : 'text-slate-600'}`}>
-                                            {bowRecord?.bow_score !== undefined && bowRecord?.bow_score !== null ? Number(bowRecord.bow_score).toFixed(2) : '-'}
+                                        <td className={`px-6 py-3 text-center font-mono font-bold border-l border-slate-800 ${currentBow && currentBow > 0 ? 'text-indigo-400' : 'text-slate-600'}`}>
+                                            {currentBow !== null ? Number(currentBow).toFixed(2) : '-'}
                                         </td>
                                     </tr>
                                 );
