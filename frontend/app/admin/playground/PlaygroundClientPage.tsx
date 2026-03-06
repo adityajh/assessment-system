@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart3, LayoutDashboard } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { BarChart3, LayoutDashboard, Award, Zap } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, ReferenceArea, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
     if (delta <= -1.5) return '#ef4444'; // Red (highly overconfident)
@@ -392,6 +392,19 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                 <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-fuchsia-500 to-indigo-500"></div>
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">Engagement Index</h4>
                                 <span className="text-5xl font-bold text-fuchsia-400">{kpiData.engagementScore}</span>
+
+                                <div className="absolute bottom-3 flex gap-2">
+                                    {kpiData.hasConsistencyBadge && (
+                                        <div className="flex items-center justify-center p-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full" title="Consistency Badge: Regular tracking throughout the term">
+                                            <Zap className="w-4 h-4 text-emerald-400" />
+                                        </div>
+                                    )}
+                                    {kpiData.hasBreadthBadge && (
+                                        <div className="flex items-center justify-center p-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full" title="Breadth Badge: Hit engagement caps across multiple categories">
+                                            <Award className="w-4 h-4 text-amber-400" />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -448,9 +461,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                             <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                 <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
-                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 'dataMax + 2']} />
+                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={['auto', 'auto']} />
                                 <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                <ReferenceLine y={0} stroke="#475569" strokeWidth={2} />
                                 {peerStackedByParamProjects.map((proj: string, idx: number) => {
                                     const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#ef4444', '#14b8a6', '#f43f5e', '#6366f1'];
                                     return (
@@ -511,6 +525,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                             <p className="text-slate-400 mb-8 text-center max-w-2xl">This horizontal stack compares the active student's overall engagement index against every other active student in the cohort. Each dot represents a student.</p>
                             <ResponsiveContainer width="100%" height={100}>
                                 <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <ReferenceArea x1={0} x2={30} fill="#1e293b" fillOpacity={0.7} />
+                                    <ReferenceArea x1={30} x2={70} fill="#334155" fillOpacity={0.5} />
+                                    <ReferenceArea x1={70} x2={100} fill="#475569" fillOpacity={0.3} />
+                                    <ReferenceLine x={50} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
                                     <XAxis type="number" dataKey="score" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                     <YAxis type="number" dataKey="yAxis" domain={[-1, 1]} hide />
                                     <Tooltip
@@ -518,7 +536,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                         contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }}
                                         formatter={(value, name, props) => {
                                             if (name === "yAxis") return [0, "Hide"];
-                                            return [value, props.payload.isCurrentStudent ? "Active Student Score" : "Cohort Score"];
+                                            let zone = "Lead the Way";
+                                            if (Number(value) < 30) zone = "Finding Rhythm";
+                                            else if (Number(value) < 70) zone = "Consistent";
+                                            return [`${value} (${zone})`, props.payload.isCurrentStudent ? "Active Student Score" : "Cohort Score"];
                                         }}
                                         labelFormatter={() => ''}
                                     />
@@ -529,10 +550,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                                 <Cell
                                                     key={`cell-${index}`}
                                                     fill={isSelected ? '#e879f9' : '#475569'}
-                                                    r={isSelected ? 8 : 4}
+                                                    r={isSelected ? 10 : 4}
                                                     opacity={isSelected ? 1 : 0.6}
                                                     stroke={isSelected ? '#fdf4ff' : 'none'}
-                                                    strokeWidth={2}
+                                                    strokeWidth={isSelected ? 3 : 0}
                                                 />
                                             );
                                         })}

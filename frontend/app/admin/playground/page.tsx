@@ -121,28 +121,47 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
 
         // 5. BUILD KPI DATA (Dashboard view)
         const uniqueProjectsAssessed = new Set(data.assessments.map(a => a.project_id)).size;
+
+        // Count active student's self assessments
+        const selfAssessmentsCount = data.assessments.filter(a => a.assessment_type === 'self' && a.normalized_score !== null).length;
+
         kpiData = {
             projectsCount: `${uniqueProjectsAssessed}/${data.projects.length}`,
             cbpCount: data.termTracking?.cbp_count || 0,
             conflexionCount: data.termTracking?.conflexion_count || 0,
-            bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00"
+            bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00",
+            selfAssessmentsCount
         };
 
-        // Calculate Engagement Score (out of 100)
-        // Assumption: Max targets -> CBP: 5, Conflexion: 5, BoW: 10
-        // Weights: CBP (35%), Conflexion (35%), BoW (30%)
+        // Calculate Engagement Score 2.0 (out of 100)
+        // Max targets -> CBP: 5, Conflexion: 5, BoW: 10, Self Assess: 15
         const cbpVal = Math.min(kpiData.cbpCount, 5);
         const confVal = Math.min(kpiData.conflexionCount, 5);
         const bowVal = kpiData.bowScore ? Math.min(Number(kpiData.bowScore), 10) : 0;
-        (kpiData as any).engagementScore = Math.round((cbpVal / 5) * 35 + (confVal / 5) * 35 + (bowVal / 10) * 30);
+        const saVal = Math.min(selfAssessmentsCount, 15);
+
+        // Weights: CBP (25%), Conflexion (25%), BoW (25%), Assessments (25%)
+        (kpiData as any).engagementScore = Math.round((cbpVal / 5) * 25 + (confVal / 5) * 25 + (bowVal / 10) * 25 + (saVal / 15) * 25);
+
+        // Badges
+        (kpiData as any).hasConsistencyBadge = (kpiData.cbpCount >= 4 && kpiData.conflexionCount >= 4);
+        (kpiData as any).hasBreadthBadge = (kpiData.cbpCount >= 5 && kpiData.conflexionCount >= 5 && Number(kpiData.bowScore) >= 8 && selfAssessmentsCount >= 10);
 
         // Cohort Engagement Data for Dot Plot
+        const selfAssessMap: Record<string, number> = {};
+        if (data.allSelfAssessments) {
+            data.allSelfAssessments.forEach((s: any) => {
+                selfAssessMap[s.student_id] = (selfAssessMap[s.student_id] || 0) + 1;
+            });
+        }
+
         if (data.allTermTracking) {
             data.allTermTracking.forEach(t => {
-                const cVal = Math.min(t.cbp_count || 0, 5);
-                const cnVal = Math.min(t.conflexion_count || 0, 5);
-                const bVal = t.bow_score ? Math.min(Number(t.bow_score), 10) : 0;
-                const score = Math.round((cVal / 5) * 35 + (cnVal / 5) * 35 + (bVal / 10) * 30);
+                const tvCbp = Math.min(t.cbp_count || 0, 5);
+                const tvConf = Math.min(t.conflexion_count || 0, 5);
+                const tvBow = t.bow_score ? Math.min(Number(t.bow_score), 10) : 0;
+                const tvSa = Math.min(selfAssessMap[t.student_id] || 0, 15);
+                const score = Math.round((tvCbp / 5) * 25 + (tvConf / 5) * 25 + (tvBow / 10) * 25 + (tvSa / 15) * 25);
 
                 engagementDistributionData.push({
                     studentId: t.student_id,
@@ -200,16 +219,31 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             }
         });
 
-        // BUILD PEER STACKED BY PARAM DATA
+        // BUILD PEER STACKED BY PARAM DATA (Cohort Delta)
         peerCategories.forEach(c => {
             const entry: any = { parameter: c.label };
+
+            // Calculate cohort average for this parameter
+            const metricKey = `avg_${c.key}`;
+            let cohortSum = 0;
+            let cohortCount = 0;
+            if (data.cohortPeerSummary) {
+                data.cohortPeerSummary.forEach((member: any) => {
+                    if (member[metricKey] !== null && member[metricKey] !== undefined) {
+                        cohortSum += Number(member[metricKey]);
+                        cohortCount++;
+                    }
+                });
+            }
+            const cohortAvg = cohortCount > 0 ? (cohortSum / cohortCount) : 0;
+
             data.projects.forEach(proj => {
                 const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
                 if (projectFeedback.length > 0) {
                     const scores = projectFeedback.map(f => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
                     const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
                     if (avg !== null) {
-                        entry[proj.name] = Number(avg.toFixed(1));
+                        entry[proj.name] = Number((avg - cohortAvg).toFixed(2));
                         if (!peerStackedByParamProjects.includes(proj.name)) {
                             peerStackedByParamProjects.push(proj.name);
                         }
