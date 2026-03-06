@@ -563,28 +563,57 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     {activeTab === 'engagement-stack' && engagementDistributionData && engagementDistributionData.length > 0 && (
                         <div className="w-full h-full flex flex-col justify-center px-12 relative items-center min-h-[400px]">
                             <p className="text-slate-400 mb-8 text-center max-w-2xl">This horizontal stack compares the active student's overall engagement index against every other active student in the cohort. Each dot represents a student.</p>
-                            <ResponsiveContainer width="100%" height={120}>
-                                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <ReferenceArea x1={0} x2={25} fill="#f43f5e" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'SYNCING', fill: '#f43f5e', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'CONNECTING', fill: '#f59e0b', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'ENGAGING', fill: '#10b981', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'LEADING', fill: '#0ea5e9', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceLine x={62.5} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
-                                    <ReferenceLine y={0} stroke="#334155" strokeWidth={8} />
-                                    <XAxis type="number" dataKey="displayScore" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                            <ResponsiveContainer width="100%" height={160}>
+                                <ScatterChart margin={{ top: 40, right: 20, bottom: 20, left: 20 }}>
+                                    <defs>
+                                        <linearGradient id="syncingGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="connectingGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="engagingGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="leadingGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+
+                                    <ReferenceArea x1={0} x2={25} fill="url(#syncingGrad)" stroke="none" label={{ position: 'top', value: 'SYNCING', fill: '#f43f5e', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', dy: -10 }} />
+                                    <ReferenceArea x1={25} x2={50} fill="url(#connectingGrad)" stroke="none" label={{ position: 'top', value: 'CONNECTING', fill: '#f59e0b', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', dy: -10 }} />
+                                    <ReferenceArea x1={50} x2={75} fill="url(#engagingGrad)" stroke="none" label={{ position: 'top', value: 'ENGAGING', fill: '#10b981', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', dy: -10 }} />
+                                    <ReferenceArea x1={75} x2={100} fill="url(#leadingGrad)" stroke="none" label={{ position: 'top', value: 'LEADING', fill: '#0ea5e9', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', dy: -10 }} />
+
+                                    <ReferenceLine x={62.5} stroke="#94a3b8" strokeDasharray="3 3" strokeOpacity={0.5} label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 11, fontWeight: 500, dy: -25 }} />
+
+                                    {/* Subsurface Track */}
+                                    <ReferenceLine y={0} stroke="#1e293b" strokeWidth={12} strokeLinecap="round" />
+                                    <ReferenceLine y={0} stroke="#334155" strokeWidth={2} strokeLinecap="round" strokeOpacity={0.3} />
+
+                                    <XAxis type="number" dataKey="displayScore" name="Engagement Score" domain={[0, 100]} hide />
                                     <YAxis type="number" dataKey="yAxis" domain={[-1, 1]} hide />
+
                                     <Tooltip
-                                        cursor={{ strokeDasharray: '3 3' }}
-                                        contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc', zIndex: 50 }}
+                                        cursor={{ stroke: '#475569', strokeDasharray: '4 4' }}
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(30, 34, 51, 0.9)',
+                                            backdropFilter: 'blur(8px)',
+                                            borderColor: 'rgba(71, 85, 105, 0.5)',
+                                            color: '#f8fafc',
+                                            borderRadius: '12px',
+                                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+                                            padding: '12px',
+                                            zIndex: 50
+                                        }}
                                         formatter={(value, name, props) => {
                                             if (name === "yAxis") return [0, "Hide"];
-
-                                            // Extract raw score to display to the user
                                             const rawScore = props.payload?.score ?? value;
-
-                                            // The visual X-axis placement uses the normalized score
                                             const normalizedScore = value;
-
                                             let zone = "Leading";
                                             if (Number(normalizedScore) < 25) zone = "Syncing";
                                             else if (Number(normalizedScore) < 50) zone = "Connecting";
@@ -595,18 +624,21 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                         }}
                                         labelFormatter={() => ''}
                                     />
-                                    <Scatter name="Students" data={engagementDistributionData} fill="#475569">
+                                    <Scatter name="Students" data={engagementDistributionData} isAnimationActive={true}>
                                         {engagementDistributionData.map((entry: any, index: number) => {
                                             const isSelected = entry.isCurrentStudent;
                                             return (
                                                 <Cell
                                                     key={`cell-${index}`}
-                                                    fill={isSelected ? '#e879f9' : '#475569'}
-                                                    r={isSelected ? 24 : 10}
-                                                    opacity={isSelected ? 1 : 0.8}
-                                                    stroke={isSelected ? 'rgba(255,255,255,0.7)' : 'none'}
-                                                    strokeWidth={isSelected ? 4 : 0}
-                                                    style={{ filter: isSelected ? 'drop-shadow(0px 0px 8px rgba(232,121,249,0.8))' : 'none' }}
+                                                    fill={isSelected ? '#e879f9' : '#64748b'}
+                                                    r={isSelected ? 10 : 6}
+                                                    opacity={isSelected ? 1 : 0.6}
+                                                    stroke={isSelected ? '#ffffff' : 'none'}
+                                                    strokeWidth={isSelected ? 3 : 0}
+                                                    style={{
+                                                        filter: isSelected ? 'drop-shadow(0px 0px 12px rgba(232,121,249,0.9))' : 'none',
+                                                        transition: 'all 0.3s ease'
+                                                    }}
                                                 />
                                             );
                                         })}
