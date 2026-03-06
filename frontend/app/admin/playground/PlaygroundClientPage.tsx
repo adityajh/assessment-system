@@ -391,7 +391,23 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                             <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-lg flex-1 min-w-[200px] flex flex-col justify-center items-center h-48 shadow-lg relative overflow-hidden">
                                 <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-fuchsia-500 to-indigo-500"></div>
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">Engagement Index</h4>
-                                <span className="text-5xl font-bold text-fuchsia-400">{kpiData.engagementScore}</span>
+                                {(() => {
+                                    const score = kpiData.engagementScore;
+                                    let color = 'text-sky-400';
+                                    let bgColor = 'bg-sky-400';
+                                    let glowColor = 'shadow-sky-500/50';
+                                    let zone = 'Leader';
+                                    if (score < 25) { color = 'text-red-400'; bgColor = 'bg-red-400'; glowColor = 'shadow-red-500/50'; zone = 'Finding Rhythm'; }
+                                    else if (score < 50) { color = 'text-amber-400'; bgColor = 'bg-amber-400'; glowColor = 'shadow-amber-500/50'; zone = 'Developing'; }
+                                    else if (score < 75) { color = 'text-emerald-400'; bgColor = 'bg-emerald-400'; glowColor = 'shadow-emerald-500/50'; zone = 'Consistent'; }
+
+                                    return (
+                                        <div className="flex flex-col items-center gap-3 mt-1">
+                                            <div className={`w-12 h-12 rounded-full ${bgColor} shadow-[0_0_25px_rgba(0,0,0,0.5)] ${glowColor} border border-white/20 animate-pulse`}></div>
+                                            <span className={`text-xl font-bold ${color}`}>{zone}</span>
+                                        </div>
+                                    );
+                                })()}
 
                                 <div className="absolute bottom-3 flex gap-2">
                                     {kpiData.hasConsistencyBadge && (
@@ -457,29 +473,36 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'peer-stacked-param' && peerStackedByParamData && peerStackedByParamData.length > 0 && (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
-                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={['auto', 'auto']} />
-                                <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
-                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <ReferenceLine y={0} stroke="#475569" strokeWidth={2} />
-                                {peerStackedByParamProjects.map((proj: string, idx: number) => {
-                                    const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#ef4444', '#14b8a6', '#f43f5e', '#6366f1'];
-                                    return (
-                                        <Bar
-                                            key={proj}
-                                            dataKey={proj}
-                                            name={proj}
-                                            stackId="a"
-                                            fill={colors[idx % colors.length]}
-                                            radius={idx === peerStackedByParamProjects.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                                        />
-                                    );
-                                })}
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div className="w-full h-full flex flex-col justify-center px-4 md:px-12 relative items-center min-h-[400px]">
+                            <p className="text-slate-400 mb-8 text-center max-w-2xl mx-auto">
+                                This chart displays the student's <strong>deviation from the cohort average</strong>. <br />
+                                <span className="text-emerald-400 opacity-80">+ Positive</span> bars mean the student scored higher than their peers on that project. <br />
+                                <span className="text-red-400 opacity-80">- Negative</span> bars mean they scored lower than the average.
+                            </p>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                    <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                    <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={['auto', 'auto']} tickFormatter={(value) => value > 0 ? `+${value}` : value.toString()} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <ReferenceLine y={0} stroke="#475569" strokeWidth={2} label={{ position: 'insideTopRight', value: 'Cohort Average', fill: '#94a3b8', fontSize: 12 }} />
+                                    {peerStackedByParamProjects.map((proj: string, idx: number) => {
+                                        const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#ef4444', '#14b8a6', '#f43f5e', '#6366f1'];
+                                        return (
+                                            <Bar
+                                                key={proj}
+                                                dataKey={proj}
+                                                name={proj}
+                                                stackId="a"
+                                                fill={colors[idx % colors.length]}
+                                                radius={idx === peerStackedByParamProjects.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                            />
+                                        );
+                                    })}
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     )}
                     {activeTab === 'peer-stacked-param' && (!peerStackedByParamData || peerStackedByParamData.length === 0) && (
                         <div className="flex-1 flex items-center justify-center text-slate-500 italic">
