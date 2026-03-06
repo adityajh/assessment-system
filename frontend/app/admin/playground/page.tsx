@@ -158,6 +158,10 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         }
 
         if (data.allTermTracking) {
+            // First pass: Calculate raw scores
+            const rawScores: { studentId: string, rawScore: number, isCurrent: boolean }[] = [];
+            let sum = 0;
+
             data.allTermTracking.forEach(t => {
                 const tvCbp = Math.min(t.cbp_count || 0, 5);
                 const tvConf = Math.min(t.conflexion_count || 0, 5);
@@ -165,22 +169,73 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 const tvSa = Math.min(selfAssessMap[t.student_id] || 0, 15);
                 const score = Math.round((tvCbp / 5) * 25 + (tvConf / 5) * 25 + (tvBow / 10) * 25 + (tvSa / 15) * 25);
 
-                // Simple stable pseudo-random Y position between -0.8 and +0.8 based on student ID string
-                let hash = 0;
-                for (let i = 0; i < t.student_id.length; i++) {
-                    hash = t.student_id.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                const pseudoRandom = Math.abs(hash % 100) / 100; // 0 to 1
-                const staticY = -0.8 + (pseudoRandom * 1.6); // Scale to -0.8 to 0.8
+                rawScores.push({ studentId: t.student_id, rawScore: score, isCurrent: t.student_id === activeStudentId });
+                sum += score;
+            });
 
+            // Calculate Mean & Standard Deviation
+            const n = rawScores.length;
+            const mean = n > 0 ? sum / n : 0;
+            let variance = 0;
+            rawScores.forEach(s => { variance += Math.pow(s.rawScore - mean, 2); });
+            const sd = n > 1 ? Math.sqrt(variance / (n - 1)) : 1;
+            const finalSD = sd === 0 ? 1 : sd;
+
+            // Calculate Z-Scores and Scale (Mean = 62.5, 1 SD = 25)
+            const scaledScores = rawScores.map(s => {
+                const zScore = (s.rawScore - mean) / finalSD;
+                let scaled = (zScore * 25) + 62.5;
+                scaled = Math.max(2, Math.min(98, scaled));
+                return { ...s, scaledScore: Number(scaled.toFixed(1)), displayScore: 0 };
+            });
+
+            // Apply horizontal jitter for overlaps
+            scaledScores.sort((a, b) => a.scaledScore - b.scaledScore);
+            let currentGroup: any[] = [];
+
+            const applyJitter = (group: any[]) => {
+                if (group.length <= 1) {
+                    if (group.length === 1) group[0].displayScore = group[0].scaledScore;
+                    return;
+                }
+                const step = 1.2;
+                group.forEach((item, index) => {
+                    const offsetIndex = Math.ceil(index / 2);
+                    const sign = index % 2 === 1 ? 1 : -1;
+                    const offset = index === 0 ? 0 : offsetIndex * sign * step;
+                    item.displayScore = item.scaledScore + offset;
+                });
+            };
+
+            scaledScores.forEach((s) => {
+                if (currentGroup.length === 0) {
+                    currentGroup.push(s);
+                } else if (Math.abs(currentGroup[0].scaledScore - s.scaledScore) < 0.1) {
+                    currentGroup.push(s);
+                } else {
+                    applyJitter(currentGroup);
+                    currentGroup = [s];
+                }
+            });
+            applyJitter(currentGroup);
+
+            // Build the final array
+            scaledScores.forEach(s => {
                 engagementDistributionData.push({
-                    studentId: t.student_id,
-                    score: score,
-                    yAxis: Number(staticY.toFixed(2)),
-                    isCurrentStudent: t.student_id === activeStudentId
+                    studentId: s.studentId,
+                    score: s.rawScore,
+                    displayScore: Number(s.displayScore.toFixed(2)),
+                    yAxis: 0,
+                    isCurrentStudent: s.isCurrent
                 });
             });
-            engagementDistributionData.sort((a, b) => a.score - b.score);
+
+            // Re-sort so current student is drawn last (on top)
+            engagementDistributionData.sort((a, b) => {
+                if (a.isCurrentStudent) return 1;
+                if (b.isCurrentStudent) return -1;
+                return a.displayScore - b.displayScore;
+            });
         }
 
 

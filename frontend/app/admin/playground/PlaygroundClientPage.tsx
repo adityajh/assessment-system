@@ -562,21 +562,25 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'CONNECTING', fill: '#f59e0b', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
                                     <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'ENGAGING', fill: '#10b981', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
                                     <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'LEADING', fill: '#0ea5e9', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceLine x={50} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
+                                    <ReferenceLine x={62.5} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
                                     <ReferenceLine y={0} stroke="#334155" strokeWidth={8} />
-                                    <XAxis type="number" dataKey="score" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                    <XAxis type="number" dataKey="displayScore" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                     <YAxis type="number" dataKey="yAxis" domain={[-1, 1]} hide />
                                     <Tooltip
                                         cursor={{ strokeDasharray: '3 3' }}
                                         contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc', zIndex: 50 }}
                                         formatter={(value, name, props) => {
                                             if (name === "yAxis") return [0, "Hide"];
+
+                                            // Extract raw score, fallback to display value if missing
+                                            const rawScore = props.payload?.score ?? value;
+
                                             let zone = "Leading";
-                                            if (Number(value) < 25) zone = "Syncing";
-                                            else if (Number(value) < 50) zone = "Connecting";
-                                            else if (Number(value) < 75) zone = "Engaging";
+                                            if (Number(rawScore) < 25) zone = "Syncing";
+                                            else if (Number(rawScore) < 50) zone = "Connecting";
+                                            else if (Number(rawScore) < 75) zone = "Engaging";
                                             const studentName = students?.find((s: any) => s.id === studentId)?.canonical_name || "Active Student";
-                                            return [`${value} (${zone})`, props.payload.isCurrentStudent ? studentName : "Cohort Score"];
+                                            return [`${rawScore} (${zone})`, props.payload.isCurrentStudent ? studentName : "Cohort Score"];
                                         }}
                                         labelFormatter={() => ''}
                                     />
