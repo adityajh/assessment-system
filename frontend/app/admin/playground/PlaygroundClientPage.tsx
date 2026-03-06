@@ -694,6 +694,45 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                 </div>
                             </div>
 
+                            {/* Actionable Mission Card */}
+                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-xl p-6 shadow-xl relative overflow-hidden mt-4">
+                                <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                                <div className="flex justify-between items-start mb-4">
+                                    <h4 className="text-white font-medium text-lg flex items-center gap-2">
+                                        <Award className="w-5 h-5 text-fuchsia-400" /> Actionable Mission
+                                    </h4>
+                                </div>
+
+                                {isEditingMission ? (
+                                    <div className="flex flex-col gap-3">
+                                        <textarea
+                                            className="w-full bg-slate-800 border border-slate-600 rounded-md p-3 text-slate-200 text-sm focus:outline-none focus:border-fuchsia-500 min-h-[100px] custom-scrollbar"
+                                            value={savedMission}
+                                            onChange={(e) => setSavedMission(e.target.value)}
+                                            placeholder="Write a custom mission for this student..."
+                                        />
+                                        <div className="flex gap-2 justify-end">
+                                            <button onClick={() => setIsEditingMission(false)} className="px-5 py-2 text-sm font-medium bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-md transition-colors shadow-lg shadow-fuchsia-500/20">
+                                                Save Mission
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-lg shadow-inner">
+                                            <p className="text-slate-300 leading-relaxed text-[15px]">
+                                                {savedMission || (growthAreas?.length > 0 ? <>Your current bottleneck is <strong className="text-slate-100">{growthAreas[0].name}</strong>. Mission for your next project: Focus aggressively on improving your skills within the <strong className="text-indigo-300">{growthAreas[0].domain}</strong> domain by taking on related tasks and volunteering for challenging components.</> : "No clear growth areas identified yet. Keep pushing your boundaries!")}
+                                            </p>
+                                        </div>
+                                        <div className="flex justify-end">
+                                            <button onClick={() => setIsEditingMission(true)} className="text-sm text-fuchsia-400 hover:text-fuchsia-300 font-medium transition-colors">
+                                                {savedMission ? '✎ Edit Custom Mission' : '+ Create Custom Mission'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Domain Level (Top 2 / Bottom 2) */}
                             <div className="border-t border-slate-800 pt-8">
                                 <div className="mb-6">
