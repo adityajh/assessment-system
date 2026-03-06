@@ -406,10 +406,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     let color = 'text-sky-400';
                                     let bgColor = 'bg-sky-400';
                                     let glowColor = 'shadow-sky-500/50';
-                                    let zone = 'Leader';
-                                    if (score < 25) { color = 'text-red-400'; bgColor = 'bg-red-400'; glowColor = 'shadow-red-500/50'; zone = 'Finding Rhythm'; }
-                                    else if (score < 50) { color = 'text-amber-400'; bgColor = 'bg-amber-400'; glowColor = 'shadow-amber-500/50'; zone = 'Developing'; }
-                                    else if (score < 75) { color = 'text-emerald-400'; bgColor = 'bg-emerald-400'; glowColor = 'shadow-emerald-500/50'; zone = 'Consistent'; }
+                                    let zone = 'Leading';
+                                    if (score < 25) { color = 'text-red-400'; bgColor = 'bg-red-400'; glowColor = 'shadow-red-500/50'; zone = 'Syncing'; }
+                                    else if (score < 50) { color = 'text-amber-400'; bgColor = 'bg-amber-400'; glowColor = 'shadow-amber-500/50'; zone = 'Connecting'; }
+                                    else if (score < 75) { color = 'text-emerald-400'; bgColor = 'bg-emerald-400'; glowColor = 'shadow-emerald-500/50'; zone = 'Engaging'; }
 
                                     return (
                                         <div className="flex flex-col items-center gap-3 mt-1">
@@ -558,10 +558,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                             <p className="text-slate-400 mb-8 text-center max-w-2xl">This horizontal stack compares the active student's overall engagement index against every other active student in the cohort. Each dot represents a student.</p>
                             <ResponsiveContainer width="100%" height={120}>
                                 <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <ReferenceArea x1={0} x2={25} fill="#f43f5e" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'FINDING RHYTHM', fill: '#f43f5e', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'DEVELOPING', fill: '#f59e0b', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'CONSISTENT', fill: '#10b981', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
-                                    <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'LEADER', fill: '#0ea5e9', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={0} x2={25} fill="#f43f5e" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'SYNCING', fill: '#f43f5e', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'CONNECTING', fill: '#f59e0b', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'ENGAGING', fill: '#10b981', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'LEADING', fill: '#0ea5e9', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
                                     <ReferenceLine x={50} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
                                     <ReferenceLine y={0} stroke="#334155" strokeWidth={8} />
                                     <XAxis type="number" dataKey="score" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
@@ -571,10 +571,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                         contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc', zIndex: 50 }}
                                         formatter={(value, name, props) => {
                                             if (name === "yAxis") return [0, "Hide"];
-                                            let zone = "Leader";
-                                            if (Number(value) < 25) zone = "Finding Rhythm";
-                                            else if (Number(value) < 50) zone = "Developing";
-                                            else if (Number(value) < 75) zone = "Consistent";
+                                            let zone = "Leading";
+                                            if (Number(value) < 25) zone = "Syncing";
+                                            else if (Number(value) < 50) zone = "Connecting";
+                                            else if (Number(value) < 75) zone = "Engaging";
                                             const studentName = students?.find((s: any) => s.id === studentId)?.canonical_name || "Active Student";
                                             return [`${value} (${zone})`, props.payload.isCurrentStudent ? studentName : "Cohort Score"];
                                         }}

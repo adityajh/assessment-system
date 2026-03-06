@@ -165,10 +165,18 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 const tvSa = Math.min(selfAssessMap[t.student_id] || 0, 15);
                 const score = Math.round((tvCbp / 5) * 25 + (tvConf / 5) * 25 + (tvBow / 10) * 25 + (tvSa / 15) * 25);
 
+                // Simple stable pseudo-random Y position between -0.8 and +0.8 based on student ID string
+                let hash = 0;
+                for (let i = 0; i < t.student_id.length; i++) {
+                    hash = t.student_id.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const pseudoRandom = Math.abs(hash % 100) / 100; // 0 to 1
+                const staticY = -0.8 + (pseudoRandom * 1.6); // Scale to -0.8 to 0.8
+
                 engagementDistributionData.push({
                     studentId: t.student_id,
                     score: score,
-                    yAxis: 0, // Constant Y for 1D dot plot
+                    yAxis: Number(staticY.toFixed(2)),
                     isCurrentStudent: t.student_id === activeStudentId
                 });
             });
