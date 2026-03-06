@@ -149,8 +149,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
 
         // Cohort Engagement Data for Dot Plot
         const selfAssessMap: Record<string, number> = {};
-        if (data.allSelfAssessments) {
-            data.allSelfAssessments.forEach((s: any) => {
+        if ((data as any).allSelfAssessments) {
+            (data as any).allSelfAssessments.forEach((s: any) => {
                 selfAssessMap[s.student_id] = (selfAssessMap[s.student_id] || 0) + 1;
             });
         }
