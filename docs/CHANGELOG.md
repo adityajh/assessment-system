@@ -4,21 +4,30 @@ All notable changes to the Let's Entreprise Assessment System are documented her
 
 Format: `## [YYYY-MM-DD] — Description`
 
-## [2026-03-05] — Metric Tracking Refactor & Navigation Consolidation
+## [2026-03-06] — Metric Tracking Refactor & Playground Enhancements
 
 - **Metric Tracking Architecture:**
     - Replaced the column-based `term_tracking` table with a more flexible row-based `metric_tracking` table linked to a `metrics` lookup table.
-    - This allows for granular tracking of disparate metrics (CBP, Conflexion, BoW) tied to specific import events (`assessment_logs`).
-    - Added "Target Metric" selection to the Import Wizard for Term Reports to specify which metric is being uploaded.
-- **Metrics UI Enhancement:**
-    - Refactored the "Metrics & Tracking" admin page to filter "Dataset Override" dropdowns by metric type.
-    - Updated logic to pull real-time student scores from the consolidated `metric_tracking` data.
+    - This allows for tracking of diverse metrics (CBP, Conflexion, BoW) tied to specific import events (`assessment_logs`).
+    - Added "Target Metric" selection to the Import Wizard for uploading Term Reports.
+- **Metrics UI Enhancements:**
+    - Refactored the "Metrics & Tracking" admin page to filter "Dataset Overrides" by metric type.
+    - Updated logic to pull real-time student scores from the consolidated `metric_tracking` schema.
 - **Navigation Consolidation:**
     - Unified the dashboard header UI into a single `DashboardLayout` component.
-    - Removed redundant internal "Back" buttons and secondary action bars from the Dashboard Index and Student Report pages.
-    - Implemented dynamic header titles ("Let's Entreprise Dashboard" vs "Student Analysis Dashboard") and standardized the "Print / Export PDF" button.
-- **Consolidated Backend Queries:**
-    - Refined `getPlaygroundData` and dashboard views (`v_student_dashboard`) to fetch aggregated metric totals from the new row-based tracking system.
+    - Implemented dynamic header titles and standardized the "Print / Export PDF" button.
+- **Playground Additions & Data Engineering:**
+    - Added new visualizations: **Engagement Stack (Dot Plot)**, **Self vs. Mentor Scatter**, and **Peer Rating Across Projects (Stacked Bar)**.
+    - **Engagement Stack:** Implemented dynamic Cohort Z-Score calculation and jittering to represent relative engagement (0-100 scale footprint).
+    - Refined the Engagement Stack UI with premium vertical gradients, subsurface tracking rails, and glassmorphism tooltips.
+    - **Actionable Mission Card:** Reorganized the "Strengths" tab, moving the Domain analysis and Mission Card into a dedicated "Actionable Mission" focus UI.
+    - Improved readability by adjusting chart container heights and fixing UI spacing typos.
+
+---
+
+## [2026-03-05] — Scale Up & Data Optimization
+- **Backend Query Refinement:**
+    - Refactored dashboard views (`v_student_dashboard`) and helper queries to fetch aggregated metrics efficiently.
 
 ---
 
