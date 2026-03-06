@@ -523,23 +523,27 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     {activeTab === 'engagement-stack' && engagementDistributionData && engagementDistributionData.length > 0 && (
                         <div className="w-full h-full flex flex-col justify-center px-12 relative items-center min-h-[400px]">
                             <p className="text-slate-400 mb-8 text-center max-w-2xl">This horizontal stack compares the active student's overall engagement index against every other active student in the cohort. Each dot represents a student.</p>
-                            <ResponsiveContainer width="100%" height={100}>
+                            <ResponsiveContainer width="100%" height={120}>
                                 <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <ReferenceArea x1={0} x2={30} fill="#1e293b" fillOpacity={0.7} />
-                                    <ReferenceArea x1={30} x2={70} fill="#334155" fillOpacity={0.5} />
-                                    <ReferenceArea x1={70} x2={100} fill="#475569" fillOpacity={0.3} />
+                                    <ReferenceArea x1={0} x2={25} fill="#ef4444" fillOpacity={0.1} />
+                                    <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.1} />
+                                    <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.1} />
+                                    <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.1} />
                                     <ReferenceLine x={50} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
+                                    <ReferenceLine y={0} stroke="#334155" strokeWidth={8} />
                                     <XAxis type="number" dataKey="score" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                     <YAxis type="number" dataKey="yAxis" domain={[-1, 1]} hide />
                                     <Tooltip
                                         cursor={{ strokeDasharray: '3 3' }}
-                                        contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }}
+                                        contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc', zIndex: 50 }}
                                         formatter={(value, name, props) => {
                                             if (name === "yAxis") return [0, "Hide"];
-                                            let zone = "Lead the Way";
-                                            if (Number(value) < 30) zone = "Finding Rhythm";
-                                            else if (Number(value) < 70) zone = "Consistent";
-                                            return [`${value} (${zone})`, props.payload.isCurrentStudent ? "Active Student Score" : "Cohort Score"];
+                                            let zone = "Leader";
+                                            if (Number(value) < 25) zone = "Finding Rhythm";
+                                            else if (Number(value) < 50) zone = "Developing";
+                                            else if (Number(value) < 75) zone = "Consistent";
+                                            const studentName = students?.find((s: any) => s.id === studentId)?.canonical_name || "Active Student";
+                                            return [`${value} (${zone})`, props.payload.isCurrentStudent ? studentName : "Cohort Score"];
                                         }}
                                         labelFormatter={() => ''}
                                     />
@@ -550,26 +554,25 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                                 <Cell
                                                     key={`cell-${index}`}
                                                     fill={isSelected ? '#e879f9' : '#475569'}
-                                                    r={isSelected ? 10 : 4}
-                                                    opacity={isSelected ? 1 : 0.6}
+                                                    r={isSelected ? 16 : 8}
+                                                    opacity={isSelected ? 1 : 0.7}
                                                     stroke={isSelected ? '#fdf4ff' : 'none'}
-                                                    strokeWidth={isSelected ? 3 : 0}
+                                                    strokeWidth={isSelected ? 4 : 0}
                                                 />
                                             );
                                         })}
                                     </Scatter>
-                                    <ReferenceLine y={0} stroke="#334155" />
                                 </ScatterChart>
                             </ResponsiveContainer>
 
                             <div className="flex gap-6 mt-8 justify-center">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-slate-600 opacity-60"></div>
+                                    <div className="w-4 h-4 rounded-full bg-slate-600 opacity-70"></div>
                                     <span className="text-sm text-slate-300">Cohort Member</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-fuchsia-400 border border-fuchsia-100"></div>
-                                    <span className="text-sm text-slate-300 font-medium whitespace-nowrap">Selected Student ({engagementDistributionData.find((d: any) => d.isCurrentStudent)?.score || 0})</span>
+                                    <div className="w-6 h-6 rounded-full bg-fuchsia-400 border-2 border-fuchsia-100"></div>
+                                    <span className="text-sm text-slate-300 font-medium whitespace-nowrap">{students?.find((s: any) => s.id === studentId)?.canonical_name || 'Selected Student'} ({engagementDistributionData.find((d: any) => d.isCurrentStudent)?.score || 0})</span>
                                 </div>
                             </div>
                         </div>

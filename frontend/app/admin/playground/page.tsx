@@ -244,13 +244,22 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                     const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
                     if (avg !== null) {
                         entry[proj.name] = Number((avg - cohortAvg).toFixed(2));
+                        // Ensure peerStackedByParamProjects contains proj.name
                         if (!peerStackedByParamProjects.includes(proj.name)) {
+                            // We will collect them all and sort later, or just push.
                             peerStackedByParamProjects.push(proj.name);
                         }
                     }
                 }
             });
             peerStackedByParamData.push(entry);
+        });
+
+        // Ensure peerStackedByParamProjects is sorted by project sequence
+        peerStackedByParamProjects.sort((a, b) => {
+            const projA = data.projects.find(p => p.name === a);
+            const projB = data.projects.find(p => p.name === b);
+            return (projA?.sequence || 0) - (projB?.sequence || 0);
         });
 
         // BUILD PEER VS MENTOR SCATTER DATA
