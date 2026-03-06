@@ -490,13 +490,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'peer-stacked-param' && peerStackedByParamData && peerStackedByParamData.length > 0 && (
-                        <div className="w-full h-full flex flex-col justify-center px-4 md:px-12 relative items-center min-h-[400px]">
-                            <p className="text-slate-400 mb-8 text-center max-w-2xl mx-auto">
-                                This chart displays the student's <strong>deviation from the cohort average</strong>. <br />
-                                <span className="text-emerald-400 opacity-80">+ Positive</span> bars mean the student scored higher than their peers on that project. <br />
-                                <span className="text-red-400 opacity-80">- Negative</span> bars mean they scored lower than the average.
-                            </p>
-                            <ResponsiveContainer width="100%" height={250}>
+                        <div className="w-full h-full flex flex-col justify-center px-4 md:px-12 relative items-center min-h-[500px]">
+                            <ResponsiveContainer width="100%" height={450}>
                                 <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                     <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
@@ -519,6 +514,11 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     })}
                                 </BarChart>
                             </ResponsiveContainer>
+                            <p className="text-slate-400 mt-8 text-center max-w-2xl mx-auto italic text-sm">
+                                This chart displays the student's <strong>deviation from the cohort average</strong>. <br />
+                                <span className="text-emerald-400 opacity-80">+ Positive</span> bars mean the student scored higher than their peers on that project. <br />
+                                <span className="text-red-400 opacity-80">- Negative</span> bars mean they scored lower than the average.
+                            </p>
                         </div>
                     )}
                     {activeTab === 'peer-stacked-param' && (!peerStackedByParamData || peerStackedByParamData.length === 0) && (
