@@ -402,14 +402,14 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                 <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-fuchsia-500 to-indigo-500"></div>
                                 <h4 className="text-slate-400 text-sm font-medium mb-3">Engagement Index</h4>
                                 {(() => {
-                                    const score = kpiData.engagementScore;
+                                    const normalizedScore = engagementDistributionData?.find((d: any) => d.isCurrentStudent)?.displayScore || kpiData.engagementScore;
                                     let color = 'text-sky-400';
                                     let bgColor = 'bg-sky-400';
                                     let glowColor = 'shadow-sky-500/50';
                                     let zone = 'Leading';
-                                    if (score < 25) { color = 'text-red-400'; bgColor = 'bg-red-400'; glowColor = 'shadow-red-500/50'; zone = 'Syncing'; }
-                                    else if (score < 50) { color = 'text-amber-400'; bgColor = 'bg-amber-400'; glowColor = 'shadow-amber-500/50'; zone = 'Connecting'; }
-                                    else if (score < 75) { color = 'text-emerald-400'; bgColor = 'bg-emerald-400'; glowColor = 'shadow-emerald-500/50'; zone = 'Engaging'; }
+                                    if (normalizedScore < 25) { color = 'text-red-400'; bgColor = 'bg-red-400'; glowColor = 'shadow-red-500/50'; zone = 'Syncing'; }
+                                    else if (normalizedScore < 50) { color = 'text-amber-400'; bgColor = 'bg-amber-400'; glowColor = 'shadow-amber-500/50'; zone = 'Connecting'; }
+                                    else if (normalizedScore < 75) { color = 'text-emerald-400'; bgColor = 'bg-emerald-400'; glowColor = 'shadow-emerald-500/50'; zone = 'Engaging'; }
 
                                     return (
                                         <div className="flex flex-col items-center gap-3 mt-1">
@@ -572,13 +572,17 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                         formatter={(value, name, props) => {
                                             if (name === "yAxis") return [0, "Hide"];
 
-                                            // Extract raw score, fallback to display value if missing
+                                            // Extract raw score to display to the user
                                             const rawScore = props.payload?.score ?? value;
 
+                                            // The visual X-axis placement uses the normalized score
+                                            const normalizedScore = value;
+
                                             let zone = "Leading";
-                                            if (Number(rawScore) < 25) zone = "Syncing";
-                                            else if (Number(rawScore) < 50) zone = "Connecting";
-                                            else if (Number(rawScore) < 75) zone = "Engaging";
+                                            if (Number(normalizedScore) < 25) zone = "Syncing";
+                                            else if (Number(normalizedScore) < 50) zone = "Connecting";
+                                            else if (Number(normalizedScore) < 75) zone = "Engaging";
+
                                             const studentName = students?.find((s: any) => s.id === studentId)?.canonical_name || "Active Student";
                                             return [`${rawScore} (${zone})`, props.payload.isCurrentStudent ? studentName : "Cohort Score"];
                                         }}
