@@ -26,6 +26,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let studentName = "Mock Student";
     let peerStackedData: any[] = [];
     let scatterData: any[] = [];
+    let engagementDistributionData: any[] = [];
     let studentsList: any[] = [];
     let activeStudentId = studentId || "";
 
@@ -132,6 +133,24 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         const confVal = Math.min(kpiData.conflexionCount, 5);
         const bowVal = kpiData.bowScore ? Math.min(Number(kpiData.bowScore), 10) : 0;
         (kpiData as any).engagementScore = Math.round((cbpVal / 5) * 35 + (confVal / 5) * 35 + (bowVal / 10) * 30);
+
+        // Cohort Engagement Data for Dot Plot
+        if (data.allTermTracking) {
+            data.allTermTracking.forEach(t => {
+                const cVal = Math.min(t.cbp_count || 0, 5);
+                const cnVal = Math.min(t.conflexion_count || 0, 5);
+                const bVal = t.bow_score ? Math.min(Number(t.bow_score), 10) : 0;
+                const score = Math.round((cVal / 5) * 35 + (cnVal / 5) * 35 + (bVal / 10) * 30);
+
+                engagementDistributionData.push({
+                    studentId: t.student_id,
+                    score: score,
+                    yAxis: 0, // Constant Y for 1D dot plot
+                    isCurrentStudent: t.student_id === activeStudentId
+                });
+            });
+            engagementDistributionData.sort((a, b) => a.score - b.score);
+        }
 
 
 
@@ -362,6 +381,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 distributionData={distributionData}
                 scatterData={scatterData}
                 peerStackedData={peerStackedData}
+                engagementDistributionData={engagementDistributionData}
                 students={studentsList}
                 studentId={activeStudentId}
             />

@@ -65,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, scatterData, peerStackedData, students, studentId }: any) {
+export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, scatterData, peerStackedData, engagementDistributionData, students, studentId }: any) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [distMetric, setDistMetric] = useState(distributionData && distributionData.length > 0 ? distributionData[0].name : '');
@@ -139,6 +139,12 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     Peer vs Mentor (Scatter)
                 </button>
                 <button
+                    onClick={() => setActiveTab('engagement-stack')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'engagement-stack' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    Engagement Stack
+                </button>
+                <button
                     onClick={() => setActiveTab('domain-comparison')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'domain-comparison' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
                 >
@@ -190,6 +196,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                         {activeTab === 'peer-rating' && 'Peer Rating Feedback by Project'}
                         {activeTab === 'peer-stacked' && 'Peer Rating by Project (Stacked Bar)'}
                         {activeTab === 'peer-vs-mentor' && 'Peer Perception vs Mentor Score Scatter'}
+                        {activeTab === 'engagement-stack' && 'Relative Engagement Stack (Cohort Comparison)'}
                         {activeTab === 'domain-comparison' && 'Self vs Mentor Readiness by Project'}
                         {activeTab === 'self-awareness' && 'Self-Awareness Gap Visualization'}
                         {activeTab === 'mastery-consolidated' && 'Program Mastery - Consolidated (Domain Averages)'}
@@ -459,6 +466,60 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     {activeTab === 'peer-rating' && (!peerRatingData || peerRatingData.length === 0) && (
                         <div className="flex-1 flex items-center justify-center text-slate-500 italic">
                             No peer feedback recorded for this student.
+                        </div>
+                    )}
+
+                    {activeTab === 'engagement-stack' && engagementDistributionData && engagementDistributionData.length > 0 && (
+                        <div className="w-full h-full flex flex-col justify-center px-12 relative items-center min-h-[400px]">
+                            <p className="text-slate-400 mb-8 text-center max-w-2xl">This horizontal stack compares the active student's overall engagement index against every other active student in the cohort. Each dot represents a student.</p>
+                            <ResponsiveContainer width="100%" height={100}>
+                                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <XAxis type="number" dataKey="score" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                    <YAxis type="number" dataKey="yAxis" domain={[-1, 1]} hide />
+                                    <Tooltip
+                                        cursor={{ strokeDasharray: '3 3' }}
+                                        contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }}
+                                        formatter={(value, name, props) => {
+                                            if (name === "yAxis") return [0, "Hide"];
+                                            return [value, props.payload.isCurrentStudent ? "Active Student Score" : "Cohort Score"];
+                                        }}
+                                        labelFormatter={() => ''}
+                                    />
+                                    <Scatter name="Students" data={engagementDistributionData} fill="#475569">
+                                        {engagementDistributionData.map((entry: any, index: number) => {
+                                            const isSelected = entry.isCurrentStudent;
+                                            return (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={isSelected ? '#e879f9' : '#475569'}
+                                                    r={isSelected ? 8 : 4}
+                                                    opacity={isSelected ? 1 : 0.6}
+                                                    stroke={isSelected ? '#fdf4ff' : 'none'}
+                                                    strokeWidth={2}
+                                                />
+                                            );
+                                        })}
+                                    </Scatter>
+                                    <ReferenceLine y={0} stroke="#334155" />
+                                </ScatterChart>
+                            </ResponsiveContainer>
+
+                            <div className="flex gap-6 mt-8 justify-center">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-slate-600 opacity-60"></div>
+                                    <span className="text-sm text-slate-300">Cohort Member</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-fuchsia-400 border border-fuchsia-100"></div>
+                                    <span className="text-sm text-slate-300 font-medium whitespace-nowrap">Selected Student ({engagementDistributionData.find((d: any) => d.isCurrentStudent)?.score || 0})</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'engagement-stack' && (!engagementDistributionData || engagementDistributionData.length === 0) && (
+                        <div className="flex-1 flex flex-col items-center justify-center text-slate-500 italic pb-8">
+                            <BarChart3 className="w-16 h-16 text-slate-700 mb-4 opacity-50" />
+                            <p>Insufficient target tracking data for the cohort to generate stack.</p>
                         </div>
                     )}
 
