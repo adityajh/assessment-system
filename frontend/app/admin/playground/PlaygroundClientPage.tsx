@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BarChart3, LayoutDashboard, Award, Zap } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, ReferenceArea, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, ReferenceArea, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
     if (delta <= -1.5) return '#ef4444'; // Red (highly overconfident)
@@ -45,17 +45,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 <p className="text-slate-200 font-medium mb-2">{label}</p>
                 <div className="flex flex-col gap-1 text-sm">
                     <p className="text-indigo-400">Mentor Score: <span className="text-slate-100 font-medium">{data.mentor}</span></p>
-                    <p className="text-cyan-400">Self Score: <span className="text-slate-100 font-medium">{data.self}</span></p>
+                    <p className="text-slate-200">Self Score: <span className="text-slate-100 font-medium">{data.self}</span></p>
                     <div className="h-px bg-slate-700 my-1"></div>
                     <p className="text-slate-300">
-                        Gap (Mentor - Self):{' '}
-                        <span className="font-medium" style={{ color: getGapColor(data.delta) }}>
-                            {data.delta > 0 ? '+' : ''}{data.delta}
+                        Variance:{' '}
+                        <span className="font-medium" style={{ color: data.delta > 0 ? '#ef4444' : data.delta < 0 ? '#10b981' : '#94a3b8' }}>
+                            {data.delta > 0 ? '+' : ''}{data.delta}%
                         </span>
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                        {data.delta < 0 ? 'Student rated themselves higher than mentor.' :
-                            data.delta > 0 ? 'Student rated themselves lower than mentor.' :
+                    <p className="text-xs text-slate-500 mt-1 max-w-[200px]">
+                        {data.delta > 0 ? 'Student rated themselves higher than the mentor (Overconfident).' :
+                            data.delta < 0 ? 'Student rated themselves lower than the mentor (Underconfident).' :
                                 'Scores are perfectly aligned.'}
                     </p>
                 </div>
@@ -69,6 +69,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [distMetric, setDistMetric] = useState(distributionData && distributionData.length > 0 ? distributionData[0].name : '');
+    const [savedMission, setSavedMission] = useState('');
+    const [isEditingMission, setIsEditingMission] = useState(false);
 
     if (!gapData || !heatmapData || !trajectoryData) {
         return (
@@ -220,20 +222,28 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                 {/* Chart Container placeholder */}
                 <div className="h-[500px] w-full bg-slate-800/20 rounded-lg border border-slate-700/50 p-6 flex flex-col">
                     {activeTab === 'self-awareness' && (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={gapData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={true} />
-                                <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[-4, 4]} ticks={[-4, -3, -2, -1, 0, 1, 2, 3, 4]} />
-                                <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} width={120} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#334155', opacity: 0.4 }} />
-                                <ReferenceLine x={0} stroke="#f1f5f9" strokeWidth={2} />
-                                <Bar dataKey="delta" radius={[0, 4, 4, 0]}>
-                                    {gapData.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={getGapColor(entry.delta)} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div className="w-full h-full flex flex-col justify-center px-4 relative items-center min-h-[400px]">
+                            <p className="text-slate-400 mb-6 text-center max-w-2xl mx-auto">
+                                This <strong>Dumbbell Chart</strong> shows the gap between the student's <span className="text-white font-medium">Self Assessment</span> (White) and the <span className="text-indigo-400 font-medium">Mentor's Assessment</span> (Indigo) on a 0-10 scale.
+                                <br />
+                                <span className="text-red-400 text-sm">Red line = Overconfident (+%)</span> <span className="text-slate-500 mx-2">|</span> <span className="text-emerald-400 text-sm">Green line = Underconfident (-%)</span>
+                            </p>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <ComposedChart data={gapData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={true} />
+                                    <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
+                                    <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} width={140} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#334155', opacity: 0.2 }} />
+                                    <Bar dataKey="range" barSize={6} isAnimationActive={false}>
+                                        {gapData.map((entry: any, index: number) => (
+                                            <Cell key={`cell-${index}`} fill={entry.delta > 0 ? '#ef4444' : entry.delta < 0 ? '#10b981' : '#94a3b8'} opacity={0.6} />
+                                        ))}
+                                    </Bar>
+                                    <Scatter dataKey="mentor" fill="#818cf8" />
+                                    <Scatter dataKey="self" fill="#f8fafc" />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
                     )}
 
                     {activeTab === 'mastery-consolidated' && (
@@ -548,10 +558,10 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                             <p className="text-slate-400 mb-8 text-center max-w-2xl">This horizontal stack compares the active student's overall engagement index against every other active student in the cohort. Each dot represents a student.</p>
                             <ResponsiveContainer width="100%" height={120}>
                                 <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <ReferenceArea x1={0} x2={25} fill="#ef4444" fillOpacity={0.1} />
-                                    <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.1} />
-                                    <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.1} />
-                                    <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.1} />
+                                    <ReferenceArea x1={0} x2={25} fill="#f43f5e" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'FINDING RHYTHM', fill: '#f43f5e', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={25} x2={50} fill="#f59e0b" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'DEVELOPING', fill: '#f59e0b', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={50} x2={75} fill="#10b981" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'CONSISTENT', fill: '#10b981', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
+                                    <ReferenceArea x1={75} x2={100} fill="#0ea5e9" fillOpacity={0.08} label={{ position: 'insideBottom', value: 'LEADER', fill: '#0ea5e9', fontSize: 11, fontWeight: 600, opacity: 0.6 }} />
                                     <ReferenceLine x={50} stroke="#94a3b8" strokeDasharray="3 3" label={{ position: 'top', value: 'Pace Car', fill: '#94a3b8', fontSize: 12 }} />
                                     <ReferenceLine y={0} stroke="#334155" strokeWidth={8} />
                                     <XAxis type="number" dataKey="score" name="Engagement Score" domain={[0, 100]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
@@ -577,10 +587,11 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                                 <Cell
                                                     key={`cell-${index}`}
                                                     fill={isSelected ? '#e879f9' : '#475569'}
-                                                    r={isSelected ? 16 : 8}
-                                                    opacity={isSelected ? 1 : 0.7}
-                                                    stroke={isSelected ? '#fdf4ff' : 'none'}
+                                                    r={isSelected ? 24 : 10}
+                                                    opacity={isSelected ? 1 : 0.8}
+                                                    stroke={isSelected ? 'rgba(255,255,255,0.7)' : 'none'}
                                                     strokeWidth={isSelected ? 4 : 0}
+                                                    style={{ filter: isSelected ? 'drop-shadow(0px 0px 8px rgba(232,121,249,0.8))' : 'none' }}
                                                 />
                                             );
                                         })}

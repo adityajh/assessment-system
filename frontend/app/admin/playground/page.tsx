@@ -63,11 +63,13 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         gapData = Array.from(domainMap.values()).map(d => {
             const mentor = d.mentorCount > 0 ? Number((d.mentorSum / d.mentorCount).toFixed(1)) : 0;
             const self = d.selfCount > 0 ? Number((d.selfSum / d.selfCount).toFixed(1)) : 0;
+            const deltaPercent = mentor > 0 ? ((self - mentor) / mentor) * 100 : 0;
             return {
                 name: d.name,
                 mentor,
                 self,
-                delta: Number((mentor - self).toFixed(1))
+                range: mentor <= self ? [mentor, self] : [self, mentor],
+                delta: Number(deltaPercent.toFixed(1))
             };
         });
 
