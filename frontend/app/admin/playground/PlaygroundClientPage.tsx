@@ -81,7 +81,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
     }
 
     return (
-        <div className="flex-1 overflow-y-auto min-h-0 pd-8 pb-20">
+        <div className="flex-1 overflow-y-auto min-h-0 p-8 pb-20">
             {/* Student Selector */}
             {students && students.length > 0 && (
                 <div className="mb-6 flex items-center gap-3">
@@ -227,7 +227,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                 </div>
 
                 {/* Chart Container placeholder */}
-                <div className="h-[500px] w-full bg-slate-800/20 rounded-lg border border-slate-700/50 p-6 flex flex-col">
+                <div className="min-h-[600px] w-full bg-slate-800/20 rounded-lg border border-slate-700/50 p-6 flex flex-col">
                     {activeTab === 'self-awareness' && (
                         <div className="w-full h-full flex flex-col justify-center px-4 relative items-center min-h-[400px]">
                             <p className="text-slate-400 mb-6 text-center max-w-2xl mx-auto">
@@ -708,7 +708,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     )}
 
                     {activeTab === 'mission-domain' && topDomainStrengths && (
-                        <div className="flex flex-col gap-8 w-full h-full p-4 overflow-y-auto">
+                        <div className="flex flex-col gap-8 w-full h-full p-4 overflow-y-visible pb-12">
                             {/* Domain Level (Top 2 / Bottom 2) */}
                             <div>
                                 <div className="mb-6">
@@ -771,9 +771,9 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-4">
-                                        <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-lg shadow-inner">
-                                            <p className="text-slate-300 leading-relaxed text-[15px]">
-                                                {savedMission || (growthDomainAreas?.length > 0 ? <>Your current bottleneck is the <strong className="text-slate-100">{growthDomainAreas[0].name}</strong> domain. Mission for your next project: Focus aggressively on improving your skills within this domain, paying special attention to elements like <strong className="text-indigo-300">{growthAreas?.[0]?.name || "your weak spots"}</strong>.</> : "No clear growth areas identified yet. Keep pushing your boundaries!")}
+                                        <div className="bg-slate-900/80 border border-slate-700 p-6 rounded-lg shadow-inner ring-1 ring-indigo-500/20">
+                                            <p className="text-slate-200 leading-relaxed text-[16px]">
+                                                {savedMission || (growthDomainAreas?.length > 0 ? <>Your current bottleneck is the <strong className="text-white font-bold underline decoration-indigo-500/50">{growthDomainAreas[0].name}</strong> domain. Mission for your next project: Focus aggressively on improving your skills within this domain, paying special attention to elements like <strong className="text-indigo-300">{growthAreas?.[0]?.name || "your weak spots"}</strong>.</> : "No clear growth areas identified yet. Keep pushing your boundaries!")}
                                             </p>
                                         </div>
                                         <div className="flex justify-end">
