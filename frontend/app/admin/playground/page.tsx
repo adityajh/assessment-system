@@ -27,6 +27,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
     let peerStackedData: any[] = [];
     let scatterData: any[] = [];
     let engagementDistributionData: any[] = [];
+    let peerStackedByParamData: any[] = [];
+    let peerStackedByParamProjects: string[] = [];
     let studentsList: any[] = [];
     let activeStudentId = studentId || "";
 
@@ -196,6 +198,25 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 });
                 peerStackedData.push(entry);
             }
+        });
+
+        // BUILD PEER STACKED BY PARAM DATA
+        peerCategories.forEach(c => {
+            const entry: any = { parameter: c.label };
+            data.projects.forEach(proj => {
+                const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
+                if (projectFeedback.length > 0) {
+                    const scores = projectFeedback.map(f => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
+                    const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
+                    if (avg !== null) {
+                        entry[proj.name] = Number(avg.toFixed(1));
+                        if (!peerStackedByParamProjects.includes(proj.name)) {
+                            peerStackedByParamProjects.push(proj.name);
+                        }
+                    }
+                }
+            });
+            peerStackedByParamData.push(entry);
         });
 
         // BUILD PEER VS MENTOR SCATTER DATA
@@ -381,6 +402,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
                 distributionData={distributionData}
                 scatterData={scatterData}
                 peerStackedData={peerStackedData}
+                peerStackedByParamData={peerStackedByParamData}
+                peerStackedByParamProjects={peerStackedByParamProjects}
                 engagementDistributionData={engagementDistributionData}
                 students={studentsList}
                 studentId={activeStudentId}

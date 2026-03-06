@@ -65,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, scatterData, peerStackedData, engagementDistributionData, students, studentId }: any) {
+export default function PlaygroundClientPage({ gapData, heatmapData, consolidatedHeatmapData, heatmapProjects, trajectoryData, kpiData, peerRatingData, peerRatingProjects, projectDomainScores, topStrengths, growthAreas, topDomainStrengths, growthDomainAreas, distributionData, scatterData, peerStackedData, peerStackedByParamData, peerStackedByParamProjects, engagementDistributionData, students, studentId }: any) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [distMetric, setDistMetric] = useState(distributionData && distributionData.length > 0 ? distributionData[0].name : '');
@@ -130,7 +130,13 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     onClick={() => setActiveTab('peer-stacked')}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'peer-stacked' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
                 >
-                    Peer Rating (Stacked)
+                    Peer Rating (Stacked by Project)
+                </button>
+                <button
+                    onClick={() => setActiveTab('peer-stacked-param')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'peer-stacked-param' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    Peer Rating (Stacked by Param)
                 </button>
                 <button
                     onClick={() => setActiveTab('peer-vs-mentor')}
@@ -195,6 +201,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                         {activeTab === 'dashboard' && 'KPI Dashboard'}
                         {activeTab === 'peer-rating' && 'Peer Rating Feedback by Project'}
                         {activeTab === 'peer-stacked' && 'Peer Rating by Project (Stacked Bar)'}
+                        {activeTab === 'peer-stacked-param' && 'Peer Rating Across Projects (Stacked Bar)'}
                         {activeTab === 'peer-vs-mentor' && 'Peer Perception vs Mentor Score Scatter'}
                         {activeTab === 'engagement-stack' && 'Relative Engagement Stack (Cohort Comparison)'}
                         {activeTab === 'domain-comparison' && 'Self vs Mentor Readiness by Project'}
@@ -431,6 +438,36 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                         </ResponsiveContainer>
                     )}
                     {activeTab === 'peer-stacked' && (!peerStackedData || peerStackedData.length === 0) && (
+                        <div className="flex-1 flex items-center justify-center text-slate-500 italic">
+                            No peer feedback recorded for this student.
+                        </div>
+                    )}
+
+                    {activeTab === 'peer-stacked-param' && peerStackedByParamData && peerStackedByParamData.length > 0 && (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 'dataMax + 2']} />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                {peerStackedByParamProjects.map((proj: string, idx: number) => {
+                                    const colors = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#ef4444', '#14b8a6', '#f43f5e', '#6366f1'];
+                                    return (
+                                        <Bar
+                                            key={proj}
+                                            dataKey={proj}
+                                            name={proj}
+                                            stackId="a"
+                                            fill={colors[idx % colors.length]}
+                                            radius={idx === peerStackedByParamProjects.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                        />
+                                    );
+                                })}
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                    {activeTab === 'peer-stacked-param' && (!peerStackedByParamData || peerStackedByParamData.length === 0) && (
                         <div className="flex-1 flex items-center justify-center text-slate-500 italic">
                             No peer feedback recorded for this student.
                         </div>
