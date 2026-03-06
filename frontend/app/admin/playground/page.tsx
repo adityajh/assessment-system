@@ -146,8 +146,8 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         (kpiData as any).engagementScore = Math.round((cbpVal / 5) * 25 + (confVal / 5) * 25 + (bowVal / 10) * 25 + (saVal / 15) * 25);
 
         // Badges
-        (kpiData as any).hasConsistencyBadge = (kpiData.cbpCount >= 4 && kpiData.conflexionCount >= 4);
-        (kpiData as any).hasBreadthBadge = (kpiData.cbpCount >= 5 && kpiData.conflexionCount >= 5 && Number(kpiData.bowScore) >= 8 && selfAssessmentsCount >= 10);
+        (kpiData as any).hasConsistencyBadge = (kpiData.cbpCount >= 1 && kpiData.conflexionCount >= 1);
+        (kpiData as any).hasBreadthBadge = (kpiData.cbpCount >= 1 && kpiData.conflexionCount >= 1 && Number(kpiData.bowScore) >= 7 && selfAssessmentsCount >= 2);
 
         // Cohort Engagement Data for Dot Plot
         const selfAssessMap: Record<string, number> = {};
