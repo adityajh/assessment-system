@@ -11,11 +11,16 @@ interface HeaderProps {
 export function StudentReportHeader({ student, projects, mentorAssessments }: HeaderProps) {
     // Calculate some basic top-level metrics
 
-    // 1. Completion rate (projects with at least one score vs total standard projects)
-    const standardProjects = projects.filter(p => p.project_type === 'standard');
-    const attemptedProjectIds = new Set(mentorAssessments.map(a => a.project_id));
-    const completionPercent = standardProjects.length > 0
-        ? Math.round((attemptedProjectIds.size / standardProjects.length) * 100)
+    // 1. Completion rate (phases with at least one score vs total phases)
+    const totalPhases = new Set(projects.map(p => p.sequence)).size;
+    const attemptedPhases = new Set(
+        mentorAssessments
+            .filter(a => a.normalized_score !== null)
+            .map(a => projects.find(p => p.id === a.project_id)?.sequence)
+            .filter(Boolean)
+    ).size;
+    const completionPercent = totalPhases > 0
+        ? Math.round((attemptedPhases / totalPhases) * 100)
         : 0;
 
     // 2. Overall Mentor Average
@@ -60,7 +65,7 @@ export function StudentReportHeader({ student, projects, mentorAssessments }: He
                     <div className="flex items-baseline gap-1">
                         <span className="text-4xl font-black text-slate-700">{completionPercent}%</span>
                     </div>
-                    <span className="text-xs text-slate-400 mt-1">{attemptedProjectIds.size} of {standardProjects.length} Projects</span>
+                    <span className="text-xs text-slate-400 mt-1">{attemptedPhases} of {totalPhases} Phases</span>
                 </div>
             </div>
 

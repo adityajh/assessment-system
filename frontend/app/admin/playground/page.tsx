@@ -74,23 +74,40 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         });
 
         // 2. BUILD HEATMAP DATA (Parameters x Projects)
-        const projectNames: string[] = data.projects.map(p => p.name);
-        heatmapProjects = projectNames;
+        const uniqueSequences = [...new Set(data.projects.map(p => p.sequence))].sort((a, b) => a - b);
+        heatmapProjects = uniqueSequences.map(seq => {
+            const seqProjects = data.projects.filter(p => p.sequence === seq);
+            let activeProject = seqProjects[0];
+            for (const proj of seqProjects) {
+                if (data.assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
+                    activeProject = proj;
+                    break;
+                }
+            }
+            return activeProject.name;
+        });
 
         heatmapData = data.parameters.map(param => {
             const domain = data.domains.find(d => d.id === param.domain_id)?.name || '';
             const scores: Record<string, number | null> = {};
 
-            data.projects.forEach(proj => {
-                const assessment = data.assessments.find(a => a.parameter_id === param.id && a.project_id === proj.id && a.assessment_type === 'mentor');
-                scores[proj.name] = assessment?.normalized_score ? Number(assessment.normalized_score.toFixed(1)) : null;
+            uniqueSequences.forEach(seq => {
+                const seqProjects = data.projects.filter(p => p.sequence === seq);
+                let activeProject = seqProjects[0];
+                for (const proj of seqProjects) {
+                    if (data.assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
+                        activeProject = proj;
+                        break;
+                    }
+                }
+                const assessment = data.assessments.find(a => a.parameter_id === param.id && a.project_id === activeProject.id && a.assessment_type === 'mentor');
+                scores[activeProject.name] = assessment?.normalized_score ? Number(assessment.normalized_score.toFixed(1)) : null;
             });
 
             return { parameter: param.name, domain, scores };
         });
 
         // 3. BUILD TRAJECTORY DATA (Phase-Based Project Averages)
-        const uniqueSequences = [...new Set(data.projects.map(p => p.sequence))].sort((a, b) => a - b);
         trajectoryData = uniqueSequences.map(seq => {
             const seqProjects = data.projects.filter(p => p.sequence === seq);
 
@@ -119,15 +136,24 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         // 4. BUILD CONSOLIDATED HEATMAP DATA (Domains x Projects)
         consolidatedHeatmapData = data.domains.map(domain => {
             const scores: Record<string, number | null> = {};
-            data.projects.forEach(proj => {
+            uniqueSequences.forEach(seq => {
+                const seqProjects = data.projects.filter(p => p.sequence === seq);
+                let activeProject = seqProjects[0];
+                for (const proj of seqProjects) {
+                    if (data.assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
+                        activeProject = proj;
+                        break;
+                    }
+                }
+
                 const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
-                const asses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+                const asses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === activeProject.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
 
                 if (asses.length > 0) {
                     const avg = asses.reduce((sum, a) => sum + a.normalized_score!, 0) / asses.length;
-                    scores[proj.name] = Number(avg.toFixed(1));
+                    scores[activeProject.name] = Number(avg.toFixed(1));
                 } else {
-                    scores[proj.name] = null;
+                    scores[activeProject.name] = null;
                 }
             });
             return { domain: domain.name, scores };
@@ -153,21 +179,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             selfAssessmentsCount
         };
 
-        // Calculate Engagement Score 2.0 (out of 100)
-        // Max targets -> CBP: 5, Conflexion: 5, BoW: 10, Self Assess: 15
-        const cbpVal = Math.min(kpiData.cbpCount, 5);
-        const confVal = Math.min(kpiData.conflexionCount, 5);
-        const bowVal = kpiData.bowScore ? Math.min(Number(kpiData.bowScore), 10) : 0;
-        const saVal = Math.min(selfAssessmentsCount, 15);
-
-        // Weights: CBP (25%), Conflexion (25%), BoW (25%), Assessments (25%)
-        (kpiData as any).engagementScore = Math.round((cbpVal / 5) * 25 + (confVal / 5) * 25 + (bowVal / 10) * 25 + (saVal / 15) * 25);
-
-        // Badges
-        (kpiData as any).hasConsistencyBadge = (kpiData.cbpCount >= 1 && kpiData.conflexionCount >= 1);
-        (kpiData as any).hasBreadthBadge = (kpiData.cbpCount >= 1 && kpiData.conflexionCount >= 1 && Number(kpiData.bowScore) >= 7 && selfAssessmentsCount >= 2);
-
-        // Cohort Engagement Data for Dot Plot
+        // Cohort Engagement Data for Dot Plot (Need Map first for dynamic sizing)
         const selfAssessMap: Record<string, number> = {};
         if ((data as any).allSelfAssessments) {
             (data as any).allSelfAssessments.forEach((s: any) => {
@@ -175,17 +187,38 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             });
         }
 
+        // Calculate Dynamic Targets based on actual cohort performance (Phase 3 logic)
+        const maxCBP = Math.max(...(data.allTermTracking?.map((t: any) => t.cbp_count || 0) || []), 1);
+        const maxConf = Math.max(...(data.allTermTracking?.map((t: any) => t.conflexion_count || 0) || []), 1);
+        const maxBow = Math.max(10, Math.max(...(data.allTermTracking?.map((t: any) => Number(t.bow_score) || 0) || []), 1)); // Cap BoW at 10 minimum standard target
+        const maxSA = Math.max(...Object.values(selfAssessMap), 1);
+
+        // Calculate Engagement Score 2.0 (out of 100) dynamically
+        const cbpVal = Math.min(kpiData.cbpCount, maxCBP);
+        const confVal = Math.min(kpiData.conflexionCount, maxConf);
+        const bowVal = kpiData.bowScore ? Math.min(Number(kpiData.bowScore), maxBow) : 0;
+        const saVal = Math.min(selfAssessmentsCount, maxSA);
+
+        // Weights: CBP (25%), Conflexion (25%), BoW (25%), Assessments (25%)
+        (kpiData as any).engagementScore = Math.round((cbpVal / maxCBP) * 25 + (confVal / maxConf) * 25 + (bowVal / maxBow) * 25 + (saVal / maxSA) * 25);
+
+        // Badges
+        (kpiData as any).hasConsistencyBadge = (kpiData.cbpCount >= 1 && kpiData.conflexionCount >= 1);
+        (kpiData as any).hasBreadthBadge = (kpiData.cbpCount >= 1 && kpiData.conflexionCount >= 1 && Number(kpiData.bowScore) >= 7 && selfAssessmentsCount >= 2);
+
+
+
         if (data.allTermTracking) {
             // First pass: Calculate raw scores
             const rawScores: { studentId: string, rawScore: number, isCurrent: boolean }[] = [];
             let sum = 0;
 
             data.allTermTracking.forEach(t => {
-                const tvCbp = Math.min(t.cbp_count || 0, 5);
-                const tvConf = Math.min(t.conflexion_count || 0, 5);
-                const tvBow = t.bow_score ? Math.min(Number(t.bow_score), 10) : 0;
-                const tvSa = Math.min(selfAssessMap[t.student_id] || 0, 15);
-                const score = Math.round((tvCbp / 5) * 25 + (tvConf / 5) * 25 + (tvBow / 10) * 25 + (tvSa / 15) * 25);
+                const tvCbp = Math.min(t.cbp_count || 0, maxCBP);
+                const tvConf = Math.min(t.conflexion_count || 0, maxConf);
+                const tvBow = t.bow_score ? Math.min(Number(t.bow_score), maxBow) : 0;
+                const tvSa = Math.min(selfAssessMap[t.student_id] || 0, maxSA);
+                const score = Math.round((tvCbp / maxCBP) * 25 + (tvConf / maxConf) * 25 + (tvBow / maxBow) * 25 + (tvSa / maxSA) * 25);
 
                 rawScores.push({ studentId: t.student_id, rawScore: score, isCurrent: t.student_id === activeStudentId });
                 sum += score;
@@ -378,11 +411,21 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
 
 
         // 7. BUILD GROUPED BAR DATA
-        projectDomainScores = data.projects.map(proj => {
+        projectDomainScores = uniqueSequences.map(seq => {
+            const seqProjects = data.projects.filter(p => p.sequence === seq);
+
+            let activeProject = seqProjects[0]; // fallback
+            for (const proj of seqProjects) {
+                if (data.assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
+                    activeProject = proj;
+                    break;
+                }
+            }
+
             const categories = data.domains.map(domain => {
                 const domainParams = data.parameters.filter(p => p.domain_id === domain.id).map(p => p.id);
-                const mentorAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
-                const selfAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === proj.id && a.assessment_type === 'self' && a.normalized_score !== null);
+                const mentorAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === activeProject.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+                const selfAsses = data.assessments.filter(a => domainParams.includes(a.parameter_id) && a.project_id === activeProject.id && a.assessment_type === 'self' && a.normalized_score !== null);
 
                 const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : 0;
                 const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : 0;
@@ -395,7 +438,7 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             });
 
             return {
-                project: proj.name,
+                project: activeProject.name,
                 categories
             };
         });

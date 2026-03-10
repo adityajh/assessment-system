@@ -22,14 +22,23 @@ interface ProgressionProps {
 export function ProgressionChart({ projects, assessments }: ProgressionProps) {
 
     const chartData = useMemo(() => {
-        // Only care about standard projects in sequence order
-        const standardProjects = projects
-            .filter(p => p.project_type === 'standard')
-            .sort((a, b) => a.sequence - b.sequence);
+        // Find unique sequences across all projects, sort them chronologically
+        const uniqueSequences = [...new Set(projects.map(p => p.sequence))].sort((a, b) => a - b);
 
-        return standardProjects.map(project => {
-            // Find all mentor assessments for this project
-            const projectAssessments = assessments.filter(a => a.project_id === project.id);
+        return uniqueSequences.map(seq => {
+            const seqProjects = projects.filter(p => p.sequence === seq);
+
+            // Find which project the student actually has assessment data for in this sequence
+            let activeProject = seqProjects[0]; // fallback
+            for (const proj of seqProjects) {
+                if (assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
+                    activeProject = proj;
+                    break;
+                }
+            }
+
+            // Find all mentor assessments for this specific project
+            const projectAssessments = assessments.filter(a => a.project_id === activeProject.id && a.assessment_type === 'mentor');
             const scores = projectAssessments.map(a => a.normalized_score).filter((s): s is number => s !== null);
 
             const avg = scores.length > 0
@@ -37,8 +46,8 @@ export function ProgressionChart({ projects, assessments }: ProgressionProps) {
                 : null;
 
             return {
-                name: project.sequence_label, // e.g. "1", "2a"
-                fullName: project.name,
+                name: activeProject.sequence_label, // e.g. "1", "2a"
+                fullName: activeProject.name,
                 average: avg,
             };
         }).filter(d => d.average !== null); // Only show projects with scores
