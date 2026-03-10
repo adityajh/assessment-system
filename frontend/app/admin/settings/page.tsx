@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import { Users, FolderGit2, LayoutTemplate, Settings as SettingsIcon } from 'lucide-react';
+import { Users, FolderGit2, LayoutTemplate, Settings as SettingsIcon, Trophy } from 'lucide-react';
 
 export default function SettingsPage() {
     return (
@@ -43,6 +43,16 @@ export default function SettingsPage() {
                     <h3 className="text-lg font-medium text-slate-200 mb-2">Component Playground</h3>
                     <p className="text-sm text-slate-500 flex-1">
                         Isolated testing environment for data visualizations and new dashboard components.
+                    </p>
+                </Link>
+
+                <Link href="/admin/program-dashboard" className="admin-card p-6 flex flex-col hover:bg-slate-800/40 transition-colors group cursor-pointer border border-slate-800/60 hover:border-amber-500/50">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4 text-amber-400 group-hover:scale-110 transition-transform">
+                        <Trophy size={24} />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-200 mb-2">Program Dashboard</h3>
+                    <p className="text-sm text-slate-500 flex-1">
+                        View cohort-wide ranking and calculate relative dynamic engagement scores.
                     </p>
                 </Link>
             </div>
