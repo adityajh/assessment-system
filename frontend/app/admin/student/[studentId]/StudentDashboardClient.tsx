@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef } from 'react';
-import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const getGapColor = (delta: number) => {
@@ -42,7 +41,22 @@ export default function StudentDashboardClient({
 
     return (
         <div className="bg-slate-50 min-h-screen text-slate-900 pb-20 print:pb-0 print:bg-white">
-            <div className="max-w-[1200px] mx-auto p-8 pt-12 print:p-0 print:max-w-none">
+            {/* Action Bar (Hidden in Print) */}
+            <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm print:hidden">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-800">Student Dashboard View</h1>
+                    <p className="text-sm text-slate-500">Optimized for 1:1 sessions and PDF export. Use landscape mode for best PDF results.</p>
+                </div>
+                <button
+                    onClick={handlePrint}
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export to PDF
+                </button>
+            </div>
+
+            <div className="max-w-[1200px] mx-auto p-8 print:p-0 print:max-w-none">
 
                 {/* PAGE 1: HERO & KPIs */}
                 <div className="print:break-inside-avoid mb-10">
@@ -55,7 +69,7 @@ export default function StudentDashboardClient({
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-slate-500 uppercase font-bold tracking-wider">Let's Enterprise</p>
-                            <p className="text-xl font-semibold text-slate-800">Student Dashboard</p>
+                            <p className="text-xl font-semibold text-slate-800">Student Readiness Report</p>
                         </div>
                     </div>
 

@@ -89,6 +89,7 @@ It must be **maintainable by non-technical programme staff** — no code deploym
 - [ ] Add interactive elements: domain drill-downs, project filters, time-range selectors.
 - [ ] Parent-friendly simplified view (high-level milestones, not raw scores).
 - [ ] Client/employer view: Project-specific student readiness profile (shareable PDF).
+- [ ] Add a "playground" mode for the student dashboard where mentors can test different views and configurations.
 
 ---
 

@@ -3,7 +3,7 @@ import { getPlaygroundData } from '@/lib/supabase/queries/assessments';
 import StudentDashboardClient from './StudentDashboardClient';
 
 export const metadata = {
-    title: 'Student Dashboard',
+    title: 'Student Dashboard - Admin',
 };
 
 export default async function StudentDashboardPage({ params }: { params: Promise<{ studentId: string }> }) {

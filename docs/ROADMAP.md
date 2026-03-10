@@ -5,10 +5,10 @@
 
 ---
 
-### Step 1 — Fix data import bugs
+### Step 1 — Fix data import bugs - WIP
 Audit and resolve all known import edge cases: scale mismatches, duplicate rows, unmatched student names. Add pre-commit validation warnings so the user can catch and fix issues before data is saved.
 
-### Step 2 — Student dashboard v1 (mentor view) [SHIPPED]
+### Step 2 — Student dashboard v1 - playground (mentor view) [SHIPPED]
 Design and ship the student dashboard for mentor use during 1:1 coaching sessions. Core sections: readiness overview, project breakdown, peer feedback, term tracking, mentor notes.
 
 ### Step 3 — Iterate on dashboard visualisations

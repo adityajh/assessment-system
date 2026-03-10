@@ -89,16 +89,28 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
             return { parameter: param.name, domain, scores };
         });
 
-        // 3. BUILD TRAJECTORY DATA (Project Averages)
-        trajectoryData = data.projects.map(proj => {
-            const mentorAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
-            const selfAsses = data.assessments.filter(a => a.project_id === proj.id && a.assessment_type === 'self' && a.normalized_score !== null);
+        // 3. BUILD TRAJECTORY DATA (Phase-Based Project Averages)
+        const uniqueSequences = [...new Set(data.projects.map(p => p.sequence))].sort((a, b) => a - b);
+        trajectoryData = uniqueSequences.map(seq => {
+            const seqProjects = data.projects.filter(p => p.sequence === seq);
+
+            // Find which project the student actually has assessment data for
+            let activeProject = seqProjects[0]; // fallback
+            for (const proj of seqProjects) {
+                if (data.assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
+                    activeProject = proj;
+                    break;
+                }
+            }
+
+            const mentorAsses = data.assessments.filter(a => a.project_id === activeProject.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
+            const selfAsses = data.assessments.filter(a => a.project_id === activeProject.id && a.assessment_type === 'self' && a.normalized_score !== null);
 
             const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : null;
             const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : null;
 
             return {
-                project: proj.name,
+                project: activeProject.name,
                 mentor: mentorAvg !== null ? Number(mentorAvg.toFixed(1)) : null,
                 self: selfAvg !== null ? Number(selfAvg.toFixed(1)) : null
             };
@@ -122,13 +134,19 @@ export default async function PlaygroundPage({ searchParams }: { searchParams: P
         });
 
         // 5. BUILD KPI DATA (Dashboard view)
-        const uniqueProjectsAssessed = new Set(data.assessments.map(a => a.project_id)).size;
+        const totalPhases = new Set(data.projects.map(p => p.sequence)).size;
+        const phasesAssessed = new Set(
+            data.assessments
+                .filter(a => a.normalized_score !== null)
+                .map(a => data.projects.find(p => p.id === a.project_id)?.sequence)
+                .filter(Boolean)
+        ).size;
 
         // Count active student's self assessments
         const selfAssessmentsCount = data.assessments.filter(a => a.assessment_type === 'self' && a.normalized_score !== null).length;
 
         kpiData = {
-            projectsCount: `${uniqueProjectsAssessed}/${data.projects.length}`,
+            projectsCount: `${phasesAssessed}/${totalPhases}`,
             cbpCount: data.termTracking?.cbp_count || 0,
             conflexionCount: data.termTracking?.conflexion_count || 0,
             bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00",

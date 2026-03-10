@@ -180,7 +180,7 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
     }
 
     // 2. Fetch all required reference data and assessments for that student
-    const [projectsResult, domainsResult, paramsResult, assessmentsResult, peerFeedbackResult, dashboardResult, allDomainScoresResult, allPeerSummaryResult, allTermTrackingResult] = await Promise.all([
+    const [projectsResult, domainsResult, paramsResult, assessmentsResult, peerFeedbackResult, dashboardResult, allDomainScoresResult, allPeerSummaryResult, allTermTrackingResult, allSelfAssessmentsResult] = await Promise.all([
         supabase.from('projects').select('*').order('sequence'),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('readiness_parameters').select('*').order('param_number'),
@@ -189,7 +189,8 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
         supabase.from('v_student_dashboard').select('*').eq('student_id', student.id).single(),
         supabase.from('v_domain_scores').select('*').eq('assessment_type', 'mentor'),
         supabase.from('v_peer_feedback_summary').select('*'),
-        supabase.from('v_student_dashboard').select('student_id, cbp_count, conflexion_count, bow_score')
+        supabase.from('v_student_dashboard').select('student_id, cbp_count, conflexion_count, bow_score'),
+        supabase.from('assessments').select('student_id').eq('assessment_type', 'self').not('normalized_score', 'is', 'null')
     ]);
 
     if (projectsResult.error) throw projectsResult.error;
@@ -208,6 +209,7 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
         termTracking: dashboardResult.data as any,
         cohortDomainScores: allDomainScoresResult.data as any[] || [],
         cohortPeerSummary: allPeerSummaryResult.data as any[] || [],
-        allTermTracking: allTermTrackingResult.data as any[] || []
+        allTermTracking: allTermTrackingResult.data as any[] || [],
+        allSelfAssessments: allSelfAssessmentsResult.data as any[] || []
     };
 }
