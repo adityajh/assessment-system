@@ -28,53 +28,43 @@ export default async function ProgramDashboardPage() {
         .from('v_student_dashboard')
         .select('student_id, cbp_count, conflexion_count, bow_score, total_projects_assessed');
 
-    // 4. Fetch All Assessments (Self and Mentor) with Scores
-    const { data: allAssessments } = await supabase
-        .from('assessments')
-        .select('student_id, assessment_type, normalized_score')
-        .not('normalized_score', 'is', 'null');
+    // 4. Fetch Assessment Averages (pre-aggregated in SQL view)
+    const { data: assessmentAvgs } = await supabase
+        .from('v_student_assessment_averages')
+        .select('student_id, assessment_type, avg_score, assessment_count');
     
-    // Calculate self/mentor counts and averages per student
-    const selfAssessStats: Record<string, { count: number, sum: number }> = {};
-    const mentorAssessStats: Record<string, { count: number, sum: number }> = {};
-    
-    if (allAssessments) {
-        allAssessments.forEach(a => {
-            const score = Number(a.normalized_score) || 0;
-            if (a.assessment_type === 'self') {
-                if (!selfAssessStats[a.student_id]) selfAssessStats[a.student_id] = { count: 0, sum: 0 };
-                selfAssessStats[a.student_id].count++;
-                selfAssessStats[a.student_id].sum += score;
-            } else if (a.assessment_type === 'mentor') {
-                if (!mentorAssessStats[a.student_id]) mentorAssessStats[a.student_id] = { count: 0, sum: 0 };
-                // Ensure mentor score isn't zero padding if we only want true averages
-                if (score > 0) {
-                    mentorAssessStats[a.student_id].count++;
-                    mentorAssessStats[a.student_id].sum += score;
-                }
-            }
+    // Map assessment stats per student
+    const selfStats: Record<string, { count: number, avg: number }> = {};
+    const mentorStats: Record<string, { count: number, avg: number }> = {};
+
+    if (assessmentAvgs) {
+        assessmentAvgs.forEach(a => {
+            const stats = { count: a.assessment_count, avg: Number(a.avg_score) };
+            if (a.assessment_type === 'self') selfStats[a.student_id] = stats;
+            else if (a.assessment_type === 'mentor') mentorStats[a.student_id] = stats;
         });
     }
 
-    // 5. Fetch Peer Feedback Averages (from existing summary view)
+    // 5. Fetch Peer Feedback Averages
     const { data: peerFeedback } = await supabase
         .from('v_peer_feedback_summary')
-        .select('recipient_id, overall_score_avg');
+        .select('student_id, avg_overall'); // Use student_id as aliased in view
     
     const peerMap: Record<string, number> = {};
     if (peerFeedback) {
         peerFeedback.forEach(p => {
-            peerMap[p.recipient_id] = Number(p.overall_score_avg) || 0;
+            peerMap[p.student_id] = Number(p.avg_overall) || 0;
         });
     }
 
     // Combine all data into a clean structure for the client
     const compiledData = students.map(student => {
         const metrics = (dashboardMetrics?.find(m => m.student_id === student.id) || {}) as any;
-        const selfStats = selfAssessStats[student.id];
-        const mentorStats = mentorAssessStats[student.id];
-        const avgSelfScore = selfStats && selfStats.count > 0 ? (selfStats.sum / selfStats.count) : 0;
-        const avgMentorScore = mentorStats && mentorStats.count > 0 ? (mentorStats.sum / mentorStats.count) : 0;
+        const sStat = selfStats[student.id];
+        const mStat = mentorStats[student.id];
+        
+        const avgSelfScore = sStat ? sStat.avg : 0;
+        const avgMentorScore = mStat ? mStat.avg : 0;
         const avgPeerScore = peerMap[student.id] || 0;
 
         return {
@@ -86,7 +76,7 @@ export default async function ProgramDashboardPage() {
             conflexionCount: metrics.conflexion_count || 0,
             bowScore: metrics.bow_score ? Number(metrics.bow_score).toFixed(2) : '0.00',
             projectsAssessed: metrics.total_projects_assessed || 0, 
-            selfAssessmentsCount: selfStats?.count || 0,
+            selfAssessmentsCount: sStat?.count || 0,
             avgMentorScore: avgMentorScore.toFixed(1),
             avgSelfScore: avgSelfScore.toFixed(1),
             avgPeerScore: avgPeerScore.toFixed(1)

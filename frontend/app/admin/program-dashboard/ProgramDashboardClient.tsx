@@ -36,6 +36,13 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
 
     const [activeCohort, setActiveCohort] = useState<string>(availableCohorts[0] || '2025');
 
+    const getEngagementColor = (score: number) => {
+        if (score < 25) return 'bg-red-500';
+        if (score < 50) return 'bg-amber-500';
+        if (score < 75) return 'bg-emerald-500';
+        return 'bg-cyan-500';
+    };
+
     // Filter, Curve, and Sort the students
     const processedStudents = useMemo(() => {
         // 1. Focus only on the active cohort
@@ -127,20 +134,19 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                         <ArrowUpDown size={14} className="opacity-50" />
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 text-center">Projects Passed</th>
-                                <th className="px-6 py-4 text-center">Avg Mentor</th>
-                                <th className="px-6 py-4 text-center">Avg Self</th>
-                                <th className="px-6 py-4 text-center">Avg Peer</th>
+                                <th className="px-6 py-4 text-center">Projects Assessed</th>
                                 <th className="px-6 py-4 text-center">CBPs</th>
                                 <th className="px-6 py-4 text-center">Conflexions</th>
                                 <th className="px-6 py-4 text-center">BoW Score</th>
-                                <th className="px-6 py-4 text-center">Self Assess.</th>
+                                <th className="px-6 py-4 text-center">Avg Mentor</th>
+                                <th className="px-6 py-4 text-center">Avg Self</th>
+                                <th className="px-6 py-4 text-center">Avg Peer</th>
                             </tr>
                         </thead>
                         <tbody className="text-sm">
                             {processedStudents.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                                    <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
                                         No students found in cohort "{activeCohort}".
                                     </td>
                                 </tr>
@@ -154,15 +160,21 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                             #{index + 1}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div>
-                                                <Link 
-                                                    href={`/dashboard/${student.id}`} 
-                                                    className="font-medium text-slate-200 hover:text-indigo-400 focus:outline-none focus:text-indigo-400 transition-colors"
-                                                    target="_blank"
-                                                >
-                                                    {student.name}
-                                                </Link>
-                                                <p className="text-xs text-slate-500 mt-0.5">{student.studentNumber}</p>
+                                            <div className="flex items-center gap-3">
+                                                <div 
+                                                    className={`w-3 h-3 rounded-full shrink-0 ${getEngagementColor(student.engagementScore || 0)} shadow-[0_0_8px_rgba(0,0,0,0.3)]`}
+                                                    title={`Zone Indicator: ${student.engagementScore}%`}
+                                                />
+                                                <div>
+                                                    <Link 
+                                                        href={`/dashboard/${student.id}`} 
+                                                        className="font-medium text-slate-200 hover:text-indigo-400 focus:outline-none focus:text-indigo-400 transition-colors"
+                                                        target="_blank"
+                                                    >
+                                                        {student.name}
+                                                    </Link>
+                                                    <p className="text-xs text-slate-500 mt-0.5">{student.studentNumber}</p>
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -179,17 +191,7 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center text-slate-300 font-medium">
-                                            {/* Note: In a fully phase-accurate system, this logic should be identical to the header phase logic */}
                                             {student.projectsAssessed} / {totalPhases}
-                                        </td>
-                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
-                                            {student.avgMentorScore !== '0.0' ? student.avgMentorScore : '-'}
-                                        </td>
-                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
-                                            {student.avgSelfScore !== '0.0' ? student.avgSelfScore : '-'}
-                                        </td>
-                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
-                                            {student.avgPeerScore !== '0.0' ? student.avgPeerScore : '-'}
                                         </td>
                                         <td className="px-6 py-4 text-center text-slate-300">
                                             <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded font-medium border border-emerald-500/20">
@@ -206,10 +208,14 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                                 {student.bowScore}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center text-slate-300">
-                                            <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded font-medium border border-blue-500/20">
-                                                {student.selfAssessmentsCount}
-                                            </span>
+                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                                            {student.avgMentorScore !== '0.0' ? student.avgMentorScore : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                                            {student.avgSelfScore !== '0.0' ? student.avgSelfScore : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                                            {student.avgPeerScore !== '0.0' ? student.avgPeerScore : '-'}
                                         </td>
                                     </tr>
                                 ))
