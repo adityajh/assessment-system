@@ -14,6 +14,9 @@ interface StudentData {
     bowScore: string | number;
     projectsAssessed: number;
     selfAssessmentsCount: number;
+    avgMentorScore?: string;
+    avgSelfScore?: string;
+    avgPeerScore?: string;
     engagementScore?: number; // Calculated dynamically on client
 }
 
@@ -125,6 +128,9 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                     </div>
                                 </th>
                                 <th className="px-6 py-4 text-center">Projects Passed</th>
+                                <th className="px-6 py-4 text-center">Avg Mentor</th>
+                                <th className="px-6 py-4 text-center">Avg Self</th>
+                                <th className="px-6 py-4 text-center">Avg Peer</th>
                                 <th className="px-6 py-4 text-center">CBPs</th>
                                 <th className="px-6 py-4 text-center">Conflexions</th>
                                 <th className="px-6 py-4 text-center">BoW Score</th>
@@ -175,6 +181,15 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                         <td className="px-6 py-4 text-center text-slate-300 font-medium">
                                             {/* Note: In a fully phase-accurate system, this logic should be identical to the header phase logic */}
                                             {student.projectsAssessed} / {totalPhases}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                                            {student.avgMentorScore !== '0.0' ? student.avgMentorScore : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                                            {student.avgSelfScore !== '0.0' ? student.avgSelfScore : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                                            {student.avgPeerScore !== '0.0' ? student.avgPeerScore : '-'}
                                         </td>
                                         <td className="px-6 py-4 text-center text-slate-300">
                                             <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded font-medium border border-emerald-500/20">
