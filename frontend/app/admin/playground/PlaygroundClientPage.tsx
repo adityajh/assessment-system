@@ -104,13 +104,6 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                         Go to Student Dashboard
                     </button>
 
-                    <button
-                        onClick={() => router.push(`/admin/playground/v1/${studentId}`)}
-                        className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
-                    >
-                        <LayoutDashboard size={16} />
-                        Dashboard Version 1 (Original)
-                    </button>
                 </div>
             )}
 
