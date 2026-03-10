@@ -29,8 +29,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         if (data.range) {
             return (
                 <div className="bg-[#1e2233] border border-slate-700 p-3 rounded-md shadow-lg">
-                    <p className="text-slate-200 font-medium mb-1">Score Range: {data.range}</p>
-                    <p className="text-indigo-400 text-sm">Students in Cohort: <span className="text-slate-100 font-medium">{data.count}</span></p>
+                    <p className="text-white font-medium mb-1">Score Range: {data.range}</p>
+                    <p className="text-indigo-400 text-sm">Students in Cohort: <span className="text-white font-medium">{data.count}</span></p>
                     {data.studentMarker !== null && (
                         <div className="mt-2 text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">
                             Student is in this bracket ({data.studentMarker.toFixed(1)})
@@ -42,18 +42,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
         return (
             <div className="bg-[#1e2233] border border-slate-700 p-3 rounded-md shadow-lg">
-                <p className="text-slate-200 font-medium mb-2">{label}</p>
+                <p className="text-white font-medium mb-2">{label}</p>
                 <div className="flex flex-col gap-1 text-sm">
-                    <p className="text-indigo-400">Mentor Score: <span className="text-slate-100 font-medium">{data.mentor}</span></p>
-                    <p className="text-slate-200">Self Score: <span className="text-slate-100 font-medium">{data.self}</span></p>
+                    <p className="text-indigo-400 font-medium">Mentor Score: <span className="text-white">{data.mentor}</span></p>
+                    <p className="text-white">Self Score: <span className="font-medium text-white">{data.self}</span></p>
                     <div className="h-px bg-slate-700 my-1"></div>
-                    <p className="text-slate-300">
+                    <p className="text-white">
                         Variance:{' '}
                         <span className="font-medium" style={{ color: data.delta > 0 ? '#ef4444' : data.delta < 0 ? '#10b981' : '#94a3b8' }}>
                             {data.delta > 0 ? '+' : ''}{data.delta}%
                         </span>
                     </p>
-                    <p className="text-xs text-slate-500 mt-1 max-w-[200px]">
+                    <p className="text-xs text-slate-400 mt-1 max-w-[200px]">
                         {data.delta > 0 ? 'Student rated themselves higher than the mentor (Overconfident).' :
                             data.delta < 0 ? 'Student rated themselves lower than the mentor (Underconfident).' :
                                 'Scores are perfectly aligned.'}
@@ -370,8 +370,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                 <XAxis dataKey="project" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                 <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 10]} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }}
-                                    itemStyle={{ color: '#f8fafc' }}
+                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }}
+                                    itemStyle={{ color: '#ffffff' }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 <Line connectNulls={false} type="monotone" dataKey="mentor" name="Average Mentor Score" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#1e2233' }} activeDot={{ r: 6, strokeWidth: 0 }} />
@@ -443,7 +443,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     <XAxis type="number" dataKey="mentor" name="Mentor Score" domain={[0, 10]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} label={{ value: 'Average Mentor Score', position: 'insideBottom', offset: -10, fill: '#94a3b8' }} />
                                     <YAxis type="number" dataKey="peer" name="Peer Score (Scaled)" domain={[0, 10]} stroke="#94a3b8" tick={{ fill: '#94a3b8' }} label={{ value: 'Average Peer Perception (Scaled to 10)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8' }} />
                                     <ZAxis type="category" dataKey="project" name="Project" />
-                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }} itemStyle={{ color: '#ffffff' }} />
                                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Scatter name="Projects" data={scatterData} fill="#8b5cf6">
                                         {scatterData.map((entry: any, index: number) => (
@@ -466,7 +466,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                 <XAxis dataKey="project" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                 <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={[0, 25]} />
-                                <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }} itemStyle={{ color: '#ffffff' }} />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 <Bar dataKey="quality_of_work" name="Quality of Work" stackId="a" fill="#8b5cf6" />
                                 <Bar dataKey="initiative_ownership" name="Initiative & Ownership" stackId="a" fill="#0ea5e9" />
@@ -489,7 +489,7 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                     <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                     <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={['auto', 'auto']} tickFormatter={(value) => value > 0 ? `+${value}` : value.toString()} />
-                                    <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }} itemStyle={{ color: '#ffffff' }} />
                                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <ReferenceLine y={0} stroke="#475569" strokeWidth={2} label={{ position: 'insideTopRight', value: 'Cohort Average', fill: '#94a3b8', fontSize: 12 }} />
                                     {peerStackedByParamProjects.map((proj: string, idx: number) => {
@@ -527,8 +527,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                                 <PolarRadiusAxis angle={30} domain={[0, 5]} stroke="#64748b" />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f8fafc' }}
-                                    itemStyle={{ color: '#f8fafc' }}
+                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }}
+                                    itemStyle={{ color: '#ffffff' }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 {peerRatingProjects?.map((proj: string, idx: number) => {
@@ -597,14 +597,15 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                             backgroundColor: 'rgba(30, 34, 51, 0.9)',
                                             backdropFilter: 'blur(8px)',
                                             borderColor: 'rgba(71, 85, 105, 0.5)',
-                                            color: '#f8fafc',
+                                            color: '#ffffff',
                                             borderRadius: '12px',
                                             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
                                             padding: '12px',
                                             zIndex: 50
                                         }}
+                                        itemStyle={{ color: '#ffffff' }}
                                         formatter={(value, name, props) => {
-                                            if (name === "yAxis") return [0, "Hide"];
+                                            if (name === "yAxis") return [null, null]; // Hide yAxis
                                             const rawScore = props.payload?.score ?? value;
                                             const normalizedScore = value;
                                             let zone = "Leading";
@@ -671,7 +672,8 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                                 <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 10 }} domain={[0, 10]} />
                                                 <Tooltip
                                                     cursor={{ fill: '#334155', opacity: 0.2 }}
-                                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#f1f5f9' }}
+                                                    contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }}
+                                                    itemStyle={{ color: '#ffffff' }}
                                                 />
                                                 <Legend wrapperStyle={{ paddingTop: '5px', fontSize: 10 }} iconSize={8} />
                                                 <Bar dataKey="self" name="Self" fill="#06b6d4" radius={[2, 2, 0, 0]} maxBarSize={12} minPointSize={1} />
