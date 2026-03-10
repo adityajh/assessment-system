@@ -396,7 +396,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                         onChange={(e) => setProjectId(e.target.value)}
                                     >
                                         <option value="">-- Choose Project --</option>
-                                        {initialProjects.filter(p => p.project_type === 'standard').sort((a, b) => (a.sequence_label || '').localeCompare(b.sequence_label || '')).map(p => (
+                                        {initialProjects.sort((a, b) => (a.sequence_label || '').localeCompare(b.sequence_label || '')).map(p => (
                                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
                                         ))}
                                     </select>

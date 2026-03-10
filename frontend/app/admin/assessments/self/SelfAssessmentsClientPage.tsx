@@ -140,7 +140,7 @@ export default function SelfAssessmentsClientPage({
                             setSelectedLog(firstLog?.id || '');
                         }}
                     >
-                        {initialProjects.filter(p => p.project_type === 'standard').map(p => (
+                        {initialProjects.map(p => (
                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
                         ))}
                     </select>
