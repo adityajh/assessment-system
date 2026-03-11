@@ -93,7 +93,7 @@ export default function StudentDashboardClient({
                             </p>
                         </div>
                         <div className="text-right flex flex-col items-end">
-                            <img src="/images/logo-light.png" alt="Let's Enterprise" className="h-[40px] mb-2 object-contain print:h-[50px]" />
+                            <img src="/images/logo-light.png" alt="Let's Enterprise" className="h-[80px] mb-2 object-contain print:h-[100px]" />
                             <p className="text-xl font-semibold text-slate-800">Student Dashboard</p>
                         </div>
                     </div>
