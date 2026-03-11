@@ -15,17 +15,17 @@ const getGapColor = (delta: number) => {
 
 const getHeatmapColor = (score: number | null | undefined) => {
     if (!score) return '#f1f5f9'; // Print friendly empty
-    if (score < 5) return '#fee2e2'; // Light Red
-    if (score < 7) return '#fef3c7'; // Light Amber
-    if (score < 9) return '#d1fae5'; // Light Emerald
-    return '#cffafe'; // Light Cyan
+    if (score < 5) return '#fca5a5'; // Red 300
+    if (score < 7) return '#fcd34d'; // Amber 300
+    if (score < 9) return '#6ee7b7'; // Emerald 300
+    return '#67e8f9'; // Cyan 300
 };
 
 const getHeatmapTextColor = (score: number | null | undefined) => {
     if (!score) return '#94a3b8';
-    if (score < 5) return '#991b1b';
-    if (score < 7) return '#92400e';
-    if (score < 9) return '#065f46';
+    if (score < 5) return '#7f1d1d';
+    if (score < 7) return '#78350f';
+    if (score < 9) return '#064e3b';
     return '#164e63';
 };
 
@@ -58,8 +58,8 @@ export default function StudentDashboardClient({
                                 ID: {studentData.student_number} | Cohort: {studentData.cohort || '2025'}
                             </p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm text-slate-500 uppercase font-bold tracking-wider">Let's Enterprise</p>
+                        <div className="text-right flex flex-col items-end">
+                            <img src="/images/logo-light.png" alt="Let's Enterprise" className="h-[40px] mb-2 object-contain print:h-[50px]" />
                             <p className="text-xl font-semibold text-slate-800">Student Dashboard</p>
                         </div>
                     </div>
@@ -124,19 +124,19 @@ export default function StudentDashboardClient({
                                     <ScatterChart margin={{ top: 20, right: 20, bottom: 0, left: 20 }}>
                                         <defs>
                                             <linearGradient id="syncingGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.10} />
+                                                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.20} />
                                                 <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
                                             </linearGradient>
                                             <linearGradient id="connectingGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.10} />
+                                                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.20} />
                                                 <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
                                             </linearGradient>
                                             <linearGradient id="engagingGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#10b981" stopOpacity={0.10} />
+                                                <stop offset="0%" stopColor="#10b981" stopOpacity={0.20} />
                                                 <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                             <linearGradient id="leadingGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.10} />
+                                                <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.20} />
                                                 <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
@@ -404,37 +404,37 @@ export default function StudentDashboardClient({
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-xl p-8 shadow-xl relative overflow-hidden print:bg-white print:border print:border-slate-300">
-                        <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-rose-500 print:hidden"></div>
+                    <div className="bg-white border-2 border-indigo-50 rounded-xl p-8 shadow-lg shadow-indigo-100/50 relative overflow-hidden print:bg-white print:border print:border-slate-300">
+                        <div className="absolute top-0 right-0 left-0 h-2 bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-500 print:hidden"></div>
                         <div className="flex justify-between items-center mb-6">
-                            <h4 className="text-white font-bold text-2xl flex items-center gap-3 print:text-indigo-800">
-                                <Target className="w-6 h-6 text-fuchsia-400 print:text-indigo-600" /> Actionable Mission Plan
+                            <h4 className="text-indigo-950 font-black text-2xl flex items-center gap-3 print:text-indigo-800">
+                                <Target className="w-7 h-7 text-indigo-500 print:text-indigo-600" /> Actionable Mission Plan
                             </h4>
                         </div>
 
                         {isEditingMission ? (
                             <div className="flex flex-col gap-4 print:hidden">
                                 <textarea
-                                    className="w-full bg-white/10 border border-white/20 rounded-lg p-4 text-white text-[16px] focus:outline-none focus:border-fuchsia-400 min-h-[120px]"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-slate-800 text-[16px] focus:outline-none focus:ring-2 focus:ring-indigo-500/50 min-h-[120px] shadow-inner"
                                     value={savedMission}
                                     onChange={(e) => setSavedMission(e.target.value)}
                                     placeholder="Write a custom mission for this student..."
                                 />
                                 <div className="flex gap-2 justify-end">
-                                    <button onClick={() => setIsEditingMission(false)} className="px-6 py-2.5 text-sm font-bold bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors shadow-lg shadow-fuchsia-900/50">
+                                    <button onClick={() => setIsEditingMission(false)} className="px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-lg shadow-indigo-200">
                                         Save Plan
                                     </button>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-4">
-                                <div className="bg-white/5 border border-white/10 p-6 rounded-lg shadow-inner print:bg-slate-50 print:border-slate-200">
-                                    <p className="text-slate-100 leading-relaxed text-lg print:text-slate-800">
-                                        {savedMission || (growthDomainAreas?.length > 0 ? <>Your current bottleneck is the <strong className="text-white font-bold border-b-2 border-indigo-400 pb-0.5 print:text-indigo-700 print:border-indigo-600">{growthDomainAreas[0].name}</strong> domain. Mission for your next project: Focus aggressively on improving your skills within this domain, paying special attention to elements like <strong className="text-fuchsia-300 print:text-fuchsia-700">{growthAreas?.[0]?.name || "your weakest skills"}</strong>.</> : "No clear growth areas identified yet. Keep pushing your boundaries!")}
+                                <div className="bg-slate-50/80 border border-slate-200 p-6 rounded-xl print:bg-slate-50 print:border-slate-200">
+                                    <p className="text-slate-700 leading-relaxed text-lg print:text-slate-800">
+                                        {savedMission || (growthDomainAreas?.length > 0 ? <>Your current bottleneck is the <strong className="text-indigo-700 font-extrabold border-b-2 border-indigo-200 pb-0.5 print:text-indigo-700 print:border-indigo-600">{growthDomainAreas[0].name}</strong> domain. Mission for your next project: Focus aggressively on improving your skills within this domain, paying special attention to elements like <strong className="text-emerald-600 font-bold print:text-emerald-700">{growthAreas?.[0]?.name || "your weakest skills"}</strong>.</> : "No clear growth areas identified yet. Keep pushing your boundaries!")}
                                     </p>
                                 </div>
                                 <div className="flex justify-end print:hidden">
-                                    <button onClick={() => setIsEditingMission(true)} className="text-sm text-fuchsia-400 hover:text-fuchsia-300 font-bold transition-colors">
+                                    <button onClick={() => setIsEditingMission(true)} className="text-sm text-indigo-500 hover:text-indigo-700 font-bold transition-colors">
                                         {savedMission ? '✎ Edit Mission Plan' : '+ Set Custom Mission Plan'}
                                     </button>
                                 </div>

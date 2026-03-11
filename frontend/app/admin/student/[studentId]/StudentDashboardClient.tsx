@@ -13,17 +13,17 @@ const getGapColor = (delta: number) => {
 
 const getHeatmapColor = (score: number | null | undefined) => {
     if (!score) return '#f1f5f9'; // Print friendly empty
-    if (score < 5) return '#fee2e2'; // Light Red
-    if (score < 7) return '#fef3c7'; // Light Amber
-    if (score < 9) return '#d1fae5'; // Light Emerald
-    return '#cffafe'; // Light Cyan
+    if (score < 5) return '#fca5a5'; // Red 300
+    if (score < 7) return '#fcd34d'; // Amber 300
+    if (score < 9) return '#6ee7b7'; // Emerald 300
+    return '#67e8f9'; // Cyan 300
 };
 
 const getHeatmapTextColor = (score: number | null | undefined) => {
     if (!score) return '#94a3b8';
-    if (score < 5) return '#991b1b';
-    if (score < 7) return '#92400e';
-    if (score < 9) return '#065f46';
+    if (score < 5) return '#7f1d1d';
+    if (score < 7) return '#78350f';
+    if (score < 9) return '#064e3b';
     return '#164e63';
 };
 
@@ -67,8 +67,8 @@ export default function StudentDashboardClient({
                                 ID: {studentData.student_number} | Cohort: {studentData.cohort || '2025'}
                             </p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm text-slate-500 uppercase font-bold tracking-wider">Let's Enterprise</p>
+                        <div className="text-right flex flex-col items-end">
+                            <img src="/images/logo-light.png" alt="Let's Enterprise" className="h-[40px] mb-2 object-contain print:h-[50px]" />
                             <p className="text-xl font-semibold text-slate-800">Student Readiness Report</p>
                         </div>
                     </div>

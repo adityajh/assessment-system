@@ -70,14 +70,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <aside className="fixed inset-y-0 left-0 z-10 flex flex-col w-64 bg-[#11131a] border-r border-slate-800/60 shrink-0">
 
                 {/* Logo / Brand */}
-                <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-800/60 shrink-0">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-                        <BarChart2 size={16} className="text-white" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-bold text-white leading-tight">Let's Entreprise</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-widest">Admin Panel</div>
-                    </div>
+                <div className="flex items-center gap-3 px-5 h-20 border-b border-slate-800/60 shrink-0">
+                    <img src="/images/logo-dark.png" alt="Let's Enterprise" className="h-[40px] object-contain" />
                 </div>
 
                 {/* Nav */}
