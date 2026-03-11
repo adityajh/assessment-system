@@ -10,6 +10,7 @@ export type MentorNote = {
     created_by: string;
     created_at: string;
     updated_at: string;
+    date: string | null;
 };
 
 export type BasicProject = {

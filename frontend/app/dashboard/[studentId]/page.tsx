@@ -28,6 +28,8 @@ export default async function StudentDashboardPage({ params }: { params: Promise
     let peerStackedByParamProjects: string[] = [];
     let topDomainStrengths: any[] = [];
     let growthDomainAreas: any[] = [];
+    let initialMission: string = '';
+    let missionDate: string | null = null;
 
     try {
         const supabase = await createClient();
@@ -40,6 +42,14 @@ export default async function StudentDashboardPage({ params }: { params: Promise
             .order('created_at', { ascending: false });
 
         if (notesData) mentorNotes = notesData;
+        
+        // Extract the latest mission Note
+        const latestMissionNote = mentorNotes.find(n => n.note_type === 'mission');
+        const initialMission = latestMissionNote ? latestMissionNote.note_text : '';
+        const missionDate = latestMissionNote ? latestMissionNote.date : null;
+        
+        // Filter out missions from the main notes feed
+        mentorNotes = mentorNotes.filter(n => n.note_type !== 'mission');
 
         studentData = data.student;
 
@@ -392,6 +402,8 @@ export default async function StudentDashboardPage({ params }: { params: Promise
             peerStackedByParamProjects={peerStackedByParamProjects}
             topDomainStrengths={topDomainStrengths}
             growthDomainAreas={growthDomainAreas}
+            initialMission={initialMission}
+            missionDate={missionDate}
         />
     );
 }

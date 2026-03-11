@@ -3,7 +3,12 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ReferenceArea, ZAxis, ComposedChart } from 'recharts';
-import { Zap, Award, Target } from 'lucide-react';
+import { 
+    Zap, Award, Target, 
+    Calendar, Edit3, CheckCircle2,
+    TrendingUp, Download, ChevronDown, ChevronUp, Map, Eye, MessageSquare
+} from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 const getGapColor = (delta: number) => {
     if (delta <= -1.5) return '#ef4444'; // Red
@@ -34,10 +39,39 @@ export default function StudentDashboardClient({
     trajectoryData, kpiData, peerRatingData, peerRatingProjects,
     projectDomainScores, topStrengths, growthAreas, distributionData, mentorNotes,
     engagementDistributionData, peerStackedByParamData, peerStackedByParamProjects,
-    topDomainStrengths, growthDomainAreas
+    topDomainStrengths, growthDomainAreas,
+    initialMission, missionDate
 }: any) {
-    const [savedMission, setSavedMission] = React.useState('');
+    const [savedMission, setSavedMission] = React.useState(initialMission || '');
     const [isEditingMission, setIsEditingMission] = React.useState(false);
+    const [isSavingMission, setIsSavingMission] = React.useState(false);
+    const [lastSavedDate, setLastSavedDate] = React.useState(missionDate);
+
+    const supabase = createClient();
+
+    const handleSaveMission = async () => {
+        setIsSavingMission(true);
+        try {
+            const { error } = await supabase
+                .from('mentor_notes')
+                .insert({
+                    student_id: studentData.id,
+                    note_text: savedMission,
+                    note_type: 'mission',
+                    created_by: 'Dashboard UI',
+                    date: new Date().toISOString().split('T')[0]
+                });
+
+            if (error) throw error;
+            setLastSavedDate(new Date().toISOString().split('T')[0]);
+            setIsEditingMission(false);
+        } catch (err) {
+            console.error('Error saving mission:', err);
+            alert('Failed to save mission. Please try again.');
+        } finally {
+            setIsSavingMission(false);
+        }
+    };
 
     const handlePrint = () => {
         window.print();
@@ -353,16 +387,14 @@ export default function StudentDashboardClient({
                                 <div key={note.id} className="relative pl-6 pb-2 border-l-2 border-indigo-100 last:border-0 last:pb-0">
                                     <div className="absolute w-3 h-3 bg-indigo-500 rounded-full -left-[7.5px] top-1 border-2 border-white ring-2 ring-indigo-100"></div>
                                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl rounded-tl-none -mt-2">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <span className="font-bold text-slate-800 mr-2">{note.created_by || 'Mentor'}</span>
-                                                <span className="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-md">
-                                                    {note.projects?.name || 'General'}
-                                                </span>
+                                        <div className="flex items-center justify-between mb-3 text-xs text-slate-500 font-medium">
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-600">Project: {note.projects?.name || 'General'}</span>
+                                                {note.date && (
+                                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded">Date: {new Date(note.date).toLocaleDateString()}</span>
+                                                )}
                                             </div>
-                                            <span className="text-xs text-slate-400 font-medium">
-                                                {new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                            </span>
+                                            <span>Mentor: {note.created_by || 'Unknown'}</span>
                                         </div>
                                         <p className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">{note.note_text}</p>
                                     </div>
@@ -410,6 +442,9 @@ export default function StudentDashboardClient({
                             <h4 className="text-indigo-950 font-black text-2xl flex items-center gap-3 print:text-indigo-800">
                                 <Target className="w-7 h-7 text-indigo-500 print:text-indigo-600" /> Actionable Mission Plan
                             </h4>
+                            {lastSavedDate && (
+                                <div className="text-[10px] text-slate-400 font-medium">Last updated: {new Date(lastSavedDate).toLocaleDateString()}</div>
+                            )}
                         </div>
 
                         {isEditingMission ? (
@@ -421,8 +456,12 @@ export default function StudentDashboardClient({
                                     placeholder="Write a custom mission for this student..."
                                 />
                                 <div className="flex gap-2 justify-end">
-                                    <button onClick={() => setIsEditingMission(false)} className="px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-lg shadow-indigo-200">
-                                        Save Plan
+                                    <button 
+                                        onClick={handleSaveMission}
+                                        disabled={isSavingMission}
+                                        className="px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50"
+                                    >
+                                        {isSavingMission ? 'Saving...' : 'Save Plan'}
                                     </button>
                                 </div>
                             </div>
@@ -434,8 +473,9 @@ export default function StudentDashboardClient({
                                     </p>
                                 </div>
                                 <div className="flex justify-end print:hidden">
-                                    <button onClick={() => setIsEditingMission(true)} className="text-sm text-indigo-500 hover:text-indigo-700 font-bold transition-colors">
-                                        {savedMission ? '✎ Edit Mission Plan' : '+ Set Custom Mission Plan'}
+                                    <button onClick={() => setIsEditingMission(true)} className="flex items-center gap-2 text-sm text-indigo-500 hover:text-indigo-700 font-bold transition-colors">
+                                        <Edit3 className="w-4 h-4" />
+                                        {savedMission ? 'Edit Mission Plan' : 'Set Custom Mission Plan'}
                                     </button>
                                 </div>
                             </div>

@@ -524,6 +524,7 @@ export async function POST(request: NextRequest) {
                     if (h.includes('student') || h.includes('name')) colMap['student'] = idx;
                     else if (h.includes('mentor')) colMap['mentor'] = idx;
                     else if (h.includes('note')) colMap['notes'] = idx;
+                    else if (h.includes('date')) colMap['date'] = idx;
                 });
                 lastColMap = colMap;
 
@@ -538,6 +539,16 @@ export async function POST(request: NextRequest) {
                     const studentName = String(row[colMap['student']] || '').trim();
                     const mentorName = colMap['mentor'] !== undefined ? String(row[colMap['mentor']] || '').trim() : 'Unknown Mentor';
                     const noteText = String(row[colMap['notes']] || '').trim();
+                    const rowDateStr = colMap['date'] !== undefined ? String(row[colMap['date']] || '').trim() : null;
+                    
+                    let effectiveDate = date; // fallback to session date
+                    if (rowDateStr && rowDateStr.toLowerCase() !== 'nan') {
+                        // Very basic date parsing check
+                        const d = new Date(rowDateStr);
+                        if (!isNaN(d.getTime())) {
+                            effectiveDate = d.toISOString().split('T')[0];
+                        }
+                    }
 
                     if (!studentName || !noteText || noteText.toLowerCase() === 'nan') continue;
 
@@ -549,8 +560,9 @@ export async function POST(request: NextRequest) {
                             student_id: studentId,
                             project_id: projectId || null,
                             mentors: new Set(),
-                            notes: []
-                        };
+                            notes: [],
+                            date: effectiveDate
+                        } as any;
                     }
 
                     if (mentorName && mentorName.toLowerCase() !== 'nan') {
@@ -592,7 +604,8 @@ export async function POST(request: NextRequest) {
                 note_text: data.notes.join('\n\n'),
                 note_type: 'general',
                 created_by: Array.from(data.mentors).join(', '),
-                assessment_log_id: log.id
+                assessment_log_id: log.id,
+                date: (data as any).date
             }));
 
             if (logEff) throw logEff;
