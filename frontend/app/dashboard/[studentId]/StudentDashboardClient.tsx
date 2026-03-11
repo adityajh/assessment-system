@@ -372,6 +372,77 @@ export default function StudentDashboardClient({
                     </div>
                 )}
 
+                {/* PAGE 6 / Section 7: Actionable Mission & Focus Areas */}
+                <div className="print:break-inside-avoid print:mt-10 mb-10">
+                    <div className="flex flex-col md:flex-row gap-6 mb-6">
+                        <div className="flex-1 bg-white border border-emerald-100 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+                            <h5 className="text-emerald-700 font-bold flex items-center gap-2 border-b border-emerald-50 pb-2">Top 2 Strongest Domains</h5>
+                            <div className="flex flex-col gap-3">
+                                {topDomainStrengths?.map((item: any, i: number) => (
+                                    <div key={i} className="bg-emerald-50 p-4 rounded-lg flex justify-between items-center">
+                                        <p className="text-slate-800 font-semibold">{item.name}</p>
+                                        <div className="bg-white text-emerald-600 font-black px-3 py-1 rounded-md shadow-sm border border-emerald-100">
+                                            {item.score}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex-1 bg-white border border-rose-100 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+                            <h5 className="text-rose-700 font-bold flex items-center gap-2 border-b border-rose-50 pb-2">Top 2 Domains for Growth</h5>
+                            <div className="flex flex-col gap-3">
+                                {growthDomainAreas?.map((item: any, i: number) => (
+                                    <div key={i} className="bg-rose-50 p-4 rounded-lg flex justify-between items-center">
+                                        <p className="text-slate-800 font-semibold">{item.name}</p>
+                                        <div className="bg-white text-rose-600 font-black px-3 py-1 rounded-md shadow-sm border border-rose-100">
+                                            {item.score}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-xl p-8 shadow-xl relative overflow-hidden print:bg-white print:border print:border-slate-300">
+                        <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-rose-500 print:hidden"></div>
+                        <div className="flex justify-between items-center mb-6">
+                            <h4 className="text-white font-bold text-2xl flex items-center gap-3 print:text-indigo-800">
+                                <Target className="w-6 h-6 text-fuchsia-400 print:text-indigo-600" /> Actionable Mission Plan
+                            </h4>
+                        </div>
+
+                        {isEditingMission ? (
+                            <div className="flex flex-col gap-4 print:hidden">
+                                <textarea
+                                    className="w-full bg-white/10 border border-white/20 rounded-lg p-4 text-white text-[16px] focus:outline-none focus:border-fuchsia-400 min-h-[120px]"
+                                    value={savedMission}
+                                    onChange={(e) => setSavedMission(e.target.value)}
+                                    placeholder="Write a custom mission for this student..."
+                                />
+                                <div className="flex gap-2 justify-end">
+                                    <button onClick={() => setIsEditingMission(false)} className="px-6 py-2.5 text-sm font-bold bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors shadow-lg shadow-fuchsia-900/50">
+                                        Save Plan
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                <div className="bg-white/5 border border-white/10 p-6 rounded-lg shadow-inner print:bg-slate-50 print:border-slate-200">
+                                    <p className="text-slate-100 leading-relaxed text-lg print:text-slate-800">
+                                        {savedMission || (growthDomainAreas?.length > 0 ? <>Your current bottleneck is the <strong className="text-white font-bold border-b-2 border-indigo-400 pb-0.5 print:text-indigo-700 print:border-indigo-600">{growthDomainAreas[0].name}</strong> domain. Mission for your next project: Focus aggressively on improving your skills within this domain, paying special attention to elements like <strong className="text-fuchsia-300 print:text-fuchsia-700">{growthAreas?.[0]?.name || "your weakest skills"}</strong>.</> : "No clear growth areas identified yet. Keep pushing your boundaries!")}
+                                    </p>
+                                </div>
+                                <div className="flex justify-end print:hidden">
+                                    <button onClick={() => setIsEditingMission(true)} className="text-sm text-fuchsia-400 hover:text-fuchsia-300 font-bold transition-colors">
+                                        {savedMission ? '✎ Edit Mission Plan' : '+ Set Custom Mission Plan'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Print Footer */}
                 <div className="hidden print:block text-center text-xs text-slate-400 mt-12 border-t border-slate-200 pt-4">
                     Generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} from Let's Enterprise Assessment System.
