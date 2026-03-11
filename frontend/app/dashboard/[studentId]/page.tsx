@@ -23,6 +23,11 @@ export default async function StudentDashboardPage({ params }: { params: Promise
     let distributionData: any[] = [];
     let mentorNotes: any[] = [];
     let studentData = null;
+    let engagementDistributionData: any[] = [];
+    let peerStackedByParamData: any[] = [];
+    let peerStackedByParamProjects: string[] = [];
+    let topDomainStrengths: any[] = [];
+    let growthDomainAreas: any[] = [];
 
     try {
         const supabase = await createClient();
@@ -61,11 +66,13 @@ export default async function StudentDashboardPage({ params }: { params: Promise
         gapData = Array.from(domainMap.values()).map(d => {
             const mentor = d.mentorCount > 0 ? Number((d.mentorSum / d.mentorCount).toFixed(1)) : 0;
             const self = d.selfCount > 0 ? Number((d.selfSum / d.selfCount).toFixed(1)) : 0;
+            const deltaPercent = mentor > 0 ? ((self - mentor) / mentor) * 100 : 0;
             return {
                 name: d.name,
                 mentor,
                 self,
-                delta: Number((mentor - self).toFixed(1))
+                range: mentor <= self ? [mentor, self] : [self, mentor],
+                delta: Number(deltaPercent.toFixed(1))
             };
         });
 
@@ -130,12 +137,111 @@ export default async function StudentDashboardPage({ params }: { params: Promise
                 .map(a => data.projects.find(p => p.id === a.project_id)?.sequence)
                 .filter(Boolean)
         ).size;
+        // Count active student's self assessments
+        const selfAssessmentsCount = data.assessments.filter(a => a.assessment_type === 'self' && a.normalized_score !== null).length;
+
         kpiData = {
             projectsCount: `${phasesAssessed}/${totalPhases}`,
             cbpCount: data.termTracking?.cbp_count || 0,
             conflexionCount: data.termTracking?.conflexion_count || 0,
-            bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00"
+            bowScore: data.termTracking?.bow_score !== undefined && data.termTracking?.bow_score !== null ? Number(data.termTracking.bow_score).toFixed(2) : "0.00",
+            selfAssessmentsCount
         };
+
+        // ENGMENET SCORE DISTRIBUTION DATA
+        const selfAssessMap: Record<string, number> = {};
+        if ((data as any).allSelfAssessments) {
+            (data as any).allSelfAssessments.forEach((s: any) => {
+                selfAssessMap[s.student_id] = (selfAssessMap[s.student_id] || 0) + 1;
+            });
+        }
+
+        const maxCBP = Math.max(...(data.allTermTracking?.map((t: any) => t.cbp_count || 0) || []), 1);
+        const maxConf = Math.max(...(data.allTermTracking?.map((t: any) => t.conflexion_count || 0) || []), 1);
+        const maxBow = Math.max(10, Math.max(...(data.allTermTracking?.map((t: any) => Number(t.bow_score) || 0) || []), 1));
+        const maxSA = Math.max(...Object.values(selfAssessMap), 1);
+
+        const cbpVal = Math.min(kpiData.cbpCount, maxCBP);
+        const confVal = Math.min(kpiData.conflexionCount, maxConf);
+        const bowVal = kpiData.bowScore ? Math.min(Number(kpiData.bowScore), maxBow) : 0;
+        const saVal = Math.min(selfAssessmentsCount, maxSA);
+
+        (kpiData as any).engagementScore = Math.round((cbpVal / maxCBP) * 25 + (confVal / maxConf) * 25 + (bowVal / maxBow) * 25 + (saVal / maxSA) * 25);
+
+        if (data.allTermTracking) {
+            const rawScores: { studentId: string, rawScore: number, isCurrent: boolean }[] = [];
+            let sum = 0;
+
+            data.allTermTracking.forEach((t: any) => {
+                const tvCbp = Math.min(t.cbp_count || 0, maxCBP);
+                const tvConf = Math.min(t.conflexion_count || 0, maxConf);
+                const tvBow = t.bow_score ? Math.min(Number(t.bow_score), maxBow) : 0;
+                const tvSa = Math.min(selfAssessMap[t.student_id] || 0, maxSA);
+                const score = Math.round((tvCbp / maxCBP) * 25 + (tvConf / maxConf) * 25 + (tvBow / maxBow) * 25 + (tvSa / maxSA) * 25);
+
+                rawScores.push({ studentId: t.student_id, rawScore: score, isCurrent: t.student_id === studentId });
+                sum += score;
+            });
+
+            const n = rawScores.length;
+            const mean = n > 0 ? sum / n : 0;
+            let variance = 0;
+            rawScores.forEach(s => { variance += Math.pow(s.rawScore - mean, 2); });
+            const sd = n > 1 ? Math.sqrt(variance / (n - 1)) : 1;
+            const finalSD = sd === 0 ? 1 : sd;
+
+            const scaledScores = rawScores.map(s => {
+                const zScore = (s.rawScore - mean) / finalSD;
+                let scaled = (zScore * 25) + 62.5;
+                scaled = Math.max(2, Math.min(98, scaled));
+                return { ...s, scaledScore: Number(scaled.toFixed(1)), displayScore: 0 };
+            });
+
+            scaledScores.sort((a, b) => a.scaledScore - b.scaledScore);
+            let currentGroup: any[] = [];
+
+            const applyJitter = (group: any[]) => {
+                if (group.length <= 1) {
+                    if (group.length === 1) group[0].displayScore = group[0].scaledScore;
+                    return;
+                }
+                const step = 1.2;
+                group.forEach((item, index) => {
+                    const offsetIndex = Math.ceil(index / 2);
+                    const sign = index % 2 === 1 ? 1 : -1;
+                    const offset = index === 0 ? 0 : offsetIndex * sign * step;
+                    item.displayScore = item.scaledScore + offset;
+                });
+            };
+
+            scaledScores.forEach((s) => {
+                if (currentGroup.length === 0) {
+                    currentGroup.push(s);
+                } else if (Math.abs(currentGroup[0].scaledScore - s.scaledScore) < 0.1) {
+                    currentGroup.push(s);
+                } else {
+                    applyJitter(currentGroup);
+                    currentGroup = [s];
+                }
+            });
+            applyJitter(currentGroup);
+
+            scaledScores.forEach(s => {
+                engagementDistributionData.push({
+                    studentId: s.studentId,
+                    score: s.rawScore,
+                    displayScore: Number(s.displayScore.toFixed(2)),
+                    yAxis: 0,
+                    isCurrentStudent: s.isCurrent
+                });
+            });
+
+            engagementDistributionData.sort((a, b) => {
+                if (a.isCurrentStudent) return 1;
+                if (b.isCurrentStudent) return -1;
+                return a.displayScore - b.displayScore;
+            });
+        }
 
         // 6. BUILD PEER RATING DATA (Radar Chart: Questions as axes, Projects as lines)
         const peerCategories = [
@@ -146,26 +252,37 @@ export default async function StudentDashboardPage({ params }: { params: Promise
             { key: 'growth_mindset', label: 'Growth Mindset' }
         ];
 
-        const radarDataMap: Record<string, any> = {};
         peerCategories.forEach(c => {
-            radarDataMap[c.key] = { subject: c.label };
-        });
+            const entry: any = { parameter: c.label };
 
-        data.projects.forEach(proj => {
-            const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
-            if (projectFeedback.length > 0) {
-                peerRatingProjects.push(proj.name);
-                peerCategories.forEach(c => {
-                    const scores = projectFeedback.map((f: any) => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
-                    const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
-                    if (avg !== null) {
-                        radarDataMap[c.key][proj.name] = Number(avg.toFixed(1));
+            const metricKey = `avg_${c.key}`;
+            let cohortSum = 0;
+            let cohortCount = 0;
+            if ((data as any).cohortPeerSummary) {
+                (data as any).cohortPeerSummary.forEach((member: any) => {
+                    if (member[metricKey] !== null && member[metricKey] !== undefined) {
+                        cohortSum += Number(member[metricKey]);
+                        cohortCount++;
                     }
                 });
             }
-        });
+            const cohortAvg = cohortCount > 0 ? (cohortSum / cohortCount) : 0;
 
-        peerRatingData = peerCategories.map(c => radarDataMap[c.key]);
+            data.projects.forEach(proj => {
+                const projectFeedback = data.peerFeedback.filter(f => f.project_id === proj.id);
+                if (projectFeedback.length > 0) {
+                    const scores = projectFeedback.map((f: any) => f[c.key as keyof typeof f]).filter(s => s !== null && s !== undefined) as number[];
+                    const avg = scores.length > 0 ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : null;
+                    if (avg !== null) {
+                        entry[proj.name] = Number((avg - cohortAvg).toFixed(2));
+                        if (!peerStackedByParamProjects.includes(proj.name)) {
+                            peerStackedByParamProjects.push(proj.name);
+                        }
+                    }
+                }
+            });
+            peerStackedByParamData.push(entry);
+        });
 
         // 7. BUILD GROUPED BAR DATA (Self vs Mentor by domain across projects)
         projectDomainScores = data.projects.map(proj => {
@@ -209,6 +326,20 @@ export default async function StudentDashboardPage({ params }: { params: Promise
 
         topStrengths = sortedParams.slice(0, 3);
         growthAreas = sortedParams.slice(-3).reverse();
+
+        // 8.5 Domain level strengths/weaknesses for Actionable Mission
+        const domainAverages: Record<string, { sum: number, count: number, name: string }> = {};
+        gapData.forEach((g: any) => {
+            if (g.mentor > 0) {
+                domainAverages[g.name] = { sum: g.mentor, count: 1, name: g.name };
+            }
+        });
+        const sortedDomains = Object.values(domainAverages)
+            .map(d => ({ name: d.name, score: Number((d.sum / d.count).toFixed(1)) }))
+            .sort((a, b) => b.score - a.score);
+
+        topDomainStrengths = sortedDomains.slice(0, 2);
+        growthDomainAreas = sortedDomains.slice(-2).reverse();
 
         // 9. BUILD DISTRIBUTION CURVE DATA
         data.domains.forEach(domain => {
@@ -256,6 +387,11 @@ export default async function StudentDashboardPage({ params }: { params: Promise
             growthAreas={growthAreas}
             distributionData={distributionData}
             mentorNotes={mentorNotes}
+            engagementDistributionData={engagementDistributionData}
+            peerStackedByParamData={peerStackedByParamData}
+            peerStackedByParamProjects={peerStackedByParamProjects}
+            topDomainStrengths={topDomainStrengths}
+            growthDomainAreas={growthDomainAreas}
         />
     );
 }
