@@ -179,12 +179,15 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
         student = students[0];
     }
 
-    // 2. Fetch cohort student IDs ONCE upfront
-    //    This guarantees the same student set is used for ALL cohort-filtered queries
+    // 2. Fetch cohort student IDs ONCE upfront — only active students
+    //    v_student_dashboard also only includes active students, so excluding
+    //    inactive students (e.g. Madhur Kalantri) ensures both dashboards
+    //    compute Z-scores over the identical pool.
     const { data: cohortStudents } = await supabase
         .from('students')
         .select('id')
-        .eq('cohort', student.cohort);
+        .eq('cohort', student.cohort)
+        .eq('is_active', true);
     const cohortStudentIds = cohortStudents?.map(s => s.id) || [];
 
     // 3. Fetch all required reference data using the pre-fetched cohort IDs
