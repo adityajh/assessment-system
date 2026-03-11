@@ -17,7 +17,8 @@ interface StudentData {
     avgMentorScore?: string;
     avgSelfScore?: string;
     avgPeerScore?: string;
-    engagementScore?: number; // Calculated dynamically on client
+    engagementScore?: number; // Raw weighted score (0-100)
+    relativeScore?: number;   // Z-score based relative score (0-100)
 }
 
 interface ProgramDashboardClientProps {
@@ -36,11 +37,11 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
 
     const [activeCohort, setActiveCohort] = useState<string>(availableCohorts[0] || '2025');
 
-    const getEngagementColor = (score: number) => {
-        if (score < 25) return 'bg-red-500';
-        if (score < 50) return 'bg-amber-500';
-        if (score < 75) return 'bg-emerald-500';
-        return 'bg-cyan-500';
+    const getEngagementColor = (relativeScore: number) => {
+        if (relativeScore < 25) return 'bg-rose-500';      // Syncing
+        if (relativeScore < 50) return 'bg-amber-500';     // Connecting
+        if (relativeScore < 75) return 'bg-emerald-500';   // Engaging
+        return 'bg-sky-500';                              // Leading
     };
 
     // Filter, Curve, and Sort the students
@@ -54,31 +55,51 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
         const maxBow = Math.max(10, Math.max(...cohortStudents.map(s => Number(s.bowScore)), 1));
         const maxSA = Math.max(...cohortStudents.map(s => s.selfAssessmentsCount), 1);
 
-        // 3. Calculate dynamic engagement scores and filter by search query
-        return cohortStudents
-            .map(s => {
-                // Apply max targets
-                const cbpVal = Math.min(s.cbpCount, maxCBP);
-                const confVal = Math.min(s.conflexionCount, maxConf);
-                const bowVal = s.bowScore ? Math.min(Number(s.bowScore), maxBow) : 0;
-                const saVal = Math.min(s.selfAssessmentsCount, maxSA);
+        // 3. Calculate raw engagement scores
+        const studentsWithRawScores = cohortStudents.map(s => {
+            const cbpVal = Math.min(s.cbpCount, maxCBP);
+            const confVal = Math.min(s.conflexionCount, maxConf);
+            const bowVal = s.bowScore ? Math.min(Number(s.bowScore), maxBow) : 0;
+            const saVal = Math.min(s.selfAssessmentsCount, maxSA);
 
-                // Calculate final percentage (25% weight per pillar)
-                const score = Math.round(
-                    (cbpVal / maxCBP) * 25 +
-                    (confVal / maxConf) * 25 +
-                    (bowVal / maxBow) * 25 +
-                    (saVal / maxSA) * 25
-                );
+            const score = Math.round(
+                (cbpVal / maxCBP) * 25 +
+                (confVal / maxConf) * 25 +
+                (bowVal / maxBow) * 25 +
+                (saVal / maxSA) * 25
+            );
 
-                return { ...s, engagementScore: score };
-            })
+            return { ...s, engagementScore: score };
+        });
+
+        // 4. Calculate Z-Score and Relative Scaling (Matching StudentDashboard logic)
+        const n = studentsWithRawScores.length;
+        if (n === 0) return [];
+
+        const mean = studentsWithRawScores.reduce((sum, s) => sum + (s.engagementScore || 0), 0) / n;
+        const variance = studentsWithRawScores.reduce((sum, s) => sum + Math.pow((s.engagementScore || 0) - mean, 2), 0) / Math.max(n - 1, 1);
+        const sd = Math.sqrt(variance) || 1;
+
+        const studentsWithRelativeScores = studentsWithRawScores.map(s => {
+            const zScore = ((s.engagementScore || 0) - mean) / sd;
+            // Standardize to 0-100 range using the same formula: (z * 25) + 62.5
+            let relativeScore = (zScore * 25) + 62.5;
+            relativeScore = Math.max(2, Math.min(98, relativeScore)); // Clamp for UI
+            
+            return { 
+                ...s, 
+                relativeScore: Number(relativeScore.toFixed(1))
+            };
+        });
+
+        // 5. Filter by search query and sort
+        return studentsWithRelativeScores
             .filter(student => 
                 searchQuery === '' || 
                 student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase())
             )
-            .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0)); // Descending by default
+            .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0)); // Still sort by raw weighted performance
 
     }, [studentsData, activeCohort, searchQuery]);
 
@@ -162,8 +183,8 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div 
-                                                    className={`w-3 h-3 rounded-full shrink-0 ${getEngagementColor(student.engagementScore || 0)} shadow-[0_0_8px_rgba(0,0,0,0.3)]`}
-                                                    title={`Zone Indicator: ${student.engagementScore}%`}
+                                                    className={`w-3 h-3 rounded-full shrink-0 ${getEngagementColor(student.relativeScore || 0)} shadow-[0_0_8px_rgba(0,0,0,0.3)]`}
+                                                    title={`Relative Zone Score: ${student.relativeScore}% (Raw: ${student.engagementScore}%)`}
                                                 />
                                                 <div>
                                                     <Link 

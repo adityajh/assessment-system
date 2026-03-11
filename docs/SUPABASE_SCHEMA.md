@@ -1,6 +1,6 @@
 # Supabase Database Schema — Let's Entreprise Assessment System
 
-> **Last Updated:** 2026-03-02
+> **Last Updated:** 2026-03-11
 > **Purpose:** Definitive reference for the database architecture of the Assessment System.
 
 ---
@@ -254,7 +254,7 @@ CREATE TABLE metric_tracking (
 ---
 
 #### `mentor_notes`
-Free-text notes from mentors, optionally tied to a project.
+Free-text notes from mentors, optionally tied to a project. Also used to store user-created **Actionable Mission Plans** (differentiated by `note_type`).
 
 ```sql
 CREATE TABLE mentor_notes (
@@ -262,13 +262,21 @@ CREATE TABLE mentor_notes (
     student_id UUID NOT NULL REFERENCES students(id),
     project_id UUID REFERENCES projects(id),   -- NULL = general note, not project-specific
     note_text TEXT NOT NULL,
-    note_type TEXT DEFAULT 'general',           -- 'general', 'strength', 'improvement', etc.
-    created_by TEXT,                             -- mentor name
+    note_type TEXT DEFAULT 'general',           -- 'general' | 'mission'
+    created_by TEXT,                             -- mentor name or 'Dashboard UI'
     assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
+    date DATE DEFAULT CURRENT_DATE,             -- [Migration 003] Per-note date (from spreadsheet or creation date)
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Index added in Migration 003 for fast filtering by student + type
+CREATE INDEX idx_mentor_notes_student_type ON mentor_notes(student_id, note_type);
 ```
+
+**Note Types:**
+- `'general'` — Standard qualitative mentor feedback, imported via the Import Wizard. Date sourced from the "Date" column in the upload file, or falls back to the session's `assessment_date`.
+- `'mission'` — Actionable Mission Plan created and saved by a mentor directly on the Student Dashboard. Date is always the creation date.
 
 ---
 

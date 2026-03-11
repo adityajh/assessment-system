@@ -4,6 +4,71 @@ All notable changes to the Let's Entreprise Assessment System are documented her
 
 Format: `## [YYYY-MM-DD] — Description`
 
+---
+
+## [2026-03-11] — Codebase Reorganization
+
+- **Repository Cleanup:** Reorganized 68 files from the flat `scripts/` root into structured subdirectories:
+    - `scripts/migrations/` — Active, numbered schema migrations.
+    - `scripts/seeds/` — SQL data seeding files for initial data population.
+    - `scripts/utilities/` — All one-off Python/JS audit, check, import, and fix scripts.
+    - `scripts/legacy/` — Old SQL patches, mapping docs, and `headers.json`.
+- **Data Folder Structure:** Reorganized the `data/` folder:
+    - `data/assets/` — Brand logos (`Let's-Enterprise-Final-Logo_LightMode.png`, `Let's-Enterprise-Final-Logo_PNG.png`).
+    - `data/templates/` — Golden Template Excel files.
+    - `data/raw/` — All raw response files, `to_import/`, and `Self Assessments/`.
+- **Root Cleanup:** Moved all temporary Python/JS scripts (`audit_data.py`, `fix_view.py`, `diagnose_db.js`, etc.) from the project root into `scripts/utilities/`.
+- **`.gitignore` Updates:** Added `.DS_Store` and `scripts/venv/` to `.gitignore`. Removed all `.DS_Store` files from the repo.
+
+---
+
+## [2026-03-11] — Dashboard Consolidation & Logo Scaling
+
+- **Unified Student Dashboard:** Removed the redundant admin-specific student dashboard (`/admin/student/[studentId]`). All student analysis links — including those from the Program Dashboard table — now route to the single unified `/dashboard/[studentId]`.
+- **Logo Scaling (2×):** Increased brand logo sizes for a bolder, more premium presence:
+    - Admin Sidebar: `logo-dark.png` increased from `40px` → `80px`.
+    - Student Dashboard header: `logo-light.png` increased from `40px` → `80px` (100px on print/PDF).
+
+---
+
+## [2026-03-11] — Actionable Mission Persistence & Date Handling
+
+- **Schema Migration (`003_add_note_date.sql`):**
+    - Added `date DATE DEFAULT CURRENT_DATE` column to `mentor_notes` to support independent date tracking per note.
+    - Added `note_type TEXT DEFAULT 'general'` column to `mentor_notes` to distinguish between `'general'` mentor feedback and `'mission'` entries.
+    - Created index `idx_mentor_notes_student_type` on `(student_id, note_type)` for faster dashboard filtering.
+- **Mission Persistence:**
+    - User-created "Actionable Mission Plans" are now saved to the `mentor_notes` table with `note_type = 'mission'`.
+    - The student dashboard retrieves the most recent mission on load and pre-populates the mission UI.
+    - The "Save Plan" button triggers a Supabase insert with the current date.
+    - A **"Last updated"** timestamp is displayed beneath the mission plan header when a saved mission exists.
+    - The edit button now displays a pencil icon (`✎`) for clearer affordance.
+- **Smart Date Handling for Notes:**
+    - **Uploaded Mentor Notes:** The import API (`/api/import/save`) now extracts a "Date" column from uploaded spreadsheets. If found, the row date is used. If not, it falls back to the `assessment_date` of the upload session.
+    - **Dashboard Missions:** Always stamped with the current date when saved.
+- **Dashboard UI Updates:**
+    - Qualitative mentor notes in the dashboard feed now show a small "Date" tag next to the project name.
+    - `MentorNote` TypeScript type updated to include `date` and `note_type` properties.
+
+---
+
+## [2026-03-11] — Student Dashboard Advanced Sections & UI Polish
+
+- **Engagement Stack (Dot Plot):** Student's relative cohort position is displayed visually on a 0–100 scale horizontal scatter chart, divided into **Syncing / Connecting / Engaging / Leading** zones. Student dot is highlighted in indigo.
+- **Self-Awareness Gap Bar:** Replaced legacy Gap chart with a horizontal diverging bar layout showing the gap between Self Assessment (white dot) and Mentor Assessment (indigo dot) per readiness parameter.
+- **Peer Rating Deviation Chart:** Replaced the Radar chart with a grouped bar chart showing each student's deviation from the cohort average per peer feedback parameter, across projects.
+- **Program Mastery Heatmap:** Replaced legacy heatmap with a domain-averaged consolidated version. Color scale updated to bolder shades (Novice / Developing / Competent / Advanced).
+- **Actionable Focus Section:**
+    - **Top 2 Strongest Domains** card (emerald).
+    - **Top 2 Domains for Growth** card (rose).
+    - Actionable Mission Plan card restyled: white background with gradient top-border (Indigo → Emerald), replacing previous dark purple aesthetic.
+- **Brand Identity:**
+    - `logo-light.png` integrated into the Student Dashboard report header (replacing plain text).
+    - `logo-dark.png` integrated into the Admin Sidebar (replacing plain text).
+- **PDF Print Improvements:** All dashboard sections include `print:break-inside-avoid` and proper print colour overrides for clean PDF export.
+
+---
+
 ## [2026-03-06] — Metric Tracking Refactor & Playground Enhancements
 
 - **Metric Tracking Architecture:**

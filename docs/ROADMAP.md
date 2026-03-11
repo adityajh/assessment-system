@@ -1,18 +1,28 @@
 # Project Roadmap — Next 10 Steps
 
-> **Last Updated:** 2026-03-03
+> **Last Updated:** 2026-03-11
 > **Related:** [VISION.md](./VISION.md) | [CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
-### Step 1 — Fix data import bugs - WIP
-Audit and resolve all known import edge cases: scale mismatches, duplicate rows, unmatched student names. Add pre-commit validation warnings so the user can catch and fix issues before data is saved.
+### Step 1 — Fix data import bugs ✅ *Partially Shipped*
+Ongoing: Import edge cases (scale mismatches, duplicate rows, unmatched names) have been addressed iteratively. The Import Wizard now shows validation warnings. The import API applies smart date extraction for mentor notes and falls back gracefully to the session date.
 
-### Step 2 — Student dashboard v1 - playground (mentor view) [SHIPPED]
-Design and ship the student dashboard for mentor use during 1:1 coaching sessions. Core sections: readiness overview, project breakdown, peer feedback, term tracking, mentor notes.
+### Step 2 — Student dashboard v1 (mentor view) ✅ *Shipped*
+The full student analysis dashboard is live at `/dashboard/[studentId]`. Includes:
+- **Relative Engagement Stack** (dot plot, cohort-positioned)
+- **Learning Trajectory** (line chart over time)
+- **Self-Awareness Gap Bar** (mentor vs self per parameter)
+- **Program Mastery Profile** (consolidated domain heatmap, mentor scores only)
+- **Peer Rating Deviation Chart** (vs cohort average, across projects)
+- **Qualitative Mentor Feedback** feed with dates
+- **Actionable Mission Plan** (persistent, editable, saved to DB)
+- **Top 2 Strongest Domains & Top 2 Growth Domains** 
+- **PDF/Print Export** with proper layout
 
-### Step 3 — Iterate on dashboard visualisations
-Collect feedback from mentors using the dashboard. Refine chart design, improve tooltips, drill-downs, and mobile responsiveness based on real use.
+### Step 3 — Iterate on dashboard visualisations 🔄 *In Progress*
+- Engagement Stack, Gap Bar, and Peer Deviation charts are live and receiving feedback.
+- Next: drill-downs into individual parameters, and mobile-responsive layout improvements.
 
 ### Step 4 — Student & parent views
 Create simplified read-only views for students (own data only) and parents (milestones, attendance, high-level scores). Accessible via invite links.
