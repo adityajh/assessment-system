@@ -91,19 +91,25 @@ export default async function ProgramDashboardPage() {
     });
 
     // 8. Calculate engagement zones PER COHORT using the shared canonical utility
-    //    This guarantees identical logic to the individual student dashboard.
+    //    IMPORTANT: Only include students who appear in v_student_dashboard (have tracking data).
+    //    This matches the Student Dashboard which uses allTermTracking from v_student_dashboard.
+    //    Including students with no data (all-zeros) skews the mean and changes everyone's Z-score.
+    const dashboardStudentIds = new Set(dashboardMetrics?.map(m => m.student_id) || []);
     const cohorts = [...new Set(studentBaseData.map(s => s.cohort))];
     const engagementMap = new Map<string, { rawScore: number; relativeScore: number; zone: string; zoneColor: string }>();
 
     for (const cohort of cohorts) {
         const cohortStudents = studentBaseData.filter(s => s.cohort === cohort);
-        const inputs: StudentEngagementInput[] = cohortStudents.map(s => ({
-            studentId: s.id,
-            cbpCount: s.cbpCount,
-            conflexionCount: s.conflexionCount,
-            bowScore: s.bowScore,
-            selfAssessmentsCount: s.selfAssessmentsCount,
-        }));
+        // Only use students with tracking data in the Z-score calculation (matching Student Dashboard pool)
+        const inputs: StudentEngagementInput[] = cohortStudents
+            .filter(s => dashboardStudentIds.has(s.id))
+            .map(s => ({
+                studentId: s.id,
+                cbpCount: s.cbpCount,
+                conflexionCount: s.conflexionCount,
+                bowScore: s.bowScore,
+                selfAssessmentsCount: s.selfAssessmentsCount,
+            }));
 
         const results = calculateCohortEngagement(inputs);
         results.forEach((result, studentId) => {
