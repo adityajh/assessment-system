@@ -85,28 +85,21 @@ export default async function StudentDashboardPage({ params }: { params: Promise
             return { parameter: param.name, domain, scores };
         });
 
-        // 3. BUILD TRAJECTORY DATA (Phase-Based Project Averages)
+        // 3. BUILD TRAJECTORY DATA (Phase-Based Aggregation)
         const uniqueSequences = [...new Set(data.projects.map(p => p.sequence))].sort((a, b) => a - b);
         trajectoryData = uniqueSequences.map(seq => {
             const seqProjects = data.projects.filter(p => p.sequence === seq);
+            const projectIds = seqProjects.map(p => p.id);
+            const projectName = seqProjects[0].name; // Primary label
 
-            // Find which project the student actually has assessment data for
-            let activeProject = seqProjects[0]; // fallback
-            for (const proj of seqProjects) {
-                if (data.assessments.some(a => a.project_id === proj.id && a.normalized_score !== null)) {
-                    activeProject = proj;
-                    break;
-                }
-            }
-
-            const mentorAsses = data.assessments.filter(a => a.project_id === activeProject.id && a.assessment_type === 'mentor' && a.normalized_score !== null);
-            const selfAsses = data.assessments.filter(a => a.project_id === activeProject.id && a.assessment_type === 'self' && a.normalized_score !== null);
+            const mentorAsses = data.assessments.filter(a => projectIds.includes(a.project_id) && a.assessment_type === 'mentor' && a.normalized_score !== null);
+            const selfAsses = data.assessments.filter(a => projectIds.includes(a.project_id) && a.assessment_type === 'self' && a.normalized_score !== null);
 
             const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : null;
             const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : null;
 
             return {
-                project: activeProject.name,
+                project: projectName,
                 mentor: mentorAvg !== null ? Number(mentorAvg.toFixed(1)) : null,
                 self: selfAvg !== null ? Number(selfAvg.toFixed(1)) : null
             };

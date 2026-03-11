@@ -91,8 +91,8 @@ export default function StudentDashboardClient({
                                 <YAxis stroke="#64748b" tick={{ fill: '#475569', fontSize: 12 }} domain={[0, 10]} />
                                 <RechartsTooltip contentStyle={{ backgroundColor: '#fff', borderColor: '#cbd5e1', borderRadius: '8px' }} />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <Line connectNulls={false} type="monotone" dataKey="mentor" name="Mentor Average" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#6366f1' }} activeDot={{ r: 6 }} />
-                                <Line connectNulls={false} type="monotone" dataKey="self" name="Self Average" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4' }} activeDot={{ r: 6 }} />
+                                <Line connectNulls={true} type="monotone" dataKey="mentor" name="Mentor Average" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#6366f1' }} activeDot={{ r: 6 }} />
+                                <Line connectNulls={true} type="monotone" dataKey="self" name="Self Average" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4' }} activeDot={{ r: 6 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
