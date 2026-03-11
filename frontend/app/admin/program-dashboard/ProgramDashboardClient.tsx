@@ -17,8 +17,11 @@ interface StudentData {
     avgMentorScore?: string;
     avgSelfScore?: string;
     avgPeerScore?: string;
-    engagementScore?: number; // Raw weighted score (0-100)
-    relativeScore?: number;   // Z-score based relative score (0-100)
+    // Pre-computed on the server using the shared canonical utility
+    engagementScore: number;    // Raw score 0-100
+    relativeScore: number;      // Z-score based relative score 0-100
+    zone: string;               // 'Syncing' | 'Connecting' | 'Engaging' | 'Leading'
+    zoneColor: string;          // Tailwind bg class
 }
 
 interface ProgramDashboardClientProps {
@@ -37,70 +40,19 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
 
     const [activeCohort, setActiveCohort] = useState<string>(availableCohorts[0] || '2025');
 
-    const getEngagementColor = (relativeScore: number) => {
-        if (relativeScore < 25) return 'bg-rose-500';      // Syncing
-        if (relativeScore < 50) return 'bg-amber-500';     // Connecting
-        if (relativeScore < 75) return 'bg-emerald-500';   // Engaging
-        return 'bg-sky-500';                              // Leading
-    };
+    // No client-side score re-calculation — zones are pre-computed on the server
+    // using the shared canonical utility (lib/utils/engagementScore.ts),
+    // which guarantees identical results to the individual student dashboard.
 
-    // Filter, Curve, and Sort the students
     const processedStudents = useMemo(() => {
-        // 1. Focus only on the active cohort
-        const cohortStudents = studentsData.filter(s => s.cohort === activeCohort);
-
-        // 2. Determine "The Curve" via maximums in this specific cohort
-        const maxCBP = Math.max(...cohortStudents.map(s => s.cbpCount), 1);
-        const maxConf = Math.max(...cohortStudents.map(s => s.conflexionCount), 1);
-        const maxBow = Math.max(10, Math.max(...cohortStudents.map(s => Number(s.bowScore)), 1));
-        const maxSA = Math.max(...cohortStudents.map(s => s.selfAssessmentsCount), 1);
-
-        // 3. Calculate raw engagement scores
-        const studentsWithRawScores = cohortStudents.map(s => {
-            const cbpVal = Math.min(s.cbpCount, maxCBP);
-            const confVal = Math.min(s.conflexionCount, maxConf);
-            const bowVal = s.bowScore ? Math.min(Number(s.bowScore), maxBow) : 0;
-            const saVal = Math.min(s.selfAssessmentsCount, maxSA);
-
-            const score = Math.round(
-                (cbpVal / maxCBP) * 25 +
-                (confVal / maxConf) * 25 +
-                (bowVal / maxBow) * 25 +
-                (saVal / maxSA) * 25
-            );
-
-            return { ...s, engagementScore: score };
-        });
-
-        // 4. Calculate Z-Score and Relative Scaling (Matching StudentDashboard logic)
-        const n = studentsWithRawScores.length;
-        if (n === 0) return [];
-
-        const mean = studentsWithRawScores.reduce((sum, s) => sum + (s.engagementScore || 0), 0) / n;
-        const variance = studentsWithRawScores.reduce((sum, s) => sum + Math.pow((s.engagementScore || 0) - mean, 2), 0) / Math.max(n - 1, 1);
-        const sd = Math.sqrt(variance) || 1;
-
-        const studentsWithRelativeScores = studentsWithRawScores.map(s => {
-            const zScore = ((s.engagementScore || 0) - mean) / sd;
-            // Standardize to 0-100 range using the same formula: (z * 25) + 62.5
-            let relativeScore = (zScore * 25) + 62.5;
-            relativeScore = Math.max(2, Math.min(98, relativeScore)); // Clamp for UI
-            
-            return { 
-                ...s, 
-                relativeScore: Number(relativeScore.toFixed(1))
-            };
-        });
-
-        // 5. Filter by search query and sort
-        return studentsWithRelativeScores
+        return studentsData
+            .filter(s => s.cohort === activeCohort)
             .filter(student => 
                 searchQuery === '' || 
                 student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 student.studentNumber.toLowerCase().includes(searchQuery.toLowerCase())
             )
-            .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0)); // Still sort by raw weighted performance
-
+            .sort((a, b) => b.relativeScore - a.relativeScore); // Sort by relative position
     }, [studentsData, activeCohort, searchQuery]);
 
     return (
@@ -151,8 +103,13 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                 <th className="px-6 py-4">Student</th>
                                 <th className="px-6 py-4">
                                     <div className="flex items-center gap-2 text-indigo-400">
-                                        Engagement Stack 
+                                        Relative Zone
                                         <ArrowUpDown size={14} className="opacity-50" />
+                                    </div>
+                                </th>
+                                <th className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        Raw Score
                                     </div>
                                 </th>
                                 <th className="px-6 py-4 text-center">Projects Assessed</th>
@@ -167,7 +124,7 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                         <tbody className="text-sm">
                             {processedStudents.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                                    <td colSpan={11} className="px-6 py-12 text-center text-slate-400">
                                         No students found in cohort "{activeCohort}".
                                     </td>
                                 </tr>
@@ -183,8 +140,8 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div 
-                                                    className={`w-3 h-3 rounded-full shrink-0 ${getEngagementColor(student.relativeScore || 0)} shadow-[0_0_8px_rgba(0,0,0,0.3)]`}
-                                                    title={`Relative Zone Score: ${student.relativeScore}% (Raw: ${student.engagementScore}%)`}
+                                                    className={`w-3 h-3 rounded-full shrink-0 ${student.zoneColor} shadow-[0_0_8px_rgba(0,0,0,0.3)]`}
+                                                    title={`Zone: ${student.zone} (Relative: ${student.relativeScore}%, Raw: ${student.engagementScore}%)`}
                                                 />
                                                 <div>
                                                     <Link 
@@ -199,11 +156,27 @@ export default function ProgramDashboardClient({ studentsData, totalPhases }: Pr
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
+                                            {/* Relative zone — matches individual student dashboard */}
                                             <div className="flex items-center gap-3">
-                                                <div className="font-bold text-base text-slate-200 w-10">
-                                                    {student.engagementScore}%
+                                                <div className="font-bold text-base text-slate-200 w-12">
+                                                    {student.relativeScore.toFixed(0)}%
                                                 </div>
                                                 <div className="flex-1 max-w-[120px] bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                                                    <div 
+                                                        className={`h-full ${student.zoneColor} rounded-full opacity-80`}
+                                                        style={{ width: `${student.relativeScore}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="text-xs text-slate-400 font-medium">{student.zone}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {/* Raw absolute score bar */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-sm text-slate-400 w-10">
+                                                    {student.engagementScore}%
+                                                </div>
+                                                <div className="flex-1 max-w-[80px] bg-slate-800 rounded-full h-1.5 overflow-hidden border border-slate-700">
                                                     <div 
                                                         className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full"
                                                         style={{ width: `${student.engagementScore}%` }}

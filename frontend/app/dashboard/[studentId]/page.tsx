@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getPlaygroundData } from '@/lib/supabase/queries/assessments';
 import StudentDashboardClient from './StudentDashboardClient';
+import { calculateCohortEngagement, StudentEngagementInput, getBadgeColor, getZone } from '@/lib/utils/engagementScore';
 
 export const metadata = {
     title: 'Student Dashboard',
@@ -179,33 +180,33 @@ export default async function StudentDashboardPage({ params }: { params: Promise
         (kpiData as any).engagementScore = Math.round((cbpVal / maxCBP) * 25 + (confVal / maxConf) * 25 + (bowVal / maxBow) * 25 + (saVal / maxSA) * 25);
 
         if (data.allTermTracking) {
-            const rawScores: { studentId: string, rawScore: number, isCurrent: boolean }[] = [];
-            let sum = 0;
+            // Use the shared canonical engagement utility (same as Program Dashboard)
+            const engagementInputs: StudentEngagementInput[] = (data.allTermTracking || []).map((t: any) => ({
+                studentId: t.student_id,
+                cbpCount: t.cbp_count || 0,
+                conflexionCount: t.conflexion_count || 0,
+                bowScore: t.bow_score ? Number(t.bow_score) : 0,
+                selfAssessmentsCount: selfAssessMap[t.student_id] || 0,
+            }));
 
-            data.allTermTracking.forEach((t: any) => {
-                const tvCbp = Math.min(t.cbp_count || 0, maxCBP);
-                const tvConf = Math.min(t.conflexion_count || 0, maxConf);
-                const tvBow = t.bow_score ? Math.min(Number(t.bow_score), maxBow) : 0;
-                const tvSa = Math.min(selfAssessMap[t.student_id] || 0, maxSA);
-                const score = Math.round((tvCbp / maxCBP) * 25 + (tvConf / maxConf) * 25 + (tvBow / maxBow) * 25 + (tvSa / maxSA) * 25);
+            const engagementResults = calculateCohortEngagement(engagementInputs);
 
-                rawScores.push({ studentId: t.student_id, rawScore: score, isCurrent: t.student_id === studentId });
-                sum += score;
+            const scaledScores = (data.allTermTracking || []).map((t: any) => {
+                const eng = engagementResults.get(t.student_id);
+                return {
+                    studentId: t.student_id,
+                    rawScore: eng?.rawScore ?? 0,
+                    scaledScore: eng?.relativeScore ?? 50,
+                    displayScore: eng?.relativeScore ?? 50,
+                    isCurrent: t.student_id === studentId,
+                };
             });
 
-            const n = rawScores.length;
-            const mean = n > 0 ? sum / n : 0;
-            let variance = 0;
-            rawScores.forEach(s => { variance += Math.pow(s.rawScore - mean, 2); });
-            const sd = n > 1 ? Math.sqrt(variance / (n - 1)) : 1;
-            const finalSD = sd === 0 ? 1 : sd;
-
-            const scaledScores = rawScores.map(s => {
-                const zScore = (s.rawScore - mean) / finalSD;
-                let scaled = (zScore * 25) + 62.5;
-                scaled = Math.max(2, Math.min(98, scaled));
-                return { ...s, scaledScore: Number(scaled.toFixed(1)), displayScore: 0 };
-            });
+            // Current student's engagement result
+            const currentStudentEng = engagementResults.get(studentId);
+            (kpiData as any).engagementScore = currentStudentEng?.rawScore ?? 0;
+            (kpiData as any).relativeScore = currentStudentEng?.relativeScore ?? 50;
+            (kpiData as any).zone = currentStudentEng?.zone ?? 'Connecting';
 
             scaledScores.sort((a, b) => a.scaledScore - b.scaledScore);
             let currentGroup: any[] = [];

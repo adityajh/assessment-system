@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import ProgramDashboardClient from './ProgramDashboardClient';
+import { calculateCohortEngagement, StudentEngagementInput } from '@/lib/utils/engagementScore';
 
 export const metadata = {
     title: 'Program Dashboard - Admin Panel',
@@ -23,13 +24,13 @@ export default async function ProgramDashboardPage() {
     const { data: projects } = await supabase.from('projects').select('sequence');
     const totalPhases = projects ? new Set(projects.map(p => p.sequence)).size : 0;
 
-    // 3. Fetch KPI Metrics view
+    // 3. Fetch KPI Metrics (CBP, Conflexion, BoW, Projects Assessed)
     const { data: dashboardMetrics } = await supabase
         .from('v_student_dashboard')
         .select('student_id, cbp_count, conflexion_count, bow_score, total_projects_assessed');
 
     // 4. Fetch Self-Assessment counts DIRECTLY from assessments table
-    //    (matching the individual student dashboard logic exactly)
+    //    (matches the individual student dashboard methodology exactly)
     const { data: selfAssessmentsRaw } = await supabase
         .from('assessments')
         .select('student_id')
@@ -43,7 +44,7 @@ export default async function ProgramDashboardPage() {
         });
     }
 
-    // 5. Fetch Assessment Averages (for display only — NOT used in engagement score calculation)
+    // 5. Fetch Assessment Averages (for display only)
     const { data: assessmentAvgs } = await supabase
         .from('v_student_assessment_averages')
         .select('student_id, assessment_type, avg_score');
@@ -58,7 +59,7 @@ export default async function ProgramDashboardPage() {
         });
     }
 
-    // 6. Fetch Peer Feedback Averages
+    // 6. Fetch Peer Feedback Averages (for display only)
     const { data: peerFeedback } = await supabase
         .from('v_peer_feedback_summary')
         .select('student_id, avg_overall');
@@ -70,28 +71,66 @@ export default async function ProgramDashboardPage() {
         });
     }
 
-    // Combine all data into a clean structure for the client
-    const compiledData = students.map(student => {
+    // 7. Build raw per-student data
+    const studentBaseData = students.map(student => {
         const metrics = (dashboardMetrics?.find(m => m.student_id === student.id) || {}) as any;
-        
-        const avgSelfScore = selfAvgMap[student.id] || 0;
-        const avgMentorScore = mentorAvgMap[student.id] || 0;
-        const avgPeerScore = peerMap[student.id] || 0;
-
         return {
             id: student.id,
             name: student.canonical_name,
             studentNumber: student.student_number,
-            cohort: student.cohort || '2025', 
+            cohort: student.cohort || '2025',
             cbpCount: metrics.cbp_count || 0,
             conflexionCount: metrics.conflexion_count || 0,
-            bowScore: metrics.bow_score ? Number(metrics.bow_score).toFixed(2) : '0.00',
-            projectsAssessed: metrics.total_projects_assessed || 0, 
-            // Direct count from assessments table — matches the individual student dashboard methodology
+            bowScore: metrics.bow_score ? Number(metrics.bow_score) : 0,
+            projectsAssessed: metrics.total_projects_assessed || 0,
             selfAssessmentsCount: selfCountMap[student.id] || 0,
-            avgMentorScore: avgMentorScore.toFixed(1),
-            avgSelfScore: avgSelfScore.toFixed(1),
-            avgPeerScore: avgPeerScore.toFixed(1)
+            avgMentorScore: (mentorAvgMap[student.id] || 0).toFixed(1),
+            avgSelfScore: (selfAvgMap[student.id] || 0).toFixed(1),
+            avgPeerScore: (peerMap[student.id] || 0).toFixed(1),
+        };
+    });
+
+    // 8. Calculate engagement zones PER COHORT using the shared canonical utility
+    //    This guarantees identical logic to the individual student dashboard.
+    const cohorts = [...new Set(studentBaseData.map(s => s.cohort))];
+    const engagementMap = new Map<string, { rawScore: number; relativeScore: number; zone: string; zoneColor: string }>();
+
+    for (const cohort of cohorts) {
+        const cohortStudents = studentBaseData.filter(s => s.cohort === cohort);
+        const inputs: StudentEngagementInput[] = cohortStudents.map(s => ({
+            studentId: s.id,
+            cbpCount: s.cbpCount,
+            conflexionCount: s.conflexionCount,
+            bowScore: s.bowScore,
+            selfAssessmentsCount: s.selfAssessmentsCount,
+        }));
+
+        const results = calculateCohortEngagement(inputs);
+        results.forEach((result, studentId) => {
+            engagementMap.set(studentId, result);
+        });
+    }
+
+    // 9. Compile final data with pre-computed engagement scores for the client
+    const compiledData = studentBaseData.map(student => {
+        const eng = engagementMap.get(student.id);
+        return {
+            id: student.id,
+            name: student.name,
+            studentNumber: String(student.studentNumber),
+            cohort: student.cohort,
+            cbpCount: student.cbpCount,
+            conflexionCount: student.conflexionCount,
+            bowScore: student.bowScore ? student.bowScore.toFixed(2) : '0.00',
+            projectsAssessed: student.projectsAssessed,
+            selfAssessmentsCount: student.selfAssessmentsCount,
+            engagementScore: eng?.rawScore ?? 0,
+            relativeScore: eng?.relativeScore ?? 50,
+            zone: eng?.zone ?? 'Connecting',
+            zoneColor: eng?.zoneColor ?? 'bg-amber-500',
+            avgMentorScore: student.avgMentorScore,
+            avgSelfScore: student.avgSelfScore,
+            avgPeerScore: student.avgPeerScore,
         };
     });
 
