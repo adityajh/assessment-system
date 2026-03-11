@@ -485,11 +485,18 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                     {activeTab === 'peer-stacked-param' && peerStackedByParamData && peerStackedByParamData.length > 0 && (
                         <div className="w-full h-full flex flex-col justify-center px-4 md:px-12 relative items-center min-h-[500px]">
                             <ResponsiveContainer width="100%" height={450}>
-                                <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
+                                <BarChart data={peerStackedByParamData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }} barGap={2} barCategoryGap="25%">
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                     <XAxis dataKey="parameter" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
                                     <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} domain={['auto', 'auto']} tickFormatter={(value) => value > 0 ? `+${value}` : value.toString()} />
-                                    <Tooltip contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }} itemStyle={{ color: '#ffffff' }} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1e2233', borderColor: '#334155', color: '#ffffff' }}
+                                        itemStyle={{ color: '#ffffff' }}
+                                        formatter={((value: number | undefined, name: string | undefined) => {
+                                            if (value === undefined || value === null) return ['-', name ?? ''];
+                                            return [value > 0 ? `+${value}` : value, name ?? ''];
+                                        }) as any}
+                                    />
                                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <ReferenceLine y={0} stroke="#475569" strokeWidth={2} label={{ position: 'insideTopRight', value: 'Cohort Average', fill: '#94a3b8', fontSize: 12 }} />
                                     {peerStackedByParamProjects.map((proj: string, idx: number) => {
@@ -499,18 +506,18 @@ export default function PlaygroundClientPage({ gapData, heatmapData, consolidate
                                                 key={proj}
                                                 dataKey={proj}
                                                 name={proj}
-                                                stackId="a"
                                                 fill={colors[idx % colors.length]}
-                                                radius={idx === peerStackedByParamProjects.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                                radius={[3, 3, 0, 0]}
+                                                minPointSize={3}
                                             />
                                         );
                                     })}
                                 </BarChart>
                             </ResponsiveContainer>
                             <p className="text-slate-400 mt-8 text-center max-w-2xl mx-auto italic text-sm">
-                                This chart displays the student's <strong>deviation from the cohort average</strong>. <br />
-                                <span className="text-emerald-400 opacity-80">+ Positive</span> bars mean the student scored higher than their peers on that project. <br />
-                                <span className="text-red-400 opacity-80">- Negative</span> bars mean they scored lower than the average.
+                                Each bar shows the student's <strong>deviation from the cohort average</strong> per project. <br />
+                                <span className="text-emerald-400 opacity-80">+ Positive</span> bars mean the student scored higher than the cohort on that project. <br />
+                                <span className="text-red-400 opacity-80">- Negative</span> bars mean they scored lower. Bars at zero indicate a cohort-average performance.
                             </p>
                         </div>
                     )}
