@@ -187,10 +187,10 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
         supabase.from('assessments').select('*').eq('student_id', student.id),
         supabase.from('peer_feedback').select('*').eq('recipient_id', student.id),
         supabase.from('v_student_dashboard').select('*').eq('student_id', student.id).single(),
-        supabase.from('v_domain_scores').select('*').eq('assessment_type', 'mentor'),
-        supabase.from('v_peer_feedback_summary').select('*'),
-        supabase.from('v_student_dashboard').select('student_id, cbp_count, conflexion_count, bow_score'),
-        supabase.from('assessments').select('student_id').eq('assessment_type', 'self').not('normalized_score', 'is', 'null')
+        supabase.from('v_domain_scores').select('*').eq('assessment_type', 'mentor').in('student_id', (await supabase.from('students').select('id').eq('cohort', student.cohort)).data?.map(s => s.id) || []),
+        supabase.from('v_peer_feedback_summary').select('*').in('student_id', (await supabase.from('students').select('id').eq('cohort', student.cohort)).data?.map(s => s.id) || []),
+        supabase.from('v_student_dashboard').select('student_id, cbp_count, conflexion_count, bow_score').in('student_id', (await supabase.from('students').select('id').eq('cohort', student.cohort)).data?.map(s => s.id) || []),
+        supabase.from('assessments').select('student_id').eq('assessment_type', 'self').not('normalized_score', 'is', 'null').in('student_id', (await supabase.from('students').select('id').eq('cohort', student.cohort)).data?.map(s => s.id) || [])
     ]);
 
     if (projectsResult.error) throw projectsResult.error;

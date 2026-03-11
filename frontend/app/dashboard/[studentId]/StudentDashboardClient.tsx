@@ -124,13 +124,16 @@ export default function StudentDashboardClient({
                             <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-2">
                                 <h3 className="text-xl font-bold text-slate-800">Relative Engagement Stack</h3>
                                 {(() => {
-                                    const normalizedScore = engagementDistributionData?.find((d: any) => d.isCurrentStudent)?.displayScore || kpiData?.engagementScore || 0;
+                                    const normalizedScore = engagementDistributionData?.find((d: any) => d.isCurrentStudent)?.score || kpiData?.engagementScore || 0;
+                                    // relativePosition is the un-jittered Z-score based position (0-100)
+                                    const relativePosition = engagementDistributionData?.find((d: any) => d.isCurrentStudent)?.relativeScore || 0; 
+                                    
                                     let color = 'text-sky-600';
                                     let bgColor = 'bg-sky-100';
                                     let zone = 'Leading';
-                                    if (normalizedScore < 25) { color = 'text-rose-600'; bgColor = 'bg-rose-100'; zone = 'Syncing'; }
-                                    else if (normalizedScore < 50) { color = 'text-amber-600'; bgColor = 'bg-amber-100'; zone = 'Connecting'; }
-                                    else if (normalizedScore < 75) { color = 'text-emerald-600'; bgColor = 'bg-emerald-100'; zone = 'Engaging'; }
+                                    if (relativePosition < 25) { color = 'text-rose-600'; bgColor = 'bg-rose-100'; zone = 'Syncing'; }
+                                    else if (relativePosition < 50) { color = 'text-amber-600'; bgColor = 'bg-amber-100'; zone = 'Connecting'; }
+                                    else if (relativePosition < 75) { color = 'text-emerald-600'; bgColor = 'bg-emerald-100'; zone = 'Engaging'; }
 
                                     return (
                                         <div className="flex items-center gap-3">
@@ -193,12 +196,13 @@ export default function StudentDashboardClient({
                                             contentStyle={{ backgroundColor: '#fff', borderColor: '#cbd5e1', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                             formatter={(value, name, props) => {
                                                 if (name === "yAxis") return [null, null];
-                                                const rawScore = props.payload?.score ?? value;
-                                                const normalizedScore = value;
+                                                const rawScore = props.payload?.score || 0;
+                                                const trueRelativeScore = props.payload?.relativeScore || value; // Fallback to displayScore if relativeScore is missing
+                                                
                                                 let zone = "Leading";
-                                                if (Number(normalizedScore) < 25) zone = "Syncing";
-                                                else if (Number(normalizedScore) < 50) zone = "Connecting";
-                                                else if (Number(normalizedScore) < 75) zone = "Engaging";
+                                                if (Number(trueRelativeScore) < 25) zone = "Syncing";
+                                                else if (Number(trueRelativeScore) < 50) zone = "Connecting";
+                                                else if (Number(trueRelativeScore) < 75) zone = "Engaging";
                                                 return [`${rawScore} (${zone})`, props.payload.isCurrentStudent ? studentData.canonical_name : "Cohort Score"];
                                             }}
                                             labelFormatter={() => ''}

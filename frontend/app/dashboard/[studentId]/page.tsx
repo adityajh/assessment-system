@@ -240,6 +240,7 @@ export default async function StudentDashboardPage({ params }: { params: Promise
                 engagementDistributionData.push({
                     studentId: s.studentId,
                     score: s.rawScore,
+                    relativeScore: s.scaledScore,
                     displayScore: Number(s.displayScore.toFixed(2)),
                     yAxis: 0,
                     isCurrentStudent: s.isCurrent
