@@ -28,27 +28,40 @@ export default async function ProgramDashboardPage() {
         .from('v_student_dashboard')
         .select('student_id, cbp_count, conflexion_count, bow_score, total_projects_assessed');
 
-    // 4. Fetch Assessment Averages (pre-aggregated in SQL view)
-    const { data: assessmentAvgs } = await supabase
-        .from('v_student_assessment_averages')
-        .select('student_id, assessment_type, avg_score, assessment_count');
+    // 4. Fetch Self-Assessment counts DIRECTLY from assessments table
+    //    (matching the individual student dashboard logic exactly)
+    const { data: selfAssessmentsRaw } = await supabase
+        .from('assessments')
+        .select('student_id')
+        .eq('assessment_type', 'self')
+        .not('normalized_score', 'is', null);
     
-    // Map assessment stats per student
-    const selfStats: Record<string, { count: number, avg: number }> = {};
-    const mentorStats: Record<string, { count: number, avg: number }> = {};
-
-    if (assessmentAvgs) {
-        assessmentAvgs.forEach(a => {
-            const stats = { count: a.assessment_count, avg: Number(a.avg_score) };
-            if (a.assessment_type === 'self') selfStats[a.student_id] = stats;
-            else if (a.assessment_type === 'mentor') mentorStats[a.student_id] = stats;
+    const selfCountMap: Record<string, number> = {};
+    if (selfAssessmentsRaw) {
+        selfAssessmentsRaw.forEach(row => {
+            selfCountMap[row.student_id] = (selfCountMap[row.student_id] || 0) + 1;
         });
     }
 
-    // 5. Fetch Peer Feedback Averages
+    // 5. Fetch Assessment Averages (for display only — NOT used in engagement score calculation)
+    const { data: assessmentAvgs } = await supabase
+        .from('v_student_assessment_averages')
+        .select('student_id, assessment_type, avg_score');
+    
+    const selfAvgMap: Record<string, number> = {};
+    const mentorAvgMap: Record<string, number> = {};
+
+    if (assessmentAvgs) {
+        assessmentAvgs.forEach(a => {
+            if (a.assessment_type === 'self') selfAvgMap[a.student_id] = Number(a.avg_score);
+            else if (a.assessment_type === 'mentor') mentorAvgMap[a.student_id] = Number(a.avg_score);
+        });
+    }
+
+    // 6. Fetch Peer Feedback Averages
     const { data: peerFeedback } = await supabase
         .from('v_peer_feedback_summary')
-        .select('student_id, avg_overall'); // Use student_id as aliased in view
+        .select('student_id, avg_overall');
     
     const peerMap: Record<string, number> = {};
     if (peerFeedback) {
@@ -60,11 +73,9 @@ export default async function ProgramDashboardPage() {
     // Combine all data into a clean structure for the client
     const compiledData = students.map(student => {
         const metrics = (dashboardMetrics?.find(m => m.student_id === student.id) || {}) as any;
-        const sStat = selfStats[student.id];
-        const mStat = mentorStats[student.id];
         
-        const avgSelfScore = sStat ? sStat.avg : 0;
-        const avgMentorScore = mStat ? mStat.avg : 0;
+        const avgSelfScore = selfAvgMap[student.id] || 0;
+        const avgMentorScore = mentorAvgMap[student.id] || 0;
         const avgPeerScore = peerMap[student.id] || 0;
 
         return {
@@ -76,7 +87,8 @@ export default async function ProgramDashboardPage() {
             conflexionCount: metrics.conflexion_count || 0,
             bowScore: metrics.bow_score ? Number(metrics.bow_score).toFixed(2) : '0.00',
             projectsAssessed: metrics.total_projects_assessed || 0, 
-            selfAssessmentsCount: sStat?.count || 0,
+            // Direct count from assessments table — matches the individual student dashboard methodology
+            selfAssessmentsCount: selfCountMap[student.id] || 0,
             avgMentorScore: avgMentorScore.toFixed(1),
             avgSelfScore: avgSelfScore.toFixed(1),
             avgPeerScore: avgPeerScore.toFixed(1)
