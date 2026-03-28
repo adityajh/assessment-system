@@ -28,6 +28,7 @@ export default async function ProjectReportPage({ params }: ProjectReportPagePro
                 assessments={data.assessments}
                 peerSummary={data.peerSummary}
                 notes={data.notes}
+                allProjects={data.allProjects}
             />
         );
     } catch (error) {

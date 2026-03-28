@@ -251,13 +251,14 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
 }
 
 export async function getProjectReportData(supabase: SupabaseClient, studentId: string, projectId: string) {
-    const [studentResult, projectResult, domainsResult, assessmentsResult, peerSummaryResult, notesResult] = await Promise.all([
+    const [studentResult, projectResult, domainsResult, assessmentsResult, peerSummaryResult, notesResult, allProjectsResult] = await Promise.all([
         supabase.from('students').select('*, programs(name)').eq('id', studentId).single(),
         supabase.from('projects').select('*').eq('id', projectId).single(),
         supabase.from('readiness_domains').select('*').order('display_order'),
         supabase.from('assessments').select('*, readiness_parameters(domain_id)').eq('student_id', studentId).eq('project_id', projectId),
         supabase.from('v_peer_feedback_summary').select('*').eq('student_id', studentId).eq('project_id', projectId).single(),
-        supabase.from('mentor_notes').select('*').eq('student_id', studentId).eq('project_id', projectId).order('date', { ascending: false })
+        supabase.from('mentor_notes').select('*').eq('student_id', studentId).eq('project_id', projectId).order('date', { ascending: false }),
+        supabase.from('projects').select('*').order('sequence')
     ]);
 
     if (studentResult.error) throw studentResult.error;
@@ -270,6 +271,7 @@ export async function getProjectReportData(supabase: SupabaseClient, studentId: 
         domains: domainsResult.data as ReadinessDomain[],
         assessments: assessmentsResult.data || [],
         peerSummary: peerSummaryResult.data || null,
-        notes: notesResult.data || []
+        notes: notesResult.data || [],
+        allProjects: allProjectsResult.data || []
     };
 }

@@ -228,30 +228,6 @@ export default function StudentDashboardClient({
                             </div>
                         </div>
                     )}
-
-                {/* Section: Project Impact Reports (NEW) */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mb-10 print:hidden transition-all hover:shadow-md">
-                    <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-2">
-                        <Briefcase className="w-5 h-5 text-indigo-500" />
-                        <h3 className="text-xl font-bold text-slate-800">Project Impact Reports</h3>
-                        <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 px-2 py-0.5 rounded">New</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {peerRatingProjects?.map((p: any) => (
-                            <Link
-                                key={p.id}
-                                href={`/dashboard/${studentData.id}/project/${p.id}`}
-                                className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl group hover:bg-indigo-600 hover:border-indigo-500 transition-all text-left"
-                            >
-                                <div className="flex flex-col gap-1 overflow-hidden">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white/70">Project Analysis</span>
-                                    <span className="font-bold text-slate-900 group-hover:text-white truncate">{p.name}</span>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
                 </div>
 
                 {/* Trajectory */}

@@ -22,9 +22,11 @@ import {
     BarChart2,
     MessageSquare,
     ArrowLeft,
-    Printer
+    Printer,
+    ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ReadinessDomain, Assessment } from '@/lib/supabase/queries/assessments';
 
 interface ProjectReportClientProps {
@@ -34,6 +36,7 @@ interface ProjectReportClientProps {
     assessments: Assessment[];
     peerSummary: any;
     notes: any[];
+    allProjects: any[];
 }
 
 const DOMAIN_COLORS: Record<string, string> = {
@@ -51,9 +54,11 @@ export default function ProjectReportClient({
     domains,
     assessments,
     peerSummary,
-    notes
+    notes,
+    allProjects
 }: ProjectReportClientProps) {
     const reportRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     // Aggregate 6-domain scores
     const chartData = useMemo(() => {
@@ -85,10 +90,17 @@ export default function ProjectReportClient({
         window.print();
     };
 
+    const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newProjectId = e.target.value;
+        if (newProjectId && newProjectId !== project.id) {
+            router.push(`/dashboard/${student.id}/project/${newProjectId}`);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-white text-slate-900 pb-20 p-4 md:p-8" ref={reportRef}>
             {/* Header / Nav (Hidden on Print) */}
-            <div className="max-w-5xl mx-auto mb-8 flex justify-between items-center print:hidden">
+            <div className="max-w-5xl mx-auto mb-8 flex flex-wrap justify-between items-center gap-4 print:hidden">
                 <Link 
                     href={`/dashboard/${student.id}`}
                     className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold uppercase text-xs tracking-widest"
@@ -96,13 +108,33 @@ export default function ProjectReportClient({
                     <ArrowLeft size={16} />
                     Back to Profile
                 </Link>
-                <button 
-                    onClick={handlePrint}
-                    className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-black hover:bg-indigo-600 transition-all shadow-xl"
-                >
-                    <Printer size={18} />
-                    Export Project Report
-                </button>
+
+                <div className="flex items-center gap-3">
+                    <div className="relative group">
+                        <select 
+                            value={project.id}
+                            onChange={handleProjectChange}
+                            className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 pr-10 text-sm font-black text-slate-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer shadow-sm"
+                        >
+                            {allProjects.map((p: any) => (
+                                <option key={p.id} value={p.id}>
+                                    Project {p.sequence_label || 'X'}: {p.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-indigo-500 transition-colors">
+                            <ChevronDown size={16} />
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-black hover:bg-black transition-all shadow-xl active:scale-95"
+                    >
+                        <Printer size={18} />
+                        Export Project Report
+                    </button>
+                </div>
             </div>
 
             {/* Report Container */}
