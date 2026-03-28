@@ -179,52 +179,52 @@ export default function ProjectReportClient({
             </div>
 
             {/* Main Report Document */}
-            <div className="max-w-5xl mx-auto bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm print:border-0 print:shadow-none">
+            <div className="max-w-5xl mx-auto bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm print:border-0 print:shadow-none print:max-w-none">
                 
                 {/* Visual Header (Thinner & Lighter) */}
-                <div className="bg-slate-50 border-b border-slate-100 px-10 py-8 relative overflow-hidden">
-                    <div className="relative z-10 flex flex-wrap justify-between items-end gap-6">
+                <div className="bg-slate-50 border-b border-slate-100 px-10 py-8 relative overflow-hidden print:py-4 print:px-6">
+                    <div className="relative z-10 flex flex-wrap justify-between items-end gap-6 print:gap-2">
                         <div className="flex-1 min-w-[300px]">
-                            <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-3 mb-3 print:mb-1">
                                 <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[9px] font-black uppercase tracking-wider">Project Impact Report</span>
-                                <span className="text-slate-300 font-bold text-xs">•</span>
-                                <span className="text-slate-400 font-bold text-xs">Module {project.sequence_label || 'X'}</span>
+                                <span className="text-slate-300 font-bold text-xs print:hidden">•</span>
+                                <span className="text-slate-400 font-bold text-xs print:hidden">Module {project.sequence_label || 'X'}</span>
                             </div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight mb-2">
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight mb-2 print:text-2xl print:mb-1">
                                 {project.name}
                             </h1>
-                            <div className="flex gap-6 mt-4">
+                            <div className="flex gap-6 mt-4 print:mt-2 print:gap-4">
                                 <div>
-                                    <p className="text-[9px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Student</p>
-                                    <p className="text-lg font-bold text-slate-700">{student.canonical_name}</p>
+                                    <p className="text-[9px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Student Associate</p>
+                                    <p className="text-lg font-bold text-slate-700 print:text-base">{student.canonical_name}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[9px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Program</p>
-                                    <p className="text-lg font-bold text-slate-700">{student.programs?.name || 'UG-MED'}</p>
+                                    <p className="text-[9px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Program Focus</p>
+                                    <p className="text-lg font-bold text-slate-700 print:text-base">{student.programs?.name || 'UG-MED'}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="text-right hidden sm:block">
-                            <img src="/images/logo-dark.png" alt="LE Logo" className="h-10 opacity-30 grayscale" />
+                        <div className="text-right hidden sm:block print:block">
+                            <img src="/images/logo-dark.png" alt="LE Logo" className="h-10 opacity-30 grayscale print:h-8" />
                         </div>
                     </div>
                 </div>
 
-                <div className="px-10 py-12 space-y-16">
+                <div className="px-10 py-12 space-y-16 print:px-6 print:py-8 print:space-y-8">
                     
                     {/* SECTION: READINESS PROFILE */}
-                    <section>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                                <BarChart2 size={24} strokeWidth={2.5} />
+                    <section className="print:break-inside-avoid">
+                        <div className="flex items-center gap-4 mb-8 print:mb-4">
+                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 print:w-8 print:h-8">
+                                <BarChart2 size={24} strokeWidth={2.5} className="print:w-5 print:h-5" />
                             </div>
                             <div className="space-y-0.5">
-                                <h2 className="text-xl font-black tracking-tight text-slate-900">Readiness Profile</h2>
+                                <h2 className="text-xl font-black tracking-tight text-slate-900 print:text-lg">Readiness Profile</h2>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi-perspective development across 6 domains</p>
                             </div>
                         </div>
 
-                        <div className="h-[400px] w-full bg-white border border-slate-100 rounded-2xl p-6">
+                        <div className="h-[400px] w-full bg-white border border-slate-100 rounded-2xl p-6 print:h-[280px] print:p-2 print:border-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={domainChartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }} barGap={4}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -261,35 +261,35 @@ export default function ProjectReportClient({
                     </section>
 
                     {/* SECTION: PEER FEEDBACK (DIVERGING BARS) */}
-                    <section>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-                                <Star size={24} strokeWidth={2.5} />
+                    <section className="print:break-inside-avoid">
+                        <div className="flex items-center gap-4 mb-8 print:mb-4">
+                            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 print:w-8 print:h-8">
+                                <Star size={24} strokeWidth={2.5} className="print:w-5 print:h-5" />
                             </div>
                             <div className="space-y-0.5">
-                                <h2 className="text-xl font-black tracking-tight text-slate-900">Peer Feedback</h2>
+                                <h2 className="text-xl font-black tracking-tight text-slate-900 print:text-lg">Peer Feedback</h2>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Performance deviation from cohort baseline</p>
                             </div>
                         </div>
 
                         {peerSummary ? (
-                            <div className="bg-white border border-slate-100 rounded-2xl p-8 flex flex-col lg:flex-row gap-10 items-center">
+                            <div className="bg-white border border-slate-100 rounded-2xl p-8 flex flex-col lg:flex-row gap-10 items-center print:p-4 print:border-0 print:gap-4 print:flex-row">
                                 {/* Compact Metric Box */}
-                                <div className="w-full lg:w-48 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center shrink-0">
-                                    <div className="mb-4">
-                                        <p className="text-4xl font-black text-slate-900 leading-none mb-1">{peerSummary.avg_overall}</p>
-                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Your Average</p>
+                                <div className="w-full lg:w-48 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center shrink-0 print:w-32 print:p-3 print:rounded-xl">
+                                    <div className="mb-4 print:mb-2">
+                                        <p className="text-4xl font-black text-slate-900 leading-none mb-1 print:text-2xl">{peerSummary.avg_overall}</p>
+                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Score</p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200/50">
-                                        <p className="text-xl font-black text-indigo-500 leading-none mb-1">
+                                    <div className="pt-4 border-t border-slate-200/50 print:pt-2">
+                                        <p className="text-xl font-black text-indigo-500 leading-none mb-1 print:text-lg">
                                             {(cohortPeerSummary.reduce((acc, curr) => acc + (curr.avg_overall || 0), 0) / cohortPeerSummary.length).toFixed(2)}
                                         </p>
-                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Cohort Norm</p>
+                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Norm</p>
                                     </div>
                                 </div>
 
                                 {/* Diverging Deviation Chart */}
-                                <div className="w-full h-[280px]">
+                                <div className="w-full h-[280px] print:h-[200px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart 
                                             layout="vertical" 
@@ -323,10 +323,10 @@ export default function ProjectReportClient({
                                             </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
-                                    <div className="flex justify-center gap-6 mt-2">
+                                    <div className="flex justify-center gap-6 mt-2 print:mt-1">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Better than Norm</span>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Above Norm</span>
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
@@ -344,18 +344,18 @@ export default function ProjectReportClient({
                     </section>
 
                     {/* SECTION: DOMAIN LEVELS (COMPACT ACCORDIONS) */}
-                    <section className="print:break-before-page">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
-                                <Target size={24} strokeWidth={2.5} />
+                    <section className="print:break-inside-avoid">
+                        <div className="flex items-center gap-4 mb-8 print:mb-4">
+                            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600 print:w-8 print:h-8">
+                                <Target size={24} strokeWidth={2.5} className="print:w-5 print:h-5" />
                             </div>
                             <div className="space-y-0.5">
-                                <h2 className="text-xl font-black tracking-tight text-slate-900">Readiness Domain Levels</h2>
+                                <h2 className="text-xl font-black tracking-tight text-slate-900 print:text-lg">Readiness Details</h2>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Granular trait-level assessment scores</p>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 print:space-y-1">
                             {domains.map(domain => {
                                 const isExpanded = expandedDomains[domain.id];
                                 const domainParams = parameters.filter(p => p.domain_id === domain.id);
@@ -364,7 +364,7 @@ export default function ProjectReportClient({
                                 return (
                                     <div 
                                         key={domain.id} 
-                                        className={`group border rounded-xl overflow-hidden transition-all ${
+                                        className={`group border rounded-xl overflow-hidden transition-all print:border print:rounded-lg print:bg-white ${
                                             isExpanded 
                                             ? 'border-indigo-100 bg-white shadow-sm' 
                                             : 'border-slate-100 bg-white hover:border-slate-200'
@@ -372,19 +372,19 @@ export default function ProjectReportClient({
                                     >
                                         <button 
                                             onClick={() => toggleDomain(domain.id)}
-                                            className="w-full px-6 py-4 flex items-center justify-between text-left"
+                                            className="w-full px-6 py-4 flex items-center justify-between text-left print:px-4 print:py-2"
                                         >
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-4 print:gap-2">
                                                 <div 
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black"
+                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black print:w-6 print:h-6 print:text-[10px]"
                                                     style={{ backgroundColor: DOMAIN_COLORS[domain.name] || '#6366f1' }}
                                                 >
                                                     {domain.short_name.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-sm font-black text-slate-800">{domain.name}</h4>
+                                                    <h4 className="text-sm font-black text-slate-800 print:text-xs">{domain.name}</h4>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden print:w-12">
                                                             <div 
                                                                 className="h-full rounded-full" 
                                                                 style={{ 
@@ -393,46 +393,45 @@ export default function ProjectReportClient({
                                                                 }}
                                                             ></div>
                                                         </div>
-                                                        <span className="text-[10px] font-black text-slate-400">{domainData?.mentor || 0}</span>
+                                                        <span className="text-[10px] font-black text-slate-400 print:text-[8px]">{domainData?.mentor || 0}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180 text-indigo-500' : 'text-slate-300'}`}>
+                                            <div className={`transition-transform duration-200 print:hidden ${isExpanded ? 'rotate-180 text-indigo-500' : 'text-slate-300'}`}>
                                                 <ChevronDown size={20} />
                                             </div>
                                         </button>
 
-                                        {isExpanded && (
-                                            <div className="px-6 pb-6 pt-0">
-                                                <div className="border-t border-slate-50 pt-4">
-                                                    <div className="grid grid-cols-12 px-2 py-2 mb-1">
-                                                        <div className="col-span-6 text-[8px] font-black uppercase tracking-widest text-slate-300">Parameter Trait</div>
-                                                        <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300">Self</div>
-                                                        <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300 italic">Mentor</div>
-                                                        <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300">Client</div>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        {domainParams.map(param => {
-                                                            const ass = assessments.filter(a => a.parameter_id === param.id);
-                                                            const s = ass.find(a => a.assessment_type === 'self')?.normalized_score;
-                                                            const m = ass.find(a => a.assessment_type === 'mentor')?.normalized_score;
-                                                            const c = ass.find(a => a.assessment_type === 'client')?.normalized_score;
+                                        {/* Force visibility in print regardless of state */}
+                                        <div className={`px-6 pb-6 pt-0 print:px-4 print:pb-2 print:block ${isExpanded ? 'block' : 'hidden'}`}>
+                                            <div className="border-t border-slate-50 pt-4 print:pt-2">
+                                                <div className="grid grid-cols-12 px-2 py-2 mb-1 print:py-1">
+                                                    <div className="col-span-6 text-[8px] font-black uppercase tracking-widest text-slate-300">Trait</div>
+                                                    <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300">Self</div>
+                                                    <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300 italic">Mentor</div>
+                                                    <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300">Client</div>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    {domainParams.map(param => {
+                                                        const ass = assessments.filter(a => a.parameter_id === param.id);
+                                                        const s = ass.find(a => a.assessment_type === 'self')?.normalized_score;
+                                                        const m = ass.find(a => a.assessment_type === 'mentor')?.normalized_score;
+                                                        const c = ass.find(a => a.assessment_type === 'client')?.normalized_score;
 
-                                                            return (
-                                                                <div key={param.id} className="grid grid-cols-12 items-center px-2 py-3 hover:bg-slate-50 rounded-lg transition-colors">
-                                                                    <div className="col-span-6">
-                                                                        <p className="text-[11px] font-bold text-slate-600">{param.name}</p>
-                                                                    </div>
-                                                                    <div className="col-span-2 text-center text-xs font-bold text-slate-400">{s || '-'}</div>
-                                                                    <div className="col-span-2 text-center text-xs font-black text-indigo-600">{m || '-'}</div>
-                                                                    <div className="col-span-2 text-center text-xs font-bold text-amber-500">{c || '-'}</div>
+                                                        return (
+                                                            <div key={param.id} className="grid grid-cols-12 items-center px-2 py-3 hover:bg-slate-50 rounded-lg transition-colors print:py-1">
+                                                                <div className="col-span-6">
+                                                                    <p className="text-[11px] font-bold text-slate-600 print:text-[9px]">{param.name}</p>
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                                                                <div className="col-span-2 text-center text-xs font-bold text-slate-400 print:text-[10px]">{s || '-'}</div>
+                                                                <div className="col-span-2 text-center text-xs font-black text-indigo-600 print:text-[10px]">{m || '-'}</div>
+                                                                <div className="col-span-2 text-center text-xs font-bold text-amber-500 print:text-[10px]">{c || '-'}</div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -440,22 +439,22 @@ export default function ProjectReportClient({
                     </section>
 
                     {/* SECTION: MENTOR NOTES (AT THE BOTTOM) */}
-                    <section className="bg-slate-50 border border-slate-100 rounded-3xl p-10 print:break-inside-avoid">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500">
-                                <MessageSquare size={20} strokeWidth={2.5} />
+                    <section className="bg-slate-50 border border-slate-100 rounded-3xl p-10 print:bg-white print:border print:rounded-2xl print:p-6 print:break-inside-avoid">
+                        <div className="flex items-center gap-4 mb-6 print:mb-4">
+                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 print:w-8 print:h-8">
+                                <MessageSquare size={20} strokeWidth={2.5} className="print:w-5 print:h-5" />
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900">Mentor Notes</h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 print:text-lg">Mentor Guidance</h3>
                         </div>
                         
-                        <div className="space-y-4">
+                        <div className="space-y-4 print:space-y-2">
                             {notes.length > 0 ? notes.map((note) => (
-                                <div key={note.id} className="bg-white border border-slate-200/50 p-6 rounded-2xl relative">
-                                    <div className="flex justify-between items-center mb-3">
+                                <div key={note.id} className="bg-white border border-slate-200/50 p-6 rounded-2xl relative print:p-3 print:border-0 print:bg-slate-50">
+                                    <div className="flex justify-between items-center mb-3 print:mb-1">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{note.created_by || 'Mentor'}</p>
                                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{new Date(note.date).toLocaleDateString()}</p>
                                     </div>
-                                    <p className="text-slate-600 leading-relaxed text-sm font-medium italic">"{note.note_text}"</p>
+                                    <p className="text-slate-600 leading-relaxed text-sm font-medium italic print:text-xs">"{note.note_text}"</p>
                                 </div>
                             )) : (
                                 <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-xs uppercase tracking-widest gap-2">
@@ -464,14 +463,13 @@ export default function ProjectReportClient({
                                 </div>
                             )}
                         </div>
-                        <p className="mt-8 text-center text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] italic">Notes are project-specific and filtered for this module</p>
+                        <p className="mt-8 text-center text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] italic print:mt-4">Analysis is module-specific and contextually filtered</p>
                     </section>
-
                 </div>
 
                 {/* Footer Credits */}
-                <div className="bg-white border-t border-slate-50 py-6 text-center">
-                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Official Impact Report Output</p>
+                <div className="bg-white border-t border-slate-50 py-6 text-center print:py-2">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Integrated Assessment Report</p>
                 </div>
             </div>
 
@@ -483,9 +481,14 @@ export default function ProjectReportClient({
                     }
                     body {
                         background: white !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                     .print\\:hidden {
                         display: none !important;
+                    }
+                    .print\\:border {
+                        border: 1px solid #e2e8f0 !important;
                     }
                     .print\\:border-0 {
                         border: 0 !important;
@@ -493,16 +496,14 @@ export default function ProjectReportClient({
                     .print\\:shadow-none {
                         box-shadow: none !important;
                     }
-                    .print\\:break-before-page {
-                        break-before: page !important;
-                    }
-                    .print\\:break-inside-avoid {
-                        break-inside: avoid !important;
-                    }
-                    /* Force layout of accordions in print */
-                    .group.border > div {
+                    .print\\:block {
                         display: block !important;
-                        padding: 0 !important;
+                    }
+                    .print\\:flex-row {
+                        flex-direction: row !important;
+                    }
+                    .print\\:max-w-none {
+                        max-width: none !important;
                     }
                 }
             `}</style>
