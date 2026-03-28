@@ -26,7 +26,8 @@ import {
     Printer,
     ChevronDown,
     ChevronUp,
-    Quote
+    Quote,
+    Target
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -101,7 +102,7 @@ export default function ProjectReportClient({
         });
     }, [domains, assessments]);
 
-    // 2. Peer Feedback Chart Data (with Cohort Triangulation)
+    // 2. Peer Feedback Chart Data (Diverging on Delta)
     const peerChartData = useMemo(() => {
         if (!peerSummary) return [];
 
@@ -114,15 +115,19 @@ export default function ProjectReportClient({
         ];
 
         return traits.map(trait => {
+            const studentScore = peerSummary[trait.key] || 0;
             // Calculate cohort average for this trait for this project
             const cohortAvg = cohortPeerSummary.length > 0
                 ? cohortPeerSummary.reduce((acc, curr) => acc + (curr[trait.key] || 0), 0) / cohortPeerSummary.length
                 : 0;
+            
+            const delta = studentScore - cohortAvg;
 
             return {
                 label: trait.label,
-                studentScore: peerSummary[trait.key] || 0,
-                cohortAvg: parseFloat(cohortAvg.toFixed(2))
+                studentScore: studentScore,
+                cohortAvg: parseFloat(cohortAvg.toFixed(2)),
+                delta: parseFloat(delta.toFixed(2))
             };
         });
     }, [peerSummary, cohortPeerSummary]);
@@ -139,272 +144,219 @@ export default function ProjectReportClient({
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50 text-slate-900 pb-20 p-4 md:p-8 font-sans" ref={reportRef}>
-            {/* Header / Nav (Hidden on Print) */}
-            <div className="max-w-6xl mx-auto mb-8 flex flex-wrap justify-between items-center gap-4 print:hidden">
+        <div className="min-h-screen bg-white text-slate-900 pb-20 p-4 md:p-8 font-sans" ref={reportRef}>
+            {/* Navigation (Hidden on Print) */}
+            <div className="max-w-5xl mx-auto mb-6 flex flex-wrap justify-between items-center gap-4 print:hidden">
                 <Link 
                     href={`/dashboard/${student.id}`}
-                    className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-black uppercase text-[10px] tracking-widest"
+                    className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors font-bold uppercase text-[9px] tracking-widest"
                 >
-                    <ArrowLeft size={14} strokeWidth={3} />
-                    Back to Student Profile
+                    <ArrowLeft size={12} strokeWidth={3} />
+                    Back to Profile
                 </Link>
 
                 <div className="flex items-center gap-3">
-                    <div className="relative group">
-                        <select 
-                            value={project.id}
-                            onChange={handleProjectChange}
-                            className="appearance-none bg-white border border-slate-200 rounded-2xl px-5 py-3 pr-12 text-sm font-black text-slate-800 hover:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer shadow-sm"
-                        >
-                            {allProjects.map((p: any) => (
-                                <option key={p.id} value={p.id}>
-                                    Project {p.sequence_label || 'X'}: {p.name}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-indigo-500 transition-colors">
-                            <ChevronDown size={18} strokeWidth={2.5} />
-                        </div>
-                    </div>
+                    <select 
+                        value={project.id}
+                        onChange={handleProjectChange}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-black text-slate-600 hover:border-indigo-300 focus:outline-none transition-all cursor-pointer"
+                    >
+                        {allProjects.map((p: any) => (
+                            <option key={p.id} value={p.id}>
+                                {p.name} ({p.sequence_label || 'X'})
+                            </option>
+                        ))}
+                    </select>
 
                     <button 
                         onClick={handlePrint}
-                        className="flex items-center gap-3 bg-slate-950 text-white px-6 py-3.5 rounded-2xl font-black text-sm hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-200/20 active:scale-95"
+                        className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2 rounded-xl font-bold text-xs hover:bg-indigo-600 transition-all active:scale-95"
                     >
-                        <Printer size={18} strokeWidth={2.5} />
-                        Export Report
+                        <Printer size={14} />
+                        Print Report
                     </button>
                 </div>
             </div>
 
             {/* Main Report Document */}
-            <div className="max-w-6xl mx-auto bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 print:border-0 print:shadow-none">
+            <div className="max-w-5xl mx-auto bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm print:border-0 print:shadow-none">
                 
-                {/* Visual Header Section */}
-                <div className="bg-slate-950 p-12 text-white relative overflow-hidden">
-                    <div className="relative z-10">
-                        <div className="flex flex-wrap items-center gap-3 mb-8">
-                            <span className="px-4 py-1.5 bg-white/10 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.25em] text-indigo-300">Impact Analysis</span>
-                            <span className="px-4 py-1.5 bg-indigo-500 rounded-full text-[10px] font-black uppercase tracking-[0.25em] shadow-lg shadow-indigo-500/30">Project ID: {project.sequence_label || 'X'}</span>
+                {/* Visual Header (Thinner & Lighter) */}
+                <div className="bg-slate-50 border-b border-slate-100 px-10 py-8 relative overflow-hidden">
+                    <div className="relative z-10 flex flex-wrap justify-between items-end gap-6">
+                        <div className="flex-1 min-w-[300px]">
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[9px] font-black uppercase tracking-wider">Project Impact Report</span>
+                                <span className="text-slate-300 font-bold text-xs">•</span>
+                                <span className="text-slate-400 font-bold text-xs">Module {project.sequence_label || 'X'}</span>
+                            </div>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight mb-2">
+                                {project.name}
+                            </h1>
+                            <div className="flex gap-6 mt-4">
+                                <div>
+                                    <p className="text-[9px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Student</p>
+                                    <p className="text-lg font-bold text-slate-700">{student.canonical_name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[9px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Program</p>
+                                    <p className="text-lg font-bold text-slate-700">{student.programs?.name || 'UG-MED'}</p>
+                                </div>
+                            </div>
                         </div>
-                        <h1 className="text-6xl font-black mb-6 tracking-tight leading-tight max-w-3xl">
-                            {project.name}
-                        </h1>
-                        <div className="flex flex-wrap gap-12 items-end mt-12 pt-8 border-t border-white/10">
-                            <div>
-                                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 mb-2">Student Associate</p>
-                                <p className="text-2xl font-bold">{student.canonical_name}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 mb-2">Cohort / Program</p>
-                                <p className="text-2xl font-bold">{student.programs?.name || 'UG-MED'}</p>
-                            </div>
-                            <div className="ml-auto text-right self-center">
-                                <img src="/images/logo-dark.png" alt="LE Logo" className="h-16 brightness-200 grayscale opacity-80" />
-                            </div>
+                        <div className="text-right hidden sm:block">
+                            <img src="/images/logo-dark.png" alt="LE Logo" className="h-10 opacity-30 grayscale" />
                         </div>
                     </div>
-                    {/* Artistic gradient mesh */}
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/30 blur-[130px] rounded-full -mr-48 -mt-48 animate-pulse"></div>
-                    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-500/10 blur-[100px] rounded-full -ml-24 -mb-24"></div>
                 </div>
 
-                <div className="p-12 space-y-20">
+                <div className="px-10 py-12 space-y-16">
                     
-                    {/* SECTION: READINESS DEVELOPMENT (CHART) */}
+                    {/* SECTION: READINESS PROFILE */}
                     <section>
-                        <div className="flex justify-between items-end mb-10">
-                            <div className="flex items-center gap-5">
-                                <div className="w-14 h-14 bg-indigo-50 rounded-[1.25rem] flex items-center justify-center text-indigo-600 shadow-inner">
-                                    <BarChart2 size={28} strokeWidth={2.5} />
-                                </div>
-                                <div className="space-y-1">
-                                    <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-none">Readiness Profile</h2>
-                                    <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Comparative perspective across 6 readiness domains</p>
-                                </div>
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                                <BarChart2 size={24} strokeWidth={2.5} />
+                            </div>
+                            <div className="space-y-0.5">
+                                <h2 className="text-xl font-black tracking-tight text-slate-900">Readiness Profile</h2>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi-perspective development across 6 domains</p>
                             </div>
                         </div>
 
-                        <div className="h-[480px] w-full bg-slate-50/50 border border-slate-100/50 rounded-[2rem] p-10 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5">
+                        <div className="h-[400px] w-full bg-white border border-slate-100 rounded-2xl p-6">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={domainChartData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }} barGap={6}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
+                                <BarChart data={domainChartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }} barGap={4}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis 
                                         dataKey="name" 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em' }}
-                                        dy={15}
+                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }}
+                                        dy={10}
                                     />
                                     <YAxis 
                                         domain={[1, 10]} 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 900 }} 
+                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} 
                                         ticks={[2, 4, 6, 8, 10]}
                                     />
                                     <Tooltip 
-                                        cursor={{ fill: '#f1f5f9', radius: 10 }}
-                                        contentStyle={{ 
-                                            borderRadius: '20px', 
-                                            border: '1px solid #e2e8f0', 
-                                            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.1)',
-                                            padding: '15px' 
-                                        }}
-                                        labelStyle={{ fontWeight: 900, color: '#0f172a', marginBottom: '8px', fontSize: '12px' }}
+                                        cursor={{ fill: '#f8fafc', radius: 8 }}
+                                        contentStyle={{ borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}
                                     />
                                     <Legend 
                                         verticalAlign="top" 
                                         align="right" 
                                         iconType="circle"
-                                        wrapperStyle={{ paddingBottom: '40px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#64748b' }} 
+                                        wrapperStyle={{ paddingBottom: '30px', fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }} 
                                     />
-                                    <Bar dataKey="mentor" name="Mentor Assessment" fill="#6366f1" radius={[6, 6, 0, 0]} barSize={28} />
-                                    <Bar dataKey="self" name="Self Correction" fill="#cbd5e1" radius={[6, 6, 0, 0]} barSize={28} />
-                                    <Bar dataKey="client" name="Client Review" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={28} />
+                                    <Bar dataKey="mentor" name="Mentor" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={24} />
+                                    <Bar dataKey="self" name="Self" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={24} />
+                                    <Bar dataKey="client" name="Client" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={24} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </section>
 
-                    {/* SECTION: MENTOR NOTES (REPOSITIONED) */}
-                    <section className="bg-indigo-50/40 border border-indigo-100/50 rounded-[2rem] p-10 overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-8 text-indigo-500/10 scale-[5] pointer-events-none">
-                            <Quote size={40} />
-                        </div>
-                        
-                        <div className="flex items-center gap-4 mb-8 relative z-10">
-                            <div className="w-11 h-11 bg-white border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
-                                <MessageSquare size={22} strokeWidth={2.5} />
+                    {/* SECTION: PEER FEEDBACK (DIVERGING BARS) */}
+                    <section>
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                                <Star size={24} strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-2xl font-black tracking-tight text-indigo-950">Mentor Notes</h3>
-                        </div>
-                        
-                        <div className="space-y-6 relative z-10">
-                            {notes.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-6">
-                                    {notes.map((note) => (
-                                        <div key={note.id} className="bg-white/60 backdrop-blur-md border border-white rounded-2xl p-8 shadow-sm">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs uppercase">
-                                                        {(note.created_by || 'M').charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-indigo-600/50 uppercase tracking-[0.2em] leading-none mb-1">Assessed By</p>
-                                                        <p className="text-sm font-black text-slate-800">{note.created_by || 'Project Mentor'}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="px-3 py-1 bg-white border border-indigo-50 rounded-lg text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                                                    {new Date(note.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </div>
-                                            </div>
-                                            <p className="text-slate-700 leading-relaxed text-[15px] font-medium whitespace-pre-wrap italic decoration-indigo-500/20">
-                                                "{note.note_text}"
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="bg-white/40 border border-dashed border-indigo-200 rounded-2xl py-12 flex flex-col items-center justify-center text-indigo-400/60 font-black text-sm uppercase tracking-widest gap-3">
-                                    <MessageSquare size={32} opacity={0.3} />
-                                    No narrative notes recorded for this module
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* SECTION: PEER FEEDBACK (HORIZONTAL BARS) */}
-                    <section className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                        <div className="lg:col-span-12">
-                            <div className="flex items-center gap-5 mb-8">
-                                <div className="w-14 h-14 bg-emerald-50 rounded-[1.25rem] flex items-center justify-center text-emerald-600 shadow-inner">
-                                    <Star size={26} strokeWidth={2.5} />
-                                </div>
-                                <div className="space-y-1">
-                                    <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-none">Peer Contributions</h2>
-                                    <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Relative performance vs cohort project average</p>
-                                </div>
+                            <div className="space-y-0.5">
+                                <h2 className="text-xl font-black tracking-tight text-slate-900">Peer Feedback</h2>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Performance deviation from cohort baseline</p>
                             </div>
+                        </div>
 
-                            {peerSummary ? (
-                                <div className="bg-white border border-slate-100 rounded-[2rem] p-10 flex flex-col lg:flex-row gap-12 items-center">
-                                    {/* Big Metric Box */}
-                                    <div className="w-full lg:w-1/4 bg-emerald-600 text-white rounded-[1.5rem] p-8 text-center shadow-xl shadow-emerald-600/20">
-                                        <p className="text-6xl font-black mb-2">{peerSummary.avg_overall}</p>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-8 whitespace-nowrap">Cohort Norm Score</p>
-                                        <div className="pt-6 border-t border-white/20">
-                                            <p className="text-xs font-bold text-emerald-100 mb-1 italic opacity-80">"Recipient of {peerSummary.feedback_count} reviews"</p>
-                                        </div>
+                        {peerSummary ? (
+                            <div className="bg-white border border-slate-100 rounded-2xl p-8 flex flex-col lg:flex-row gap-10 items-center">
+                                {/* Compact Metric Box */}
+                                <div className="w-full lg:w-48 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center shrink-0">
+                                    <div className="mb-4">
+                                        <p className="text-4xl font-black text-slate-900 leading-none mb-1">{peerSummary.avg_overall}</p>
+                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Your Average</p>
                                     </div>
+                                    <div className="pt-4 border-t border-slate-200/50">
+                                        <p className="text-xl font-black text-indigo-500 leading-none mb-1">
+                                            {(cohortPeerSummary.reduce((acc, curr) => acc + (curr.avg_overall || 0), 0) / cohortPeerSummary.length).toFixed(2)}
+                                        </p>
+                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Cohort Norm</p>
+                                    </div>
+                                </div>
 
-                                    {/* Horizontal Comparison Chart */}
-                                    <div className="w-full lg:w-3/4 h-[320px]">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart 
-                                                layout="vertical" 
-                                                data={peerChartData} 
-                                                margin={{ top: 5, right: 30, left: 140, bottom: 5 }}
-                                                barSize={14}
-                                            >
-                                                <XAxis type="number" domain={[0, 5]} hide />
-                                                <YAxis 
-                                                    dataKey="label" 
-                                                    type="category" 
-                                                    axisLine={false} 
-                                                    tickLine={false} 
-                                                    tick={{ fill: '#64748b', fontSize: 11, fontWeight: 900, textAnchor: 'end' }} 
-                                                    width={130}
-                                                />
-                                                <Tooltip 
-                                                    cursor={{ fill: '#f8fafc' }}
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }}
-                                                />
-                                                <Bar dataKey="studentScore" name="Student Rating" fill="#10b981" radius={[0, 10, 10, 0]}>
-                                                    {peerChartData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.studentScore >= entry.cohortAvg ? '#10b981' : '#f43f5e'} />
-                                                    ))}
-                                                </Bar>
-                                                {/* Each category would ideally have its own reference line, but recharts doesn't support that easily. 
-                                                    We can use a legend to explain the cohort average comparison.
-                                                */}
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                        <div className="flex justify-center gap-8 mt-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Above Average</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Below Average</span>
-                                            </div>
+                                {/* Diverging Deviation Chart */}
+                                <div className="w-full h-[280px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart 
+                                            layout="vertical" 
+                                            data={peerChartData} 
+                                            margin={{ top: 5, right: 30, left: 140, bottom: 5 }}
+                                            barSize={12}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                            <XAxis type="number" domain={[-1, 1]} hide />
+                                            <YAxis 
+                                                dataKey="label" 
+                                                type="category" 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 900, textAnchor: 'end' }} 
+                                                width={130}
+                                            />
+                                            <Tooltip 
+                                                cursor={{ fill: '#f8fafc' }}
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }}
+                                                formatter={(value: any) => [value > 0 ? `+${value}` : value, 'Deviation']}
+                                            />
+                                            <ReferenceLine x={0} stroke="#cbd5e1" strokeWidth={2} />
+                                            <Bar dataKey="delta" radius={[0, 10, 10, 0]}>
+                                                {peerChartData.map((entry, index) => (
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={entry.delta >= 0 ? '#10b981' : '#f43f5e'} 
+                                                        radius={entry.delta >= 0 ? [0, 10, 10, 0] : [10, 0, 0, 10]}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                    <div className="flex justify-center gap-6 mt-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Better than Norm</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Below Norm</span>
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="h-60 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-slate-400 gap-4">
-                                    <Star size={40} opacity={0.2} />
-                                    <p className="text-sm font-black uppercase tracking-widest opacity-60">Confidential peer review pending</p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div className="h-40 bg-slate-50 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-3">
+                                <Star size={24} opacity={0.2} />
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Confidential peer review pending</p>
+                            </div>
+                        )}
                     </section>
 
-                    {/* SECTION: ACCORDION DOMAINS (REFACTORED TABLE) */}
+                    {/* SECTION: DOMAIN LEVELS (COMPACT ACCORDIONS) */}
                     <section className="print:break-before-page">
-                        <div className="flex items-center gap-5 mb-10">
-                            <div className="w-14 h-14 bg-indigo-50 rounded-[1.25rem] flex items-center justify-center text-indigo-600 shadow-inner">
-                                <FileText size={28} strokeWidth={2.5} />
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
+                                <Target size={24} strokeWidth={2.5} />
                             </div>
-                            <div className="space-y-1">
-                                <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-none">Readiness Domain Levels</h2>
-                                <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">Deep dive into specific competencies and sub-traits</p>
+                            <div className="space-y-0.5">
+                                <h2 className="text-xl font-black tracking-tight text-slate-900">Readiness Domain Levels</h2>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Granular trait-level assessment scores</p>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {domains.map(domain => {
                                 const isExpanded = expandedDomains[domain.id];
                                 const domainParams = parameters.filter(p => p.domain_id === domain.id);
@@ -413,96 +365,72 @@ export default function ProjectReportClient({
                                 return (
                                     <div 
                                         key={domain.id} 
-                                        className={`group border transition-all duration-300 rounded-[1.5rem] overflow-hidden ${
+                                        className={`group border rounded-xl overflow-hidden transition-all ${
                                             isExpanded 
-                                            ? 'border-indigo-200 bg-white shadow-xl shadow-indigo-100/20 select-none' 
-                                            : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-indigo-100'
+                                            ? 'border-indigo-100 bg-white shadow-sm' 
+                                            : 'border-slate-100 bg-white hover:border-slate-200'
                                         }`}
                                     >
                                         <button 
                                             onClick={() => toggleDomain(domain.id)}
-                                            className="w-full px-8 py-6 flex items-center justify-between text-left"
+                                            className="w-full px-6 py-4 flex items-center justify-between text-left"
                                         >
-                                            <div className="flex items-center gap-6">
+                                            <div className="flex items-center gap-4">
                                                 <div 
-                                                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-black shadow-lg"
+                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black"
                                                     style={{ backgroundColor: DOMAIN_COLORS[domain.name] || '#6366f1' }}
                                                 >
                                                     {domain.short_name.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-xl font-black text-slate-900">{domain.name}</h4>
-                                                    <div className="flex items-center gap-4 mt-1">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aggregate Level:</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className="h-full rounded-full transition-all duration-1000" 
-                                                                    style={{ 
-                                                                        width: `${(domainData?.mentor || 0) * 10}%`,
-                                                                        backgroundColor: DOMAIN_COLORS[domain.name]
-                                                                    }}
-                                                                ></div>
-                                                            </div>
-                                                            <span className="text-xs font-black text-slate-700">{domainData?.mentor || 0}</span>
+                                                    <h4 className="text-sm font-black text-slate-800">{domain.name}</h4>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className="h-full rounded-full" 
+                                                                style={{ 
+                                                                    width: `${(domainData?.mentor || 0) * 10}%`,
+                                                                    backgroundColor: DOMAIN_COLORS[domain.name]
+                                                                }}
+                                                            ></div>
                                                         </div>
+                                                        <span className="text-[10px] font-black text-slate-400">{domainData?.mentor || 0}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-indigo-500' : 'text-slate-300'}`}>
-                                                <ChevronDown size={28} strokeWidth={2.5} />
+                                            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180 text-indigo-500' : 'text-slate-300'}`}>
+                                                <ChevronDown size={20} />
                                             </div>
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="px-8 pb-8 pt-2 animate-in fade-in slide-in-from-top-4 duration-300">
-                                                <div className="bg-slate-50/50 rounded-2xl border border-slate-100 overflow-hidden">
-                                                    <table className="w-full text-left">
-                                                        <thead>
-                                                            <tr className="border-b border-indigo-100/30">
-                                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Parameter Trait</th>
-                                                                <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 w-24">Self</th>
-                                                                <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-indigo-950 w-24">Mentor</th>
-                                                                <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-amber-600 w-24">Client</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-slate-100">
-                                                            {domainParams.map(param => {
-                                                                const getParamScore = (type: string) => {
-                                                                    const ass = assessments.find(a => a.parameter_id === param.id && a.assessment_type === type);
-                                                                    return ass?.normalized_score || null;
-                                                                };
+                                            <div className="px-6 pb-6 pt-0">
+                                                <div className="border-t border-slate-50 pt-4">
+                                                    <div className="grid grid-cols-12 px-2 py-2 mb-1">
+                                                        <div className="col-span-6 text-[8px] font-black uppercase tracking-widest text-slate-300">Parameter Trait</div>
+                                                        <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300">Self</div>
+                                                        <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300 italic">Mentor</div>
+                                                        <div className="col-span-2 text-center text-[8px] font-black uppercase tracking-widest text-slate-300">Client</div>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        {domainParams.map(param => {
+                                                            const ass = assessments.filter(a => a.parameter_id === param.id);
+                                                            const s = ass.find(a => a.assessment_type === 'self')?.normalized_score;
+                                                            const m = ass.find(a => a.assessment_type === 'mentor')?.normalized_score;
+                                                            const c = ass.find(a => a.assessment_type === 'client')?.normalized_score;
 
-                                                                const sScore = getParamScore('self');
-                                                                const mScore = getParamScore('mentor');
-                                                                const cScore = getParamScore('client');
-
-                                                                return (
-                                                                    <tr key={param.id} className="hover:bg-white transition-colors">
-                                                                        <td className="px-6 py-5">
-                                                                            <p className="text-sm font-bold text-slate-700">{param.name}</p>
-                                                                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-md">{param.description}</p>
-                                                                        </td>
-                                                                        <td className="px-6 py-5 text-center">
-                                                                            <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg text-xs font-black border ${sScore ? 'bg-white border-slate-200 text-slate-600 shadow-sm' : 'border-transparent text-slate-300'}`}>
-                                                                                {sScore || '-'}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="px-6 py-5 text-center">
-                                                                            <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm font-black border ${mScore ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'border-transparent text-slate-200'}`}>
-                                                                                {mScore || '-'}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="px-6 py-5 text-center">
-                                                                            <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg text-xs font-black border ${cScore ? 'bg-amber-100 border-amber-200 text-amber-700 shadow-sm' : 'border-transparent text-slate-200'}`}>
-                                                                                {cScore || '-'}
-                                                                            </div>
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                        </tbody>
-                                                    </table>
+                                                            return (
+                                                                <div key={param.id} className="grid grid-cols-12 items-center px-2 py-3 hover:bg-slate-50 rounded-lg transition-colors">
+                                                                    <div className="col-span-6">
+                                                                        <p className="text-[11px] font-bold text-slate-600">{param.name}</p>
+                                                                    </div>
+                                                                    <div className="col-span-2 text-center text-xs font-bold text-slate-400">{s || '-'}</div>
+                                                                    <div className="col-span-2 text-center text-xs font-black text-indigo-600">{m || '-'}</div>
+                                                                    <div className="col-span-2 text-center text-xs font-bold text-amber-500">{c || '-'}</div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
@@ -511,27 +439,51 @@ export default function ProjectReportClient({
                             })}
                         </div>
                     </section>
+
+                    {/* SECTION: MENTOR NOTES (AT THE BOTTOM) */}
+                    <section className="bg-slate-50 border border-slate-100 rounded-3xl p-10 print:break-inside-avoid">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500">
+                                <MessageSquare size={20} strokeWidth={2.5} />
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900">Mentor Notes</h3>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {notes.length > 0 ? notes.map((note) => (
+                                <div key={note.id} className="bg-white border border-slate-200/50 p-6 rounded-2xl relative">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{note.created_by || 'Mentor'}</p>
+                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{new Date(note.date).toLocaleDateString()}</p>
+                                    </div>
+                                    <p className="text-slate-600 leading-relaxed text-sm font-medium italic">"{note.note_text}"</p>
+                                </div>
+                            )) : (
+                                <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-xs uppercase tracking-widest gap-2">
+                                    <Quote size={24} opacity={0.2} />
+                                    No qualitative notes for this project
+                                </div>
+                            )}
+                        </div>
+                        <p className="mt-8 text-center text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] italic">Notes are project-specific and filtered for this module</p>
+                    </section>
+
                 </div>
 
-                {/* Footer Branding */}
-                <div className="bg-slate-50 border-t border-slate-100 p-10 text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] mb-4">Official Impact Report Output</p>
-                    <div className="flex items-center justify-center gap-8 opacity-40 grayscale">
-                        <img src="/images/logo-dark.png" alt="LE" className="h-8" />
-                    </div>
+                {/* Footer Credits */}
+                <div className="bg-white border-t border-slate-50 py-6 text-center">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">Official Impact Report Output</p>
                 </div>
             </div>
 
             <style jsx global>{`
                 @media print {
                     @page {
-                        margin: 0;
+                        margin: 10mm;
                         size: A4 portrait;
                     }
                     body {
                         background: white !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
                     }
                     .print\\:hidden {
                         display: none !important;
@@ -545,21 +497,13 @@ export default function ProjectReportClient({
                     .print\\:break-before-page {
                         break-before: page !important;
                     }
-                    .print\\:mt-10 {
-                        margin-top: 2.5rem !important;
+                    .print\\:break-inside-avoid {
+                        break-inside: avoid !important;
                     }
-                    /* Ensure all accordions are expanded for print */
-                    .group.border {
-                        border: 0 !important;
-                        margin-bottom: 2rem !important;
-                    }
+                    /* Force layout of accordions in print */
                     .group.border > div {
                         display: block !important;
                         padding: 0 !important;
-                    }
-                    /* Force visibility of subscores in print */
-                    table {
-                        page-break-inside: avoid;
                     }
                 }
             `}</style>
