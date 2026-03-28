@@ -313,12 +313,11 @@ export default function ProjectReportClient({
                                                 formatter={(value: any) => [value > 0 ? `+${value}` : value, 'Deviation']}
                                             />
                                             <ReferenceLine x={0} stroke="#cbd5e1" strokeWidth={2} />
-                                            <Bar dataKey="delta" radius={[0, 10, 10, 0]}>
+                                            <Bar dataKey="delta" radius={6}>
                                                 {peerChartData.map((entry, index) => (
                                                     <Cell 
                                                         key={`cell-${index}`} 
                                                         fill={entry.delta >= 0 ? '#10b981' : '#f43f5e'} 
-                                                        radius={entry.delta >= 0 ? [0, 10, 10, 0] : [10, 0, 0, 10]}
                                                     />
                                                 ))}
                                             </Bar>
