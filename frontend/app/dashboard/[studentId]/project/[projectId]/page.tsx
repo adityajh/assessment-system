@@ -25,10 +25,12 @@ export default async function ProjectReportPage({ params }: ProjectReportPagePro
                 student={data.student}
                 project={data.project}
                 domains={data.domains}
+                parameters={data.parameters}
                 assessments={data.assessments}
                 peerSummary={data.peerSummary}
                 notes={data.notes}
                 allProjects={data.allProjects}
+                cohortPeerSummary={data.cohortPeerSummary}
             />
         );
     } catch (error) {
