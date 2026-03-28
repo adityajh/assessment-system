@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
         const data = await request.json();
-        const { type, projectId, program, cohort, term, date, rawScaleMin, rawScaleMax, fileName, records: sheetsData } = data;
+        const { type, projectId, program, cohort, term, date, rawScaleMin, rawScaleMax, fileName, clientName, companyName, records: sheetsData } = data;
 
         if (!sheetsData || Object.keys(sheetsData).length === 0) {
             return NextResponse.json({ error: 'No records provided' }, { status: 400 });
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         let inserts: any[] = [];
         let mappingConfig: Record<string, any> = {}; // for the assessment log
 
-        if (type === 'mentor' || type === 'self') {
+        if (type === 'mentor' || type === 'self' || type === 'client') {
             // Process the sheetsData (Matrix Format)
             // Expecting: Column 0 = Code, Column >= 4 = Students
             Object.entries(sheetsData as Record<string, any[][]>).forEach(([sheetName, rows]) => {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
                     mappingConfig[codeVal] = param.id;
 
-                    if ((type === 'self' || type === 'mentor') && questionColIdx !== -1) {
+                    if ((type === 'self' || type === 'mentor' || type === 'client') && questionColIdx !== -1) {
                         mappingConfig.questions = mappingConfig.questions || [];
                         const qText = String(row[questionColIdx] || '').trim();
                         if (qText) {
@@ -187,6 +187,8 @@ export async function POST(request: NextRequest) {
                     data_type: type,
                     project_id: projectId,
                     file_name: fileName,
+                    client_name: clientName || null,
+                    company_name: companyName || null,
                     mapping_config: mappingConfig,
                     records_inserted: inserts.length
                 })

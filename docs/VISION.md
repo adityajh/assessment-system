@@ -2,19 +2,20 @@
 
 > **System:** Let's Entreprise Assessment System
 > **Programme:** India's first working BBA — a 3-year undergraduate programme where work is the curriculum.
-> **Date:** 2026-03-02
+> **Date:** 2026-03-28
 
 ---
 
 ## Where We Are Today
 
-The Assessment System currently serves **Year 1** of Let's Entreprise. It has:
+The Assessment System is live and serving **Year 1** of Let's Entreprise. It has:
 - A **Supabase database** modelling 6 readiness domains × 24 parameters, with support for mentor assessments, self-assessments, peer feedback, term tracking, and mentor notes.
-- An **Import Wizard** that lets non-technical staff upload Excel/CSV data with fuzzy name matching and configurable score normalization.
+- An **Import Wizard** for non-technical staff to upload Excel data with fuzzy name matching, configurable score normalization, and full audit logging.
 - An **Admin Panel** for managing students, projects, scores, and import logs.
-- A **Student Dashboard** (in progress) for per-student readiness visualisation.
+- A **Student Dashboard** — live at `/dashboard/[studentId]` — with readiness profiles, peer feedback, growth trajectory, mentor notes, and PDF export.
+- A **Program Dashboard** — live at `/admin/program-dashboard` — showing cohort-level engagement zone analysis across all active students.
 
-**Current focus:** Ironing out data import bugs and rolling out student dashboards within the week.
+*For near-term execution steps, see [`ROADMAP.md`](./ROADMAP.md). For a history of what's been built, see [`CHANGELOG.md`](./CHANGELOG.md).*
 
 ---
 
@@ -25,7 +26,7 @@ The Assessment System becomes the **single source of truth for student growth** 
 It serves **four audiences** with tailored views:
 
 | Audience | What They See |
-|----------|--------------|
+|----------|--------------| 
 | **Mentor** | Full student profile, cohort analytics, coaching tools, import capabilities |
 | **Student** | Personal readiness dashboard, peer feedback, growth trajectory, reflections |
 | **Parent** | Read-only summary of progress, term-level milestones, attendance |
@@ -35,101 +36,71 @@ It must be **maintainable by non-technical programme staff** — no code deploym
 
 ---
 
-## Short-Term (This Week → End of March 2026)
+## Phase 1 — Foundation & Analytics ✅
 
-> **Goal:** Stabilise the foundation and ship student-facing dashboards.
+> **Goal:** Build the core data infrastructure and ship mentor-facing dashboards.
 
-### 🔧 Data Import Stability
-- [ ] Resolve remaining import bugs (scale detection, duplicate handling, edge cases).
-- [ ] Add import validation warnings (e.g., "3 students not matched") before commit.
-- [ ] Improve error messaging for failed imports.
-
-### 📊 Student Dashboard v1
-- [ ] Design and ship the student dashboard layout for mentor use.
-- [ ] Core sections: Readiness overview, project-by-project breakdown, peer feedback, term tracking, mentor notes.
-- [ ] Shareable read-only link per student (no auth needed for v1).
-
-### 🧹 Housekeeping
-- [ ] Clean up legacy Python scripts that are no longer needed.
-- [ ] Review and remove `docs/duplicate_mappings.md` and `docs/dashboard_chart_recommendations.md` if superseded.
+- Supabase schema: 6 readiness domains × 24 parameters, all core tables live
+- Import Wizard: Excel upload, auto-detection, fuzzy name matching, score normalization, audit trail
+- Admin Panel: students, projects, score browsers, import logs
+- Student Dashboard: readiness profile, peer feedback, self vs. mentor gap, domain trajectory, PDF export
+- Program Dashboard: cohort engagement zone analysis (Syncing / Connecting / Engaging / Leading)
 
 ---
 
-## Medium-Term (April – August 2026)
+## Phase 2 — Scale & Industry Integration ⬜
 
-> **Goal:** Multi-audience access, attendance data, and programme-level analytics.
+> **Goal:** Extend the system for industry projects, detailed project reporting, and multi-year growth.
 
-### 🔐 Authentication & Role-Based Access
-- [ ] Implement Supabase Auth with 4 roles: `admin`, `mentor`, `student`, `viewer` (parent/client).
-- [ ] **Admin / Mentor:** Full access to admin panel + all dashboards.
-- [ ] **Student:** Access only to their own dashboard.
-- [ ] **Viewer (Parent / Client):** Read-only access via shareable invite links scoped to specific students or projects.
+### 🤝 Client Assessment & Project Reports
+- **Client Assessment**: Support for industry partners to assess students on specific projects. Includes capturing Client Name and Company Name during upload.
+- **Project Report**: Exportable PDF report focused on a single project, comparing Self, Mentor, and Client assessments (6-domain bar chart). Surfaces project-specific mentor notes and peer feedback.
+- **Admin UI**: Dedicated score browser for Client Assessments.
 
-### 🏫 Multi-Cohort Support
-- [ ] Add `cohort` dimension to all queries (e.g., "Year 1 — 2025–26", "Year 1 — 2026–27").
-- [ ] Admin UI: Cohort selector/filter across all views.
-- [ ] Ensure the Import Wizard tags all data with the selected cohort.
-- [ ] Onboarding flow: Bulk student upload for new cohorts.
+### 📋 Attendance via Jibble
+- **Phase 2a**: New `attendance` data type in Import Wizard — CSV export from Jibble uploaded manually.
+- **Phase 2b**: Direct Jibble API sync — automated attendance pull on a schedule.
+- Surface attendance KPIs on the Student Dashboard and Admin views.
 
-### 📋 Attendance & Participation Integration
-- [ ] Design a simple attendance data model (student × date × status, or student × project × metric).
-- [ ] CSV upload path via Import Wizard (new data type: `attendance`).
-- [ ] Surface attendance KPIs on the student dashboard and programme analytics.
-
-### 📈 Programme-Level Analytics (Cohort Dashboard)
-- [ ] `/admin/analytics` — Aggregate views across the entire cohort:
-  - Domain heatmap: All students × 6 domains (colour-coded).
-  - Distribution charts: Score distributions per domain.
-  - Cohort averages vs. individual benchmarking.
-  - Peer feedback health check: participation rates, outlier detection.
-- [ ] Exportable reports for programme reviews and accreditation.
-
-### 🎨 Dashboard Design Evolution
-- [ ] Iterate on dashboard visualisations based on mentor + student feedback.
-- [ ] Add interactive elements: domain drill-downs, project filters, time-range selectors.
-- [ ] Parent-friendly simplified view (high-level milestones, not raw scores).
-- [ ] Client/employer view: Project-specific student readiness profile (shareable PDF).
-- [ ] Add a "playground" mode for the student dashboard where mentors can test different views and configurations.
+### 🏫 Year 2 & Year 3 Rollout
+- Same 6 domains / 24 parameters accumulate longitudinally — student dashboard shows a **3-year growth trajectory**.
+- Multi-cohort support: students move from Year 1 → Year 2 without losing data.
+- Year 2 project sequences configured via Admin UI (no code changes).
 
 ---
 
-## Long-Term (September 2026 → 2027+)
+## Phase 3 — Access & Security ⬜
 
-> **Goal:** Full 3-year lifecycle, cross-year progression, and platform maturity.
+> **Goal:** Transition from open access to secure, role-based interaction.
 
-### 🎓 Year 2 & Year 3 Rollout
-- [ ] Extend the system to serve Year 2 and Year 3 students concurrently.
-- [ ] Same 6 domains / 24 parameters across all years — scores accumulate longitudinally.
-- [ ] Student progression: A student's dashboard shows a **3-year growth trajectory** across all projects and years.
-- [ ] Year-specific project sequences: Each year has its own set of projects, independently configurable via the Admin Panel.
-- [ ] Handle students moving between years (promotions, repeats, transfers).
+- **Authentication & Role-Based Access**: Supabase Auth with 4 roles: `admin`, `mentor`, `student`, `viewer` (parent / client).
+- **Student self-view**: Students see only their own data.
+- **Viewer / Parent access**: Read-only access via scoped invite links for external stakeholders.
 
-### 🔄 Dynamic Project Configuration
-- [ ] Admin UI for creating, reordering, and archiving projects — no code changes needed.
-- [ ] Support for project types beyond "standard": client projects, internships, capstone.
-- [ ] Configurable assessment frameworks per project (which parameters are assessed, which are N/A).
+---
 
-### 🔗 External System Integrations
-- [ ] Attendance: Move from CSV upload to automated sync (API integration with attendance system, when ready).
-- [ ] LMS / Google Workspace integration for assignment and participation data.
-- [ ] Webhook or API endpoints for third-party systems to push data into the Assessment System.
+## Phase 4 — Platform Maturity & Intelligence ⬜
 
-### 📱 Accessibility & Distribution
-- [ ] Mobile-responsive dashboard (students and parents primarily access via phone).
-- [ ] Push notifications or email digests: "Your new assessment scores are available."
-- [ ] Offline PDF report generation for parent-teacher meetings.
+> **Goal:** Deep analytics, external data integrations, and institutional durability.
 
-### 🏛️ Institutional Features
-- [ ] Multi-programme support: Beyond the BBA, if Let's Entreprise launches additional programmes.
-- [ ] Academic calendar awareness: Terms, semesters, breaks — contextual timestamps.
-- [ ] Audit trail & data governance: Who uploaded what, when, with rollback capability.
-- [ ] Archival: Graduated students' data preserved as alumni records.
+### 🔗 Daily Diary Integration (BoW)
+- Connect to the **Daily Diary** system students use for Book of Work logging.
+- Pull BoW entries to replace or supplement manual BoW CSV uploads in the Import Wizard.
+- Surface BoW activity on the Student Dashboard timeline.
+
+### 📈 Programme-Level Analytics
+- `/admin/analytics` — aggregate cohort views: domain heatmap (all students × 6 domains), score distributions, cohort averages.
+- Exportable reports for programme reviews and accreditation.
+
+### 🏛️ Institutional Durability
+- Mobile-responsive layout for students/parents.
+- Push notifications for new assessments.
+- Graduated students preserved as alumni records.
+- Audit trail with rollback capability.
 
 ---
 
 ## Architecture Principles
-
-These guide every decision as the system evolves:
 
 | Principle | What It Means |
 |-----------|--------------|
@@ -141,4 +112,6 @@ These guide every decision as the system evolves:
 
 ---
 
-*This document will be updated as priorities shift and new requirements emerge. For a history of what's already been built, see [`CHANGELOG.md`](./CHANGELOG.md).*
+*For a history of what's been built, see [`CHANGELOG.md`](./CHANGELOG.md).*
+*For the database schema, see [`SUPABASE_SCHEMA.md`](./SUPABASE_SCHEMA.md).*
+*For near-term step-by-step execution, see [`ROADMAP.md`](./ROADMAP.md).*

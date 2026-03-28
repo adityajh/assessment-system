@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Matrix Format Detection (Headers are students)
-            if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
+            if (finalDetectedType === 'mentor' || finalDetectedType === 'self' || finalDetectedType === 'client') {
                 const studentCols: number[] = [];
                 let hasQuestionCol = false;
 
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Also check for Parameter Codes in Column 0 (Matrix)
-            if (finalDetectedType === 'mentor' || finalDetectedType === 'self') {
+            if (finalDetectedType === 'mentor' || finalDetectedType === 'self' || finalDetectedType === 'client') {
                 for (let r = headerIdx + 1; r < rows.length; r++) {
                     const row = rows[r];
                     if (!row || row.length === 0) continue;
@@ -276,6 +276,7 @@ function detectFileType(filename: string, sheetNames: string[]): string {
     if (nameLower.includes('note')) return 'mentor_notes';
     if (nameLower.includes('matrix') || sheetNames.includes('Kickstart') || sheetNames.includes('Legend')) return 'mentor';
     if (nameLower.includes('self') || nameLower.includes('x-ray') || nameLower.includes('accounting')) return 'self';
+    if (nameLower.includes('client')) return 'client';
     if (nameLower.includes('peer')) return 'peer';
     if (nameLower.includes('term')) return 'term';
     return 'unknown';

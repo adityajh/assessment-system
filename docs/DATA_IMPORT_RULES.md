@@ -1,69 +1,274 @@
-# ⚙️ Import Engine Technical Specification
+# 📥 Data Import Rules
 
-This document details the logic used by the Assessment System to parse, recognize, deduplicate, and normalize data during the import process.
-
-## 1. 🏷️ Discovery & Data Type Detection
-
-The system uses the filename as the primary signal for data type detection during the initial upload.
-
-| Keyword in Filename | Target Data Type | Format Type |
-| :--- | :--- | :--- |
-| **"Self"** | Student Self-Assessments | Matrix |
-| **"Peer"** | Peer Feedback Matrices | Flat (Transactional) |
-| **"Term"** | Term Tracking (CBP/Conflexion/BOW) | Flat (Value-Key) |
-| **"Notes"** | Mentor Qualitative Notes | Flat (Textual) |
-| *No keyword* | Mentor Assessments | Matrix |
-
-## 2. 🧑‍🎓 Student Recognition Logic
-
-The engine uses a fuzzy-tolerant alias system to link spreadsheet columns/rows to database IDs.
-
-1.  **Normalization**: All names are trimmed, lowercased, and internal whitespace is collapsed.
-2.  **Exact Matching**: Compares the cell against the `canonical_name` in the `students` table.
-3.  **Alias Matching**: If exact matching fails, it iterates through the `aliases` JSON array for each student.
-4.  **Safety**: Any column header or cell that does not match a canonical name or known alias is automatically skipped, allowing helper columns (like "Parameter Description") to exist without breaking the import.
-
-## 3. 📉 Extraction Logic
-
-### Matrix Format (Mentor / Self)
-- **Anchor**: Column A must contain the alphanumeric parameter **Code** (e.g., `C1`, `E4`).
-- **Headers**: Student names start from Column B onwards.
-- **Self-Assessment Question**: If a column named **"Question"** or **"Prompt"** is found, the engine extracts the question text and maps it to the specific parameter for that import event.
-
-### Flat Format (Peer Feedback)
-- The engine scans the header row for keywords to map transactional data:
-    - **Recipient**: Contains `recipient` or `to:`.
-    - **Giver**: Contains `giver`, `your name`, or `from:`.
-    - **Metrics**: Keywords like `quality`, `initiative`, `communication`, `collaboration`, `growth` are used to map scores to the 5 peer metrics.
-
-### Flat Format (Term Tracking)
-- **Target Metric**: For "Term" data types, the user must select a **Target Metric** (CBP, Conflexion, or BoW) during the import process. 
-- **Mapping**: The values in the primary data column are mapped to the selected metric in the `metric_tracking` table. Multiple imports of different metrics can be performed against the same Term Report file if it contains multiple columns.
-
-## 4. 🧹 Deduplication Policy
-
-The system handles collisions at two levels to ensure data integrity without requiring manual deletion.
-
-### Internal Collision (Within the same file)
-- **Rule**: **Last Row Wins**.
-- If a student has multiple rows for the same parameter/metric within the same file, or if multiple sheets are uploaded, the engine keeps only the last occurrence encountered during the scan.
-- *Note: This replaces legacy "averaging" logic.*
-
-### Database Collision (Historical Overwrites)
-- **Rule**: **Upsert (Update or Insert)**.
-- The database enforces a unique constraint on `(student_id, project_id, parameter_id, assessment_type)`.
-- If you re-import data for the same project/student, the new record will **overwrite** the old one, but it will be linked to a new `assessment_log_id` for auditing.
-
-## 5. 📏 Normalization Engine
-
-All scores are standardized to a 10-point scale for comparison using **Linear Min-Max Interpolation**.
-
-- **Formula**: `normalized_score = ((raw_score - min) / (max - min)) * 9 + 1`
-- **Scale Sources**:
-    - **Mentor/Self**: The user must explicitly set the `rawScaleMin` and `rawScaleMax` in the UI during import (e.g., 1 to 4).
-    - **Peer**: Defaults to 1 to 5 if not specified.
-- **Inference**: If a calculation results in a `NaN` or divide-by-zero (e.g., `max === min`), the raw score is passed through without normalization.
+> **Last Updated:** 2026-03-17
+> **Purpose:** Complete reference for how to prepare and upload all data types through the Import Wizard (`/admin/import`).
 
 ---
 
-*Adherence to these technical patterns ensures that data correctly propagates from Excel/CSV to the student dashboard visualisations.*
+## Overview
+
+The Import Wizard accepts **Excel files (`.xlsx` / `.xls`)** only. It automatically detects the data type from the **filename** and routes the data to the correct database table.
+
+| Data Type | Filename must contain | Target Table | Requires Project? |
+| :--- | :--- | :--- | :--- |
+| **Mentor Assessment** | *(no keyword — or "matrix")* | `assessments` (type=`mentor`) | ✅ Yes |
+| **Self Assessment** | `Self`, `x-ray`, or `Accounting` | `assessments` (type=`self`) | ✅ Yes |
+| **Peer Feedback** | `Peer` | `peer_feedback` | ✅ Yes |
+| **Term / Metric Report** | `Term` | `metric_tracking` | ❌ No (metric chosen separately) |
+| **Mentor Notes** | `Notes` or `note` | `mentor_notes` | ✅ Yes |
+
+> **Detection is case-insensitive.** A file named `SDP_MentorNotes_Jun25.xlsx` will correctly be detected as **Mentor Notes**.
+
+---
+
+## Import Wizard Steps (All Types)
+
+1. **Upload** — Drag your `.xlsx` or `.xls` file onto the upload zone. The system will auto-parse it and detect the data type.
+2. **Verify the detected type** — You can override the detected type from the dropdown if needed.
+3. **Select a Project** — Required for all types except Term/Metric reports.
+4. **Fill General Details** — Assessment Date, Program, Cohort Year, and Term.
+5. **Set Score Scale** — Enter the raw Min/Max scores for normalization (Mentor & Self only; not used for Notes or Term data).
+6. **Import** — Click "FINAL RUN: IMPORT TO DATABASE". A duplicate warning will appear if data for that project/cohort/type already exists.
+
+---
+
+## Type 1: Mentor Assessments (Matrix)
+
+**When to use:** After a mentor-led evaluation session. Scores represent the mentor's assessment of each student against the 24 readiness parameters.
+
+**File naming:** Do NOT include `Self`, `Peer`, `Term`, or `Notes` in the filename. Optionally include `Matrix`.
+> Example: `SDP_MentorMatrix_Mar26.xlsx`
+
+### Sheet Structure
+
+```
+| Code | [Student A] | [Student B] | [Student C] | ... |
+|------|-------------|-------------|-------------|-----|
+| C1   | 7           | 5           | 8           | ... |
+| E2   | 6           | 9           | 7           | ... |
+```
+
+- **Column A** must contain the alphanumeric parameter **Code** (e.g., `C1`, `E4`, `M3`). This is mandatory — it's how scores are mapped to parameters.
+- **Row 1** (header row) must contain **student names** starting from Column B onwards.
+- Student names must match the canonical name or a known alias in the `students` table.
+- Helper/metadata columns (e.g., "Parameter Description", "Domain") are automatically skipped as long as they don't match a student name.
+- Multiple sheets in the workbook are all scanned and merged.
+
+### Wizard Settings
+
+| Setting | Value |
+| :--- | :--- |
+| Min Raw Score | Minimum value on mentor's scale (usually `1`) |
+| Max Raw Score | Maximum value on mentor's scale (e.g., `4`, `5`, or `10`) |
+| Associated Project | The project this assessment corresponds to |
+
+### Deduplication
+
+- **Within file:** If a student appears in two rows with the same parameter code, the **last row wins**.
+- **Database:** Re-importing the same student × project × parameter will **overwrite** the previous score. A new audit log entry is created.
+
+---
+
+## Type 2: Self Assessments (Matrix)
+
+**When to use:** After students self-evaluate via a form or survey exported to Excel.
+
+**File naming:** Must contain `Self`, `x-ray`, `xray`, or `Accounting`.
+> Example: `BusinessXRay_Self_Assessment.xlsx`, `Accounting_Self_Scores.xlsx`
+
+### Sheet Structure
+
+```
+| Code | Question / Prompt          | [Student A] | [Student B] | ... |
+|------|----------------------------|-------------|-------------|-----|
+| C1   | How confident are you...?  | 3           | 4           | ... |
+| E2   | Rate your ability to...    | 5           | 2           | ... |
+```
+
+- **Column A** must contain the parameter **Code** (`C1`–`P4`).
+- **Question/Prompt column** *(optional but recommended)*: A column whose header contains `Question`, `Prompt`, or `Statement`. The text in each row is stored in `self_assessment_questions` and linked to that parameter for this upload. This allows different projects to use different question wordings.
+- Student names start from the first column after code/question metadata.
+- Score scale can be 1–4, 1–5, or 1–10. The system auto-detects the scale from the max value found; always verify and correct in the wizard.
+
+### Wizard Settings
+
+| Setting | Value |
+| :--- | :--- |
+| Min Raw Score | Usually `1` |
+| Max Raw Score | `4`, `5`, or `10` depending on the form used |
+| Associated Project | The project being self-assessed |
+
+---
+
+## Type 3: Peer Feedback (Flat / Transactional)
+
+**When to use:** After a peer feedback session where students rated each other across 5 metrics.
+
+**File naming:** Must contain `Peer`.
+> Example: `Kickstart_PeerFeedback_Oct25.xlsx`
+
+### Sheet Structure
+
+```
+| Recipient Name | Giver Name | Quality of Work | Initiative | Communication | Collaboration | Growth Mindset |
+|----------------|------------|-----------------|------------|---------------|---------------|----------------|
+| Aadi Gujar     | Riya Shah  | 4               | 3          | 5             | 4             | 3              |
+```
+
+**Required columns** (header keywords used for detection, case-insensitive):
+
+| Column | Detection Keywords |
+| :--- | :--- |
+| Recipient | `recipient`, `to:` |
+| Giver | `giver`, `your name`, `from:` |
+| Quality of Work | `quality` |
+| Initiative / Ownership | `initiative` |
+| Communication | `communication` |
+| Collaboration | `collaboration` |
+| Growth Mindset | `growth` |
+
+- Both `Recipient Name` and `Giver Name` are matched against the student roster via canonical name or aliases.
+- Scores must be on a **1–5 scale**. They are normalized to 1–10 at import.
+- The `Project` column in your sheet is **not used** for routing — the project is selected in the wizard.
+
+### Deduplication
+
+- The database enforces a unique constraint on `(recipient_id, giver_id, project_id)`. Re-importing the same pair will **overwrite** the previous scores.
+
+---
+
+## Type 4: Term / Metric Reports
+
+**When to use:** To record term-level engagement metrics (CBP sessions attended, Conflexion score, BoW score) for each student.
+
+**File naming:** Must contain `Term`.
+> Example: `Term2_MetricReport_Jan26.xlsx`
+
+### Sheet Structure
+
+```
+| Student Name    | Value |
+|-----------------|-------|
+| Aadi Gujar      | 12    |
+| Priya Mehta     | 8     |
+```
+
+Or alternatively with a metric column (when uploading multiple metrics at once per-row):
+
+```
+| Student Name    | Metric     | Value |
+|-----------------|------------|-------|
+| Aadi Gujar      | CBP        | 12    |
+| Aadi Gujar      | Conflexion | 3     |
+```
+
+**Required columns** (header keywords, case-insensitive):
+
+| Column | Detection Keywords |
+| :--- | :--- |
+| Student Name | `student`, `name` |
+| Value / Score | `value`, `score`, `count` |
+| Metric *(optional)* | `metric` |
+
+- **Target Metric must be selected in the wizard** (CBP, Conflexion, or BoW). If your file has a metric column, the wizard still requires you to choose the primary metric for this upload session.
+- Values are stored **as-is** (no normalization). They represent raw counts or scores.
+- A **Project is not required** for Term Reports.
+
+### Deduplication
+
+- Uniqueness is enforced on `(student_id, metric_id, assessment_log_id)`. Each upload creates a new `assessment_log`, so re-importing creates a new record. The dashboard uses the **most recent** log entry for display.
+
+---
+
+## Type 5: Mentor Notes
+
+**When to use:** To bulk-import qualitative written feedback from mentors for one or more students, linked to a specific project.
+
+**File naming:** Must contain `Notes` or `note`.
+> Example: `SDP_MentorNotes_Mar26.xlsx`, `Kickstart_notes.xlsx`
+
+### Sheet Structure
+
+```
+| Student Name | Mentor     | Date       | Notes                                     |
+|--------------|------------|------------|-------------------------------------------|
+| Aadi Gujar   | Shiv Kumar | 2026-03-10 | Strong commercial awareness, needs to ... |
+| Priya Mehta  | Shiv Kumar | 2026-03-10 | Excellent initiative shown during...      |
+```
+
+**Required columns** (header keywords, case-insensitive):
+
+| Column | Detection Keywords | Notes |
+| :--- | :--- | :--- |
+| **Student Name** | `student`, `name` | **Required.** Matched against roster. |
+| **Notes / Feedback** | `note`, `notes`, `feedback` | **Required.** The free-text feedback text. |
+| Mentor / Created By | `mentor` | Optional. Stored in `created_by`. Defaults to the importing user. |
+| Date | `date` | Optional. Per-note date. Stored in the `date` column. Falls back to the session's Assessment Date if missing. |
+
+- Each row becomes one `mentor_notes` record with `note_type = 'general'`.
+- Notes are linked to the project selected in the wizard.
+- Long notes (multi-sentence or multi-paragraph) are fully preserved; there is no character limit.
+- The `Date` column should be formatted as `YYYY-MM-DD` or a standard Excel date for reliable parsing.
+
+### Wizard Settings
+
+| Setting | Value |
+| :--- | :--- |
+| Associated Project | The project these notes relate to |
+| Assessment Date | Used as fallback date for any rows missing a `Date` column |
+
+### Deduplication
+
+- There is **no unique constraint** on mentor notes — the same student can have multiple notes per project (e.g., from multiple sessions). Each import creates new records.
+- To avoid accidental duplication, the wizard will warn you if an `assessment_log` for the same project/cohort/type already exists.
+
+---
+
+## Student Name Matching (All Types)
+
+The engine uses a **fuzzy-tolerant alias system** to match names from your file to the database.
+
+1. **Normalization** — Names are trimmed, lowercased, and internal whitespace is collapsed.
+2. **Exact Match** — Compared against `canonical_name` in the `students` table.
+3. **Alias Match** — If exact match fails, all entries in the `aliases` array for each student are checked.
+4. **Skip on No Match** — Any name that cannot be matched is skipped and flagged in the "Unrecognized Students" panel in the wizard. If a correct name is being skipped, add it to the student's aliases list in the Admin → Students panel.
+
+> **Inactive students** (`is_active = FALSE`, e.g., Madhur Kalantri) are excluded from matching even if their name appears in the file.
+
+---
+
+## Score Normalization
+
+All scored data (Mentor and Self) is normalized to a **1–10 scale** at import time using linear min-max interpolation.
+
+**Formula:**
+```
+normalized_score = ((raw_score - min) / (max - min)) * 9 + 1
+```
+
+| Type | Default Raw Scale | Normalized To |
+| :--- | :--- | :--- |
+| Mentor Assessment | 1–10 (set manually in wizard) | 1–10 |
+| Self Assessment | 1–4, 1–5, or 1–10 (auto-detected) | 1–10 |
+| Peer Feedback | 1–5 (fixed) | 1–10 |
+| Term / Metric | N/A — stored as-is | Not normalized |
+| Mentor Notes | N/A — qualitative text | Not normalized |
+
+> If the raw scale min equals max (divide-by-zero), the raw score is passed through without normalization.
+
+---
+
+## Common Errors & Fixes
+
+| Symptom | Likely Cause | Fix |
+| :--- | :--- | :--- |
+| "No students matched" | Names in file don't match canonical names or aliases | Add aliases in Admin → Students, or fix spelling in the file |
+| "No parameter codes recognized" | Column A doesn't contain codes (`C1`–`P4`) | Ensure Col A has the exact code, not a description |
+| Data type detected as "unknown" | Filename has no recognized keyword | Rename file or override type in the wizard dropdown |
+| Wrong scale detected | Scores happen to max out below 5 | Manually set Min/Max in the wizard before importing |
+| Duplicate warning shown | Same project/cohort/type was previously imported | Review previous import logs; use "Import Anyway" only if re-importing intentionally |
+
+---
+
+*For the database schema that this data populates, see [`SUPABASE_SCHEMA.md`](./SUPABASE_SCHEMA.md).*
+*For the system's architecture, see [`CONTEXT.md`](./CONTEXT.md).*

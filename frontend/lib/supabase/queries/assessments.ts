@@ -24,7 +24,7 @@ export type AssessmentLog = {
     program_id: string;
     term: string;
     cohort?: string | null;
-    data_type: 'self' | 'mentor' | 'peer' | 'term';
+    data_type: 'self' | 'mentor' | 'peer' | 'term' | 'client';
     project_id: string | null;
     file_name: string | null;
     mapping_config: Record<string, string>;
@@ -37,7 +37,7 @@ export type Assessment = {
     student_id: string;
     project_id: string;
     parameter_id: string;
-    assessment_type: 'mentor' | 'self';
+    assessment_type: 'mentor' | 'self' | 'client';
     assessment_log_id?: string | null;
     assessment_framework_id?: string | null;
     self_assessment_question_id?: string | null;
@@ -113,7 +113,32 @@ export async function getSelfAssessmentData(supabase: SupabaseClient) {
     };
 }
 
-export async function getAssessmentsByLog(supabase: SupabaseClient, logId: string, assessmentType: 'mentor' | 'self') {
+export async function getClientAssessmentData(supabase: SupabaseClient) {
+    const [studentsResult, projectsResult, domainsResult, paramsResult, logsResult] = await Promise.all([
+        supabase.from('students').select('*').order('student_number'),
+        supabase.from('projects').select('*').order('sequence').order('sequence_label'),
+        supabase.from('readiness_domains').select('*').order('display_order'),
+        supabase.from('readiness_parameters').select('*').order('param_number'),
+        supabase.from('assessment_logs').select('*').eq('data_type', 'client').order('assessment_date', { ascending: false })
+    ]);
+
+    if (studentsResult.error) throw studentsResult.error;
+    if (projectsResult.error) throw projectsResult.error;
+    if (domainsResult.error) throw domainsResult.error;
+    if (paramsResult.error) throw paramsResult.error;
+    if (logsResult.error) throw logsResult.error;
+
+    return {
+        students: studentsResult.data as Student[],
+        projects: projectsResult.data as Project[],
+        domains: domainsResult.data as ReadinessDomain[],
+        parameters: paramsResult.data as ReadinessParameter[],
+        assessments: [] as Assessment[],
+        assessmentLogs: logsResult.data as AssessmentLog[],
+    };
+}
+
+export async function getAssessmentsByLog(supabase: SupabaseClient, logId: string, assessmentType: 'mentor' | 'self' | 'client') {
     const { data, error } = await supabase
         .from('assessments')
         .select('*')
@@ -222,5 +247,29 @@ export async function getPlaygroundData(supabase: SupabaseClient, studentId?: st
         cohortPeerSummary: allPeerSummaryResult.data as any[] || [],
         allTermTracking: allTermTrackingResult.data as any[] || [],
         allSelfAssessments: allSelfAssessmentsResult.data as any[] || []
+    };
+}
+
+export async function getProjectReportData(supabase: SupabaseClient, studentId: string, projectId: string) {
+    const [studentResult, projectResult, domainsResult, assessmentsResult, peerSummaryResult, notesResult] = await Promise.all([
+        supabase.from('students').select('*, programs(name)').eq('id', studentId).single(),
+        supabase.from('projects').select('*').eq('id', projectId).single(),
+        supabase.from('readiness_domains').select('*').order('display_order'),
+        supabase.from('assessments').select('*, readiness_parameters(domain_id)').eq('student_id', studentId).eq('project_id', projectId),
+        supabase.from('v_peer_feedback_summary').select('*').eq('student_id', studentId).eq('project_id', projectId).single(),
+        supabase.from('mentor_notes').select('*').eq('student_id', studentId).eq('project_id', projectId).order('date', { ascending: false })
+    ]);
+
+    if (studentResult.error) throw studentResult.error;
+    if (projectResult.error) throw projectResult.error;
+    if (domainsResult.error) throw domainsResult.error;
+
+    return {
+        student: studentResult.data,
+        project: projectResult.data,
+        domains: domainsResult.data as ReadinessDomain[],
+        assessments: assessmentsResult.data || [],
+        peerSummary: peerSummaryResult.data || null,
+        notes: notesResult.data || []
     };
 }

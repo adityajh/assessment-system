@@ -30,7 +30,7 @@ interface ScoreGridProps {
     domains: ReadinessDomain[];
     parameters: ReadinessParameter[];
     assessments: Assessment[];
-    assessmentType: 'mentor' | 'self';
+    assessmentType: 'mentor' | 'self' | 'client';
     displayScore: 'raw' | 'normalized';
     onScoreUpdate: (assessment: Assessment) => void;
 }
@@ -205,6 +205,9 @@ export function ScoreGrid({
                                     } else if (assessmentType === 'mentor') {
                                         cellBg = 'bg-indigo-500/10 hover:bg-indigo-500/20';
                                         cellText = 'text-indigo-300 font-medium';
+                                    } else if (assessmentType === 'client') {
+                                        cellBg = 'bg-amber-500/10 hover:bg-amber-500/20';
+                                        cellText = 'text-amber-300 font-medium';
                                     } else {
                                         cellBg = 'bg-teal-500/10 hover:bg-teal-500/20';
                                         cellText = 'text-teal-300 font-medium';

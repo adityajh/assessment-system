@@ -159,9 +159,11 @@ CREATE TABLE assessment_logs (
     program_id UUID REFERENCES programs(id) NOT NULL,
     term TEXT NOT NULL,
     cohort TEXT,
-    data_type TEXT NOT NULL CHECK (data_type IN ('self', 'mentor', 'peer', 'term', 'mentor_notes')),
-    project_id UUID REFERENCES projects(id),
+    data_type TEXT NOT NULL CHECK (data_type IN ('self', 'mentor', 'peer', 'term', 'mentor_notes', 'client')),
+    project_id UUID REFERENCES PROJECTS(id),
     file_name TEXT,
+    client_name TEXT,                  -- [Migration 004] Industry partner contact
+    company_name TEXT,                 -- [Migration 004] Client organisation
     mapping_config JSONB,             -- Stores raw_scale_max, question mappings, etc.
     records_inserted INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now() -- Used as "Upload Date" in UI
@@ -179,7 +181,7 @@ CREATE TABLE assessments (
     student_id UUID NOT NULL REFERENCES students(id),
     project_id UUID NOT NULL REFERENCES projects(id),
     parameter_id UUID NOT NULL REFERENCES readiness_parameters(id),
-    assessment_type TEXT NOT NULL CHECK (assessment_type IN ('mentor', 'self')),
+    assessment_type TEXT NOT NULL CHECK (assessment_type IN ('mentor', 'self', 'client')),
     assessment_log_id UUID REFERENCES assessment_logs(id) ON DELETE CASCADE,
     assessment_framework_id UUID REFERENCES assessment_frameworks(id),
     self_assessment_question_id UUID REFERENCES self_assessment_questions(id),

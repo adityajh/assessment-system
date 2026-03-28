@@ -36,6 +36,7 @@ const navSections = [
         items: [
             { href: '/admin/assessments/mentor', icon: BarChart2, label: 'Mentor Scores' },
             { href: '/admin/assessments/self', icon: FileText, label: 'Self Scores' },
+            { href: '/admin/assessments/client', icon: Briefcase, label: 'Client Scores' },
             { href: '/admin/peer-feedback', icon: MessageSquareQuote, label: 'Peer Feedback' },
             { href: '/admin/notes', icon: StickyNote, label: 'Mentor Notes' }
         ]
@@ -123,7 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 {/* Footer */}
                 <div className="px-4 py-3 border-t border-slate-800/60 shrink-0">
-                    <p className="text-[10px] text-slate-600 text-center">Year 1 Assessment System</p>
+                    <p className="text-[10px] text-slate-600 text-center uppercase tracking-widest font-bold">Assessment System</p>
                 </div>
             </aside>
 

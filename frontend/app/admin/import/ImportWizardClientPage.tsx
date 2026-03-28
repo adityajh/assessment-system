@@ -14,7 +14,7 @@ interface ImportWizardProps {
     initialMetrics?: any[];
 }
 
-type ImportType = 'mentor' | 'self' | 'peer' | 'term' | 'mentor_notes' | 'unknown';
+type ImportType = 'mentor' | 'self' | 'peer' | 'term' | 'mentor_notes' | 'client' | 'unknown';
 
 export default function ImportWizardClientPage({ initialStudents, initialProjects, initialPrograms, initialMetrics = [] }: ImportWizardProps) {
     const [file, setFile] = useState<File | null>(null);
@@ -27,6 +27,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
     const [term, setTerm] = useState<string>('Year 1');
     const [rawScaleMin, setRawScaleMin] = useState<number>(1);
     const [rawScaleMax, setRawScaleMax] = useState<number>(10);
+    const [clientName, setClientName] = useState<string>('');
+    const [companyName, setCompanyName] = useState<string>('');
 
     const [isUploading, setIsUploading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -105,8 +107,12 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
             setError("Please select a Target Metric for this term report.");
             return;
         }
-        if ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId) {
+        if ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes' || detectedType === 'client') && !projectId) {
             setError("Please select a project before importing.");
+            return;
+        }
+        if (detectedType === 'client' && (!clientName || !companyName)) {
+            setError("Please provide both Client Name and Company Name.");
             return;
         }
 
@@ -168,6 +174,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                     rawScaleMin: rawScaleMin,
                     rawScaleMax: rawScaleMax,
                     fileName: file!.name,
+                    clientName: detectedType === 'client' ? clientName : null,
+                    companyName: detectedType === 'client' ? companyName : null,
                     records: recordsToSave,
                 }),
             });
@@ -224,6 +232,10 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     <li className="flex justify-between">
                                         <span className="font-bold">Mentor Notes:</span>
                                         <span className="bg-indigo-100 px-1.5 rounded text-indigo-700 font-mono">Notes</span>
+                                    </li>
+                                    <li className="flex justify-between">
+                                        <span className="font-bold">Client Assessment:</span>
+                                        <span className="bg-indigo-100 px-1.5 rounded text-indigo-700 font-mono">Client</span>
                                     </li>
                                 </ul>
                             </div>
@@ -367,6 +379,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     <option value="peer">Peer Feedback</option>
                                     <option value="term">Metric Tracking (was Term Reports)</option>
                                     <option value="mentor_notes">Mentor Notes</option>
+                                    <option value="client">Client Assessments</option>
                                 </select>
                             </div>
 
@@ -387,7 +400,33 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                 </div>
                             )}
 
-                            {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && (
+                            {detectedType === 'client' && (
+                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-black text-amber-800 uppercase tracking-widest">Client Contact Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. John Doe"
+                                            className="w-full px-4 py-2 bg-white border border-amber-300 rounded-lg text-slate-950 font-bold"
+                                            value={clientName}
+                                            onChange={e => setClientName(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-black text-amber-800 uppercase tracking-widest">Company Organization</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Acme Corp"
+                                            className="w-full px-4 py-2 bg-white border border-amber-300 rounded-lg text-slate-950 font-bold"
+                                            value={companyName}
+                                            onChange={e => setCompanyName(e.target.value)}
+                                        />
+                                    </div>
+                                    <p className="text-[9px] text-amber-700 font-medium italic">This assessment will be locked to this specifically named client for accountability.</p>
+                                </div>
+                            )}
+
+                            {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes' || detectedType === 'client') && (
                                 <div className="flex flex-col gap-2">
                                     <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
                                     <select
@@ -495,7 +534,8 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     }`}
                                 onClick={handleImport}
                                 disabled={isProcessing || detectedType === 'unknown' || !assessmentDate || !program || !cohort || !term ||
-                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId)
+                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes' || detectedType === 'client') && !projectId) ||
+                                    (detectedType === 'client' && (!clientName || !companyName))
                                 }
                             >
                                 {isProcessing ? (
@@ -564,7 +604,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
                                     </div>
                                 </div>
 
-                                {(detectedType === 'mentor' || detectedType === 'self') && (
+                                {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'client') && (
                                     <div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-black text-slate-600 uppercase">Detected Raw Scale</span>
