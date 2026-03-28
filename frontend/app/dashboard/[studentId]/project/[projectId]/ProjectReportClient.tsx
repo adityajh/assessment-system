@@ -167,14 +167,6 @@ export default function ProjectReportClient({
                             </option>
                         ))}
                     </select>
-
-                    <button 
-                        onClick={handlePrint}
-                        className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2 rounded-xl font-bold text-xs hover:bg-indigo-600 transition-all active:scale-95"
-                    >
-                        <Printer size={14} />
-                        Print Report
-                    </button>
                 </div>
             </div>
 
@@ -224,7 +216,7 @@ export default function ProjectReportClient({
                             </div>
                         </div>
 
-                        <div className="h-[400px] w-full bg-white border border-slate-100 rounded-2xl p-6 print:h-[280px] print:p-2 print:border-0">
+                        <div className="h-[400px] w-full bg-white border border-slate-100 rounded-2xl p-6 print:h-[320px] print:p-2 print:border-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={domainChartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }} barGap={4}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -261,7 +253,7 @@ export default function ProjectReportClient({
                     </section>
 
                     {/* SECTION: PEER FEEDBACK (DIVERGING BARS) */}
-                    <section className="print:break-inside-avoid">
+                    <section className="print:break-inside-avoid print:pb-12">
                         <div className="flex items-center gap-4 mb-8 print:mb-4">
                             <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 print:w-8 print:h-8">
                                 <Star size={24} strokeWidth={2.5} className="print:w-5 print:h-5" />
@@ -289,7 +281,7 @@ export default function ProjectReportClient({
                                 </div>
 
                                 {/* Diverging Deviation Chart */}
-                                <div className="w-full h-[280px] print:h-[200px]">
+                                <div className="w-full h-[280px] print:h-[220px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart 
                                             layout="vertical" 
@@ -344,7 +336,7 @@ export default function ProjectReportClient({
                     </section>
 
                     {/* SECTION: DOMAIN LEVELS (COMPACT ACCORDIONS) */}
-                    <section className="print:break-inside-avoid">
+                    <section className="print:break-before-page pt-10">
                         <div className="flex items-center gap-4 mb-8 print:mb-4">
                             <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600 print:w-8 print:h-8">
                                 <Target size={24} strokeWidth={2.5} className="print:w-5 print:h-5" />
@@ -504,6 +496,9 @@ export default function ProjectReportClient({
                     }
                     .print\\:max-w-none {
                         max-width: none !important;
+                    }
+                    .print\\:break-before-page {
+                        break-before: page !important;
                     }
                 }
             `}</style>
