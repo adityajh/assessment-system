@@ -258,7 +258,7 @@ export async function getProjectReportData(supabase: SupabaseClient, studentId: 
         supabase.from('readiness_parameters').select('*').order('param_number'),
         supabase.from('assessments').select('*, readiness_parameters(*)').eq('student_id', studentId).eq('project_id', projectId),
         supabase.from('v_peer_feedback_summary').select('*').eq('student_id', studentId).eq('project_id', projectId).single(),
-        supabase.from('mentor_notes').select('*').eq('student_id', studentId).eq('project_id', projectId).order('date', { ascending: false }),
+        supabase.from('mentor_notes').select('*, projects(name)').eq('student_id', studentId).or(`project_id.eq.${projectId},project_id.is.null`).order('date', { ascending: false }),
         supabase.from('projects').select('*').order('sequence'),
         supabase.from('v_peer_feedback_summary').select('*').eq('project_id', projectId)
     ]);

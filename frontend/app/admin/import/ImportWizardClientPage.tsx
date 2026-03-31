@@ -107,7 +107,7 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
             setError("Please select a Target Metric for this term report.");
             return;
         }
-        if ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes' || detectedType === 'client') && !projectId) {
+        if ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'client') && !projectId) {
             setError("Please select a project before importing.");
             return;
         }
@@ -428,13 +428,13 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
                             {(detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes' || detectedType === 'client') && (
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-md font-black text-slate-950 uppercase tracking-wide">Associated Project</label>
+                                    <label className="text-md font-black text-slate-950 uppercase tracking-wide">{detectedType === 'mentor_notes' ? 'Associated Project (Optional)' : 'Associated Project'}</label>
                                     <select
                                         className="input bg-white border-2 border-slate-300 !text-slate-900 !font-bold h-12 focus:border-indigo-600 transition-all"
                                         value={projectId}
                                         onChange={(e) => setProjectId(e.target.value)}
                                     >
-                                        <option value="">-- Choose Project --</option>
+                                        <option value="">{detectedType === 'mentor_notes' ? '-- General / Not project-specific --' : '-- Choose Project --'}</option>
                                         {initialProjects.sort((a, b) => (a.sequence_label || '').localeCompare(b.sequence_label || '')).map(p => (
                                             <option key={p.id} value={p.id}>{p.sequence_label} - {p.name}</option>
                                         ))}
@@ -528,13 +528,13 @@ export default function ImportWizardClientPage({ initialStudents, initialProject
 
                             <button
                                 className={`w-full rounded-xl py-4 font-black text-lg transition-all shadow-xl flex items-center justify-center gap-3 mt-4 ${isProcessing || detectedType === 'unknown' || !assessmentDate || !program || !cohort || !term ||
-                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes') && !projectId)
+                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer') && !projectId)
                                     ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                                     : 'bg-slate-950 text-white hover:bg-indigo-600 cursor-pointer'
                                     }`}
                                 onClick={handleImport}
                                 disabled={isProcessing || detectedType === 'unknown' || !assessmentDate || !program || !cohort || !term ||
-                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'mentor_notes' || detectedType === 'client') && !projectId) ||
+                                    ((detectedType === 'mentor' || detectedType === 'self' || detectedType === 'peer' || detectedType === 'client') && !projectId) ||
                                     (detectedType === 'client' && (!clientName || !companyName))
                                 }
                             >

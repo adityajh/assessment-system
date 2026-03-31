@@ -444,7 +444,12 @@ export default function ProjectReportClient({
                             {notes.length > 0 ? notes.map((note) => (
                                 <div key={note.id} className="bg-white border border-slate-200/50 p-6 rounded-2xl relative print:p-2 print:border-0 print:bg-slate-50">
                                     <div className="flex justify-between items-center mb-3 print:mb-0.5">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest print:text-[7px]">{note.created_by || 'Mentor'}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest print:text-[7px]">{note.created_by || 'Mentor'}</p>
+                                            <span className={`px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider ${note.project_id ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                {note.projects?.name || 'General Guidance'}
+                                            </span>
+                                        </div>
                                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest print:text-[7px]">{new Date(note.date).toLocaleDateString()}</p>
                                     </div>
                                     <p className="text-slate-600 leading-relaxed text-sm font-medium italic print:text-[9px]">"{note.note_text}"</p>
