@@ -1,6 +1,6 @@
 # 📥 Data Import Rules
 
-> **Last Updated:** 2026-03-17
+> **Last Updated:** 2026-03-31
 > **Purpose:** Complete reference for how to prepare and upload all data types through the Import Wizard (`/admin/import`).
 
 ---
@@ -15,7 +15,7 @@ The Import Wizard accepts **Excel files (`.xlsx` / `.xls`)** only. It automatica
 | **Self Assessment** | `Self`, `x-ray`, or `Accounting` | `assessments` (type=`self`) | ✅ Yes |
 | **Peer Feedback** | `Peer` | `peer_feedback` | ✅ Yes |
 | **Term / Metric Report** | `Term` | `metric_tracking` | ❌ No (metric chosen separately) |
-| **Mentor Notes** | `Notes` or `note` | `mentor_notes` | ✅ Yes |
+| **Mentor Notes** | `Notes` or `note` | `mentor_notes` | ⚠️ Optional — leave blank for General notes |
 
 > **Detection is case-insensitive.** A file named `SDP_MentorNotes_Jun25.xlsx` will correctly be detected as **Mentor Notes**.
 
@@ -25,7 +25,7 @@ The Import Wizard accepts **Excel files (`.xlsx` / `.xls`)** only. It automatica
 
 1. **Upload** — Drag your `.xlsx` or `.xls` file onto the upload zone. The system will auto-parse it and detect the data type.
 2. **Verify the detected type** — You can override the detected type from the dropdown if needed.
-3. **Select a Project** — Required for all types except Term/Metric reports.
+3. **Select a Project** — Required for all types except Term/Metric reports and Mentor Notes. For Mentor Notes, leave blank to create "General Guidance" notes not tied to any specific project.
 4. **Fill General Details** — Assessment Date, Program, Cohort Year, and Term.
 5. **Set Score Scale** — Enter the raw Min/Max scores for normalization (Mentor & Self only; not used for Notes or Term data).
 6. **Import** — Click "FINAL RUN: IMPORT TO DATABASE". A duplicate warning will appear if data for that project/cohort/type already exists.
@@ -182,10 +182,10 @@ Or alternatively with a metric column (when uploading multiple metrics at once p
 
 ## Type 5: Mentor Notes
 
-**When to use:** To bulk-import qualitative written feedback from mentors for one or more students, linked to a specific project.
+**When to use:** To bulk-import qualitative written feedback from mentors for one or more students. Can optionally be linked to a specific project, or left as "General Guidance" with no project association.
 
 **File naming:** Must contain `Notes` or `note`.
-> Example: `SDP_MentorNotes_Mar26.xlsx`, `Kickstart_notes.xlsx`
+> Example: `SDP_MentorNotes_Mar26.xlsx`, `General_notes_Mar26.xlsx`
 
 ### Sheet Structure
 
@@ -203,18 +203,18 @@ Or alternatively with a metric column (when uploading multiple metrics at once p
 | **Student Name** | `student`, `name` | **Required.** Matched against roster. |
 | **Notes / Feedback** | `note`, `notes`, `feedback` | **Required.** The free-text feedback text. |
 | Mentor / Created By | `mentor` | Optional. Stored in `created_by`. Defaults to the importing user. |
-| Date | `date` | Optional. Per-note date. Stored in the `date` column. Falls back to the session's Assessment Date if missing. |
+| Date | `date` | Optional. Per-note date. Falls back to session's Assessment Date if missing. Supports both `YYYY-MM-DD` and raw Excel serial number formats. |
 
 - Each row becomes one `mentor_notes` record with `note_type = 'general'`.
-- Notes are linked to the project selected in the wizard.
+- If a project is selected, notes are linked to that project. If no project is selected, `project_id` is stored as `NULL` ("General Guidance").
+- General notes appear in **every** project report for that student, clearly labeled as "General Guidance".
 - Long notes (multi-sentence or multi-paragraph) are fully preserved; there is no character limit.
-- The `Date` column should be formatted as `YYYY-MM-DD` or a standard Excel date for reliable parsing.
 
 ### Wizard Settings
 
 | Setting | Value |
 | :--- | :--- |
-| Associated Project | The project these notes relate to |
+| Associated Project | *(Optional)* The project these notes relate to. Leave blank for general notes not tied to a module. |
 | Assessment Date | Used as fallback date for any rows missing a `Date` column |
 
 ### Deduplication

@@ -6,6 +6,30 @@ Format: `## [YYYY-MM-DD] — Description`
 
 ---
 
+## [2026-03-31] — General Mentor Notes, Import Fixes & Data Corrections
+
+### Import Wizard: General Mentor Notes
+- **Optional Project Association:** Mentor Notes can now be imported without being tied to a specific project, creating "General Guidance" notes not associated with any module.
+- **UI:** When "Mentor Notes" is detected, the project dropdown label updates to "Associated Project (Optional)" and defaults to "-- General / Not project-specific --".
+- **Validation:** The mandatory project check is relaxed for the `mentor_notes` type only (all other assessment types still require project selection).
+
+### Import Wizard: Excel Serial Date Fix
+- **Bug Fixed:** Mentor Notes with a `Date` column containing raw Excel serial numbers (e.g., `46107`) were crashing the import with a Postgres timezone displacement error (`+046107-01-01`).
+- **Fix:** The import API now detects all-digit date strings and converts them correctly from Excel serial number to calendar date using the standard epoch formula (`(serial - 25569) * 86400 * 1000`).
+- **Safety Guard:** A year bounds check (`2000 < year < 2100`) ensures no out-of-range dates are sent to Postgres; rows with unparseable dates fall back to the session's Assessment Date.
+
+### Dashboards: General Notes Display
+- **Project Reports:** Now fetch both project-specific notes **and** general notes (`project_id = NULL`) for each student in one query. Each note in the Mentor Guidance section displays a labeled tag (project name or "General Guidance") to make context clear.
+
+### Learning Trajectory: Correct Label for Concurrent-Module Students
+- **Bug Fixed:** For students doing one of two concurrent modules at the same sequence number (e.g., Moonshine `6a` / SIDR `6b`), the chart always displayed "Moonshine" (alphabetically first) regardless of which project the student actually participated in.
+- **Fix:** The trajectory chart now resolves the phase label from the student's actual assessment data, falling back to alphabetical order only if no data exists for that phase.
+
+### Data Corrections (Direct Database)
+- **Kickstart Self-Assessments Deleted:** Removed self-assessment records for **Jasper Jovi Dias** and **Moiz Lakdawala** for the Kickstart project. Both students joined the program late and did not participate in Kickstart. Their assessed project count now correctly reflects 5/6.
+
+---
+
 ## [2026-03-11] — Codebase Reorganization
 
 - **Repository Cleanup:** Reorganized 68 files from the flat `scripts/` root into structured subdirectories:
