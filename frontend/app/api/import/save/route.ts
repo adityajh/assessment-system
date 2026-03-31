@@ -545,10 +545,22 @@ export async function POST(request: NextRequest) {
                     
                     let effectiveDate = date; // fallback to session date
                     if (rowDateStr && rowDateStr.toLowerCase() !== 'nan') {
-                        // Very basic date parsing check
-                        const d = new Date(rowDateStr);
-                        if (!isNaN(d.getTime())) {
-                            effectiveDate = d.toISOString().split('T')[0];
+                        let parsedDate: Date | null = null;
+                        
+                        // Check if it's an Excel serial date number (e.g., 46107)
+                        if (/^\d+$/.test(rowDateStr)) {
+                            const excelDate = parseInt(rowDateStr, 10);
+                            parsedDate = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+                        } else {
+                            parsedDate = new Date(rowDateStr);
+                        }
+
+                        if (parsedDate && !isNaN(parsedDate.getTime())) {
+                            const year = parsedDate.getFullYear();
+                            // Sanity check preventing Postgres crashes on out-of-range dates
+                            if (year > 2000 && year < 2100) {
+                                effectiveDate = parsedDate.toISOString().split('T')[0];
+                            }
                         }
                     }
 
