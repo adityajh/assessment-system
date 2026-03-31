@@ -108,10 +108,14 @@ export default async function StudentDashboardPage({ params }: { params: Promise
         trajectoryData = uniqueSequences.map(seq => {
             const seqProjects = data.projects.filter(p => p.sequence === seq);
             const projectIds = seqProjects.map(p => p.id);
-            const projectName = seqProjects[0].name; // Primary label
 
             const mentorAsses = data.assessments.filter(a => projectIds.includes(a.project_id) && a.assessment_type === 'mentor' && a.normalized_score !== null);
             const selfAsses = data.assessments.filter(a => projectIds.includes(a.project_id) && a.assessment_type === 'self' && a.normalized_score !== null);
+
+            // Use the project name from actual assessment data if available (handles concurrent projects like Moonshine/SIDR)
+            const actualProjectId = mentorAsses[0]?.project_id || selfAsses[0]?.project_id;
+            const actualProject = actualProjectId ? seqProjects.find(p => p.id === actualProjectId) : null;
+            const projectName = actualProject?.name || seqProjects[0].name;
 
             const mentorAvg = mentorAsses.length > 0 ? mentorAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / mentorAsses.length : null;
             const selfAvg = selfAsses.length > 0 ? selfAsses.reduce((sum, a) => sum + a.normalized_score!, 0) / selfAsses.length : null;
