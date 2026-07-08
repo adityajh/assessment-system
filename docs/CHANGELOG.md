@@ -6,6 +6,17 @@ Format: `## [YYYY-MM-DD] — Description`
 
 ---
 
+## [2026-07-08] — External REST API & API Key Management
+
+- **API Key Management:** Added a dynamic API Key management UI to the Admin Settings (`/admin/settings/api-keys`) to generate and revoke tokens. Tokens are stored as SHA-256 hashes in a new `api_keys` database table for security.
+- **REST API Layer:** Built a secure, read-only Next.js REST API namespace (`/api/v1/*`) to allow external systems to fetch assessment data:
+  - `GET /api/v1/students`: Lists active students with top-level metrics.
+  - `GET /api/v1/students/[id]`: Returns detailed student profiles, domain scores, and peer feedback summaries.
+  - `GET /api/v1/projects`: Lists active projects.
+- **Authentication:** Built `lib/apiAuth.ts` middleware to enforce `Authorization: Bearer <TOKEN>` checks against the `api_keys` table.
+
+---
+
 ## [2026-03-31] — General Mentor Notes, Import Fixes & Data Corrections
 
 ### Import Wizard: General Mentor Notes

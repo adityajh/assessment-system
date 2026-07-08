@@ -323,6 +323,26 @@ CREATE TABLE assessment_frameworks (
 
 ---
 
+---
+
+#### `api_keys` (NEW - External Integration)
+Stores secure hashes of API keys used by external systems to authenticate against the REST API.
+
+```sql
+CREATE TABLE api_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    key_hash TEXT NOT NULL UNIQUE,
+    created_by TEXT,
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+```
+
+---
+
 ### 2.3 Database Views (for Dashboard Queries)
 
 These views pre-compute the aggregations needed by the dashboard.
