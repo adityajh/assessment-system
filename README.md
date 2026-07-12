@@ -1,5 +1,7 @@
 # Let's Entreprise — Year 1 Assessment System
 
+> **HISTORICAL ARCHIVE — cohort 2025 (frozen 2026-07-12).** Read-only record; successor: Tricorder v2 in The Bridge. Live DB ≠ committed migrations — never rebuild from scripts/; the running instance is the artifact.
+
 An admin portal + student dashboard for the Let's Entreprise Year 1 programme.
 
 ---

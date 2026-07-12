@@ -1,7 +1,8 @@
 import json
 import subprocess
+import os
 
-PAT = "sbp_b8874cc5000ef2fbc3dacf9da71672d451127fba"
+PAT = os.environ["SUPABASE_MGMT_PAT"]  # token rotated + moved to env 2026-07-12
 URL = "https://api.supabase.com/v1/projects/wqcdtdofwytfrcbhfycc/database/query"
 
 def run_sql(query):

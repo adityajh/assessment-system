@@ -130,6 +130,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* ── Main Content ── */}
             <main className="admin-main flex-1 ml-64 flex flex-col min-h-screen">
+                <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-[11px] font-semibold uppercase tracking-widest text-center py-1.5 shrink-0">
+                    Historical archive — cohort 2025 · frozen
+                </div>
                 <header className="admin-header h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center px-8 shrink-0 gap-3">
                     <div className="flex-1">
                         <h1 className="text-base font-semibold text-white">
